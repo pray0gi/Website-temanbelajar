@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Belajar Struktur Data: Antrean (Queue)</title>
+    
+    <!-- Link ke Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Link ke Google Fonts (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://css-proxy.vercel.app/api/fonts/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .queue-person {
+            transition: all 0.3s ease-out;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Style untuk blok kode */
+        pre {
+            background-color: #020617; /* slate-950 */
+            color: #e2e8f0; /* slate-200 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            height: 100%; /* Membuat pre sama tinggi dalam grid */
+        }
+        code {
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white">
+
+    <!-- Kontainer Utama -->
+    <div class="container mx-auto p-4 md:p-8">
+
+        <!-- Header Halaman -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-sky-400 to-cyan-300 text-transparent bg-clip-text">Antrean (Queue)</h1>
+            <p class="text-slate-400 mt-2">Memahami konsep Pertama Masuk, Pertama Keluar (FIFO).</p>
+        </header>
+
+        <!-- Menu Navigasi -->
+        <nav class="bg-slate-800 p-4 mb-8 rounded-lg sticky top-4 z-10">
+            <ul class="flex flex-wrap justify-center items-center gap-x-4 md:gap-x-8 text-slate-300">
+                <li>
+                    <a href="/index.html" class="hover:text-sky-400 font-semibold transition-colors">Beranda</a>
+                </li>
+                <li>
+                    <a href="/materi/antrean.html" class="text-sky-400 font-bold">Antrean (Queue)</a>
+                </li>
+                <li>
+                    <a href="/materi/tumpukan.html" class="hover:text-sky-400 font-semibold transition-colors">Tumpukan (Stack)</a>
+                </li>
+                <li>
+                    <a href="/materi/pohon.html" class="hover:text-sky-400 font-semibold transition-colors">Pohon (Tree)</a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Konten Utama -->
+        <main class="fade-in">
+
+            <!-- Seksi Penjelasan Konsep -->
+            <section id="konsep" class="bg-slate-800 p-6 rounded-lg mb-8">
+                <h2 class="text-3xl font-bold mb-4 text-cyan-300">Konsep Dasar Antrean</h2>
+                <p class="text-slate-300 leading-relaxed">
+                    Antrean atau Queue adalah struktur data linear yang mengikuti prinsip **First-In, First-Out (FIFO)**. Artinya, elemen yang pertama kali ditambahkan ke dalam antrean akan menjadi elemen yang pertama kali dikeluarkan. Bayangkan ini persis seperti antrean orang di loket tiket: orang yang datang lebih dulu akan dilayani lebih dulu.
+                </p>
+                <div class="mt-4 grid md:grid-cols-2 gap-4">
+                    <div class="bg-slate-700 p-4 rounded-lg">
+                        <h3 class="font-semibold text-lg text-sky-400">Operasi Utama: Enqueue</h3>
+                        <p class="text-slate-400">Menambahkan elemen baru ke bagian paling belakang (akhir) dari antrean.</p>
+                    </div>
+                    <div class="bg-slate-700 p-4 rounded-lg">
+                        <h3 class="font-semibold text-lg text-sky-400">Operasi Utama: Dequeue</h3>
+                        <p class="text-slate-400">Menghapus dan mengembalikan elemen dari bagian paling depan antrean.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Seksi Simulasi Interaktif -->
+            <section id="simulasi" class="bg-slate-800 p-6 rounded-lg mb-8">
+                <h2 class="text-3xl font-bold mb-4 text-center text-cyan-300">Simulasi: Antrean Tiket Bioskop</h2>
+                <div class="flex items-center space-x-2 mb-4">
+                    <input type="text" id="personName" placeholder="Nama orang..." class="w-full bg-slate-700 p-2 rounded-md border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                    <button id="enqueueBtn" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded whitespace-nowrap">Masuk Antrean</button>
+                    <button id="dequeueBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Layani</button>
+                </div>
+                <p id="queue-message" class="text-center h-6 mb-2 text-green-400"></p>
+                <div class="bg-slate-900 p-4 rounded-lg min-h-[100px] flex items-center">
+                    <div class="text-slate-500 font-bold mr-4">LOKET</div>
+                    <div id="queue-container" class="flex flex-row-reverse items-center justify-end w-full space-x-2 space-x-reverse">
+                        <!-- Orang di antrean akan muncul di sini -->
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Seksi Contoh Penggunaan -->
+            <section id="contoh" class="bg-slate-800 p-6 rounded-lg mb-8">
+                <h2 class="text-3xl font-bold mb-4 text-cyan-300">Contoh Penggunaan di Dunia Nyata</h2>
+                <ul class="list-disc list-inside text-slate-300 space-y-2">
+                    <li><strong>Antrean Print Dokumen:</strong> Saat Anda mencetak beberapa dokumen, printer akan memprosesnya sesuai urutan pengiriman.</li>
+                    <li><strong>Penjadwalan Tugas (Task Scheduling):</strong> Sistem operasi menggunakan antrean untuk menentukan proses CPU mana yang akan dieksekusi selanjutnya.</li>
+                    <li><strong>Layanan Pelanggan:</strong> Sistem chat atau telepon layanan pelanggan menangani permintaan sesuai urutan masuknya.</li>
+                    <li><strong>Buffering Data:</strong> Dalam streaming video, data video disimpan sementara dalam antrean sebelum ditampilkan untuk memastikan pemutaran yang lancar.</li>
+                </ul>
+            </section>
+
+            <!-- Seksi Contoh Kode -->
+            <section id="kode" class="bg-slate-800 p-6 rounded-lg">
+                <h2 class="text-3xl font-bold mb-4 text-cyan-300">Contoh Implementasi</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Kolom JavaScript -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-2 text-sky-400">JavaScript (ES6 Class)</h3>
+                        <pre><code class="language-javascript">
+class Queue {
+  constructor() {
+    this.items = [];
+  }
+
+  // Menambah elemen
+  enqueue(element) {
+    this.items.push(element);
+  }
+
+  // Menghapus elemen
+  dequeue() {
+    if (this.isEmpty()) {
+      return "Antrean kosong";
+    }
+    return this.items.shift();
+  }
+
+  // Memeriksa antrean
+  isEmpty() {
+    return this.items.length === 0;
+  }
+}
+
+// Contoh penggunaan:
+const antreanLoket = new Queue();
+antreanLoket.enqueue("Adi");
+antreanLoket.enqueue("Budi");
+console.log(antreanLoket.items); 
+// Output: ["Adi", "Budi"]
+
+antreanLoket.dequeue();
+console.log(antreanLoket.items); 
+// Output: ["Budi"]
+                        </code></pre>
+                    </div>
+                    <!-- Kolom Python -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-2 text-sky-400">Python (collections.deque)</h3>
+                        <pre><code class="language-python">
+from collections import deque
+
+# Cara paling efisien untuk
+# membuat Queue di Python
+antrean_loket = deque()
+
+# Menambah elemen (enqueue)
+antrean_loket.append("Adi")
+antrean_loket.append("Budi")
+
+print(antrean_loket)
+# Output: deque(['Adi', 'Budi'])
+
+# Menghapus elemen (dequeue)
+# elemen pertama akan dihapus
+antrean_loket.popleft()
+
+print(antrean_loket)
+# Output: deque(['Budi'])
+
+# Memeriksa antrean
+if not antrean_loket:
+  print("Antrean kosong")
+
+                        </code></pre>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+        
+        <footer class="text-center mt-12 text-slate-500 text-sm">
+            <p>&copy; 2025 temanbelajar.my.id - Semua Hak Cipta Dilindungi</p>
+        </footer>
+
+    </div>
+
+    <!-- JavaScript untuk Simulasi -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- LOGIKA SIMULASI ANTRIAN (QUEUE) ---
+            const personNameInput = document.getElementById('personName');
+            const enqueueBtn = document.getElementById('enqueueBtn');
+            const dequeueBtn = document.getElementById('dequeueBtn');
+            const queueContainer = document.getElementById('queue-container');
+            const queueMessage = document.getElementById('queue-message');
+            
+            let queueData = []; // Data antrean dimulai dari kosong
+
+            const renderQueue = () => {
+                queueContainer.innerHTML = '';
+                queueData.forEach((person, index) => {
+                    const personDiv = document.createElement('div');
+                    personDiv.className = 'queue-person bg-cyan-600 text-white font-semibold py-2 px-4 rounded-full shadow-md fade-in';
+                    personDiv.textContent = person;
+                    queueContainer.appendChild(personDiv);
+                });
+            };
+
+            enqueueBtn.addEventListener('click', () => {
+                const name = personNameInput.value.trim();
+                if (name && queueData.length < 7) {
+                    queueData.push(name);
+                    renderQueue();
+                    personNameInput.value = '';
+                    queueMessage.textContent = `"${name}" berhasil masuk antrean!`;
+                    setTimeout(() => queueMessage.textContent = '', 2000);
+                } else if (queueData.length >= 7) {
+                    queueMessage.textContent = 'Antrean sudah penuh!';
+                    setTimeout(() => queueMessage.textContent = '', 2000);
+                }
+            });
+
+            dequeueBtn.addEventListener('click', () => {
+                if (queueData.length > 0) {
+                    const servedPerson = queueData.shift(); // Mengambil elemen pertama
+                    queueMessage.textContent = `"${servedPerson}" sedang dilayani!`;
+                    setTimeout(() => queueMessage.textContent = '', 2000);
+                    renderQueue();
+                } else {
+                    queueMessage.textContent = 'Antrean sudah kosong!';
+                    setTimeout(() => queueMessage.textContent = '', 2000);
+                }
+            });
+
+            // Inisialisasi tampilan antrean saat halaman dimuat
+            renderQueue();
+        });
+    </script>
+</body>
+</html>
