@@ -6,9 +6,8 @@
     <title>Ujian Online - temanbelajar.my.id</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://css-proxy.vercel.app/api/fonts/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- ** BARU: Tambahkan Supabase Client Library ** -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -21,8 +20,21 @@
 </head>
 <body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
 
-    <div class="w-full max-w-4xl mx-auto">
+    <!-- ** BARU: Modal Peringatan Pelanggaran ** -->
+    <div id="violation-warning" class="fixed inset-0 bg-black bg-opacity-80 flex-col items-center justify-center p-4 hidden z-50 text-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-yellow-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <h2 class="text-4xl font-bold text-yellow-400 mb-4">PERINGATAN!</h2>
+        <p class="text-xl text-white mb-2">Anda terdeteksi meninggalkan halaman ujian.</p>
+        <p class="text-lg text-slate-300">Kembali ke halaman ujian sekarang untuk melanjutkan.</p>
+        <p class="text-2xl font-bold mt-6">
+            Jumlah Pelanggaran: <span id="violation-count" class="text-red-500">0</span> / 3
+        </p>
+        <p class="text-sm text-slate-400 mt-4">Jika Anda melakukan 3 kali pelanggaran, ujian akan dihentikan secara otomatis.</p>
+    </div>
 
+    <div class="w-full max-w-4xl mx-auto">
         <!-- Halaman Login -->
         <div data-page="login" class="active fade-in">
             <div class="bg-slate-800 p-8 rounded-xl shadow-2xl max-w-md mx-auto">
@@ -47,14 +59,14 @@
         <div data-page="instructions" class="fade-in">
             <div class="bg-slate-800 p-8 rounded-xl shadow-2xl text-center">
                 <h1 class="text-3xl font-bold mb-4 text-cyan-300">Selamat Datang, <span id="student-name"></span>!</h1>
-                <p class="text-slate-300 mb-6 max-w-2xl mx-auto">Anda akan memulai Ujian Online Perbaikan Peralatan Listrik. Harap perhatikan instruksi di bawah ini sebelum memulai.</p>
+                <p class="text-slate-300 mb-6 max-w-2xl mx-auto">Anda akan memulai Ujian Online Struktur Data. Harap perhatikan instruksi di bawah ini sebelum memulai.</p>
                 <div class="bg-slate-900 p-6 rounded-lg text-left max-w-lg mx-auto mb-8">
                     <ul class="list-disc list-inside space-y-3 text-slate-300">
                         <li>Ujian terdiri dari <strong id="total-questions-info"></strong> soal pilihan ganda.</li>
                         <li>Waktu pengerjaan adalah <strong id="time-limit-info"></strong> menit.</li>
                         <li>Anda hanya memiliki <strong class="text-yellow-400">satu kali kesempatan</strong> untuk mengerjakan ujian ini.</li>
-                        <li>Pastikan koneksi internet Anda stabil selama pengerjaan.</li>
-                        <li>Jawaban akan terekam otomatis saat Anda menekan tombol "Kirim Jawaban" atau saat waktu habis.</li>
+                        <li class="font-bold text-yellow-300">PENTING: Dilarang membuka tab baru, aplikasi lain, atau keluar dari mode layar penuh selama ujian.</li>
+                        <li class="font-bold text-yellow-300">Melakukan 3 kali pelanggaran akan menghentikan ujian secara otomatis.</li>
                     </ul>
                 </div>
                 <button id="start-exam-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-transform duration-200 hover:scale-105 text-lg">Mulai Ujian</button>
@@ -63,17 +75,12 @@
 
         <!-- Halaman Ujian -->
         <div data-page="exam" class="fade-in">
-            <div class="bg-slate-800 p-6 md:p-8 rounded-xl shadow-2xl">
-                <!-- Header Ujian -->
+             <div class="bg-slate-800 p-6 md:p-8 rounded-xl shadow-2xl">
                 <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-slate-700 pb-4">
                     <h1 class="text-2xl font-bold text-cyan-300 mb-4 md:mb-0">Ujian Struktur Data</h1>
                     <div id="timer" class="bg-red-700 text-white text-2xl font-bold px-6 py-2 rounded-lg shadow-lg">00:00</div>
                 </div>
-                <!-- Konten Soal -->
-                <div id="exam-content">
-                     <p class="text-center text-slate-400">Memuat soal...</p>
-                </div>
-                <!-- Tombol Kirim -->
+                <div id="exam-content"><p class="text-center text-slate-400">Memuat soal...</p></div>
                 <div class="mt-8 text-center">
                     <button id="submit-exam-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-8 rounded-lg transition-transform duration-200 hover:scale-105 text-lg">Kirim Jawaban</button>
                 </div>
@@ -85,22 +92,18 @@
             <div class="bg-slate-800 p-8 rounded-xl shadow-2xl text-center">
                 <h1 class="text-3xl font-bold mb-4 text-green-400">Ujian Selesai!</h1>
                 <p class="text-slate-300 mb-6 text-lg">Terima kasih, <span id="student-name-final"></span>. Jawaban Anda telah berhasil direkam.</p>
-                <p class="text-slate-400">Anda dapat menutup halaman ini sekarang.</p>
+                <p id="completion-reason" class="text-slate-400"></p>
             </div>
         </div>
     </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-
     // =================================================================
-    // ** PENTING: KONEKSI KE SUPABASE **
-    // ** GANTI DUA BARIS DI BAWAH INI DENGAN URL & KUNCI DARI PROYEK SUPABASE ANDA **
-    // Anda bisa menemukannya di: Dashboard Supabase > Settings > API
+    // KONEKSI KE SUPABASE
     // =================================================================
-    const SUPABASE_URL = 'https://mtadhiyfducemvckpnkb.supabase.co'; // <-- GANTI DENGAN URL PROYEK ANDA YANG SEBENARNYA
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10YWRoaXlmZHVjZW12Y2twbmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjAwMjcsImV4cCI6MjA3MzczNjAyN30.BbjPW_FDSVN_cpf6uf3xXfZnl0fKgYi2rs-m8ytBWkk'; // <-- GANTI DENGAN KUNCI ANON ANDA YANG SEBENARNYA
-
+    const SUPABASE_URL = 'https://mtadhiyfducemvckpnkb.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10YWRoaXlmZHVjZW12Y2twbmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjAwMjcsImV4cCI6MjA3MzczNjAyN30.BbjPW_FDSVN_cpf6uf3xXfZnl0fKgYi2rs-m8ytBWkk';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // =================================================================
@@ -110,134 +113,141 @@ document.addEventListener('DOMContentLoaded', () => {
     let soalUjian = [];
     let timerInterval = null;
     let jawabanSiswa = {};
-    const WAKTU_UJIAN = 90; // DIUBAH: Waktu ujian sekarang 90 menit
-
-    // =================================================================
-    // FUNGSI UTAMA (DIMODIFIKASI UNTUK SUPABASE)
-    // =================================================================
+    const WAKTU_UJIAN = 90;
+    let isExamSubmitted = false;
     
-    function navigateTo(page) {
-        document.querySelectorAll('[data-page]').forEach(p => p.classList.remove('active'));
-        document.querySelector(`[data-page="${page}"]`).classList.add('active');
-    }
+    // ** BARU: Variabel untuk deteksi kecurangan **
+    let violationCount = 0;
+    const MAX_VIOLATIONS = 3;
+    const violationWarningEl = document.getElementById('violation-warning');
+    const violationCountEl = document.getElementById('violation-count');
 
-    function startTimer(duration) {
+    // =================================================================
+    // FUNGSI UTAMA
+    // =================================================================
+    const navigateTo = (page) => {
+        document.querySelectorAll('[data-page]').forEach(p => p.classList.remove('active'));
+        document.querySelector(`[data-page="${pageName}"]`).classList.add('active');
+    };
+
+    const startTimer = (duration) => {
         let timer = duration * 60;
         const timerElement = document.getElementById('timer');
         timerInterval = setInterval(() => {
+            if (isExamSubmitted) return;
             const minutes = Math.floor(timer / 60);
             const seconds = timer % 60;
             timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
             if (--timer < 0) {
-                clearInterval(timerInterval);
-                submitExam();
+                submitExam("Waktu Habis");
             }
         }, 1000);
-    }
+    };
     
-    // ** BARU: Fungsi untuk memuat soal dari database **
-    async function loadQuestions() {
+    const loadQuestions = async () => {
+        // ... (fungsi loadQuestions tetap sama)
         const examContent = document.getElementById('exam-content');
         const { data, error } = await supabaseClient.from('soal_ujian').select('*');
-
         if (error) {
             examContent.innerHTML = `<p class="text-center text-red-400">Gagal memuat soal. Coba muat ulang halaman.</p>`;
-            console.error('Error fetching questions:', error);
             return;
         }
-
-        soalUjian = data; // Simpan soal ke variabel global
+        soalUjian = data;
         examContent.innerHTML = '';
         soalUjian.forEach((soal, index) => {
             const soalDiv = document.createElement('div');
             soalDiv.className = 'mb-6 pb-4 border-b border-slate-700';
-            
             let pilihanHTML = soal.pilihan.map(p => `
                 <div>
                     <input type="radio" id="soal-${soal.id}-${p}" name="soal-${soal.id}" value="${p}" class="hidden jawaban-radio">
                     <label for="soal-${soal.id}-${p}" class="block p-3 rounded-lg border-2 border-slate-600 hover:bg-slate-700 cursor-pointer transition-colors">${p}</label>
                 </div>
             `).join('');
-
             soalDiv.innerHTML = `
                 <p class="text-lg text-slate-200 mb-4">${index + 1}. ${soal.pertanyaan}</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">${pilihanHTML}</div>
             `;
             examContent.appendChild(soalDiv);
         });
-
         examContent.addEventListener('change', (e) => {
             if (e.target.type === 'radio') {
                 jawabanSiswa[e.target.name] = e.target.value;
             }
         });
-    }
+    };
 
-    // ** BARU: Fungsi untuk mengirimkan jawaban ke database **
-    async function submitExam() {
-        clearInterval(timerInterval);
+    const submitExam = async (reason = "Jawaban telah dikirim") => {
+        if (isExamSubmitted) return;
+        isExamSubmitted = true;
         
-        // 1. Hitung skor
+        clearInterval(timerInterval);
+        removeCheatingDetection(); // Matikan deteksi setelah ujian selesai
+        
         let correctAnswers = 0;
         soalUjian.forEach(soal => {
             const jawaban = jawabanSiswa[`soal-${soal.id}`];
-            if (jawaban === soal.jawaban_benar) {
-                correctAnswers++;
-            }
+            if (jawaban === soal.jawaban_benar) correctAnswers++;
         });
-        // DIUBAH: Logika skor disempurnakan untuk memastikan skala 0-100
         const skorAkhir = soalUjian.length > 0 ? parseInt(((correctAnswers / soalUjian.length) * 100).toFixed(0)) : 0;
 
-        // 2. Simpan hasil ujian ke tabel hasil_ujian
-        const { error: insertError } = await supabaseClient.from('hasil_ujian').insert([
-            { 
-                nis_siswa: siswaSaatIni.nis,
-                jawaban_siswa: jawabanSiswa,
-                skor_akhir: skorAkhir
-            }
-        ]);
-        
-        if (insertError) {
-            console.error('Gagal menyimpan hasil ujian:', insertError);
-            alert('Terjadi kesalahan saat menyimpan jawaban Anda. Harap hubungi guru.');
-            return;
-        }
-
-        // 3. Update status siswa menjadi sudah mengerjakan
-        const { error: updateError } = await supabaseClient
-            .from('siswa')
-            .update({ sudah_mengerjakan: true })
-            .eq('nis', siswaSaatIni.nis);
-
-        if (updateError) {
-            console.error('Gagal update status siswa:', updateError);
-        }
+        await supabaseClient.from('hasil_ujian').insert([{ nis_siswa: siswaSaatIni.nis, jawaban_siswa: jawabanSiswa, skor_akhir: skorAkhir }]);
+        await supabaseClient.from('siswa').update({ sudah_mengerjakan: true }).eq('nis', siswaSaatIni.nis);
 
         document.getElementById('student-name-final').textContent = siswaSaatIni.nama;
+        document.getElementById('completion-reason').textContent = reason === "Waktu Habis" ? "Waktu pengerjaan Anda telah habis." : "Ujian dihentikan karena terdeteksi pelanggaran.";
         navigateTo('complete');
-    }
+        
+        // Keluar dari mode layar penuh jika masih aktif
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        }
+    };
 
     // =================================================================
-    // EVENT LISTENERS (DIMODIFIKASI UNTUK SUPABASE)
+    // ** BARU: FUNGSI DETEKSI KECURANGAN **
     // =================================================================
+    const handleVisibilityChange = () => {
+        if (document.hidden && !isExamSubmitted) {
+            violationCount++;
+            violationCountEl.textContent = violationCount;
+            violationWarningEl.style.display = 'flex'; // Tampilkan peringatan
+            if (violationCount >= MAX_VIOLATIONS) {
+                submitExam("Pelanggaran Maksimal");
+            }
+        } else {
+            violationWarningEl.style.display = 'none'; // Sembunyikan peringatan
+        }
+    };
+
+    const handleFullscreenChange = () => {
+        if (!document.fullscreenElement && !isExamSubmitted) {
+            // Jika keluar dari fullscreen, dianggap sebagai pelanggaran
+            handleVisibilityChange();
+        }
+    };
     
-    // ** BARU: Handler login yang terhubung ke database **
+    const setupCheatingDetection = () => {
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+    };
+
+    const removeCheatingDetection = () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+
+
+    // =================================================================
+    // EVENT LISTENERS
+    // =================================================================
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const nis = document.getElementById('nis').value;
         const password = document.getElementById('password').value;
         const loginError = document.getElementById('login-error');
-        const loginBtn = document.getElementById('login-btn');
-
-        loginBtn.disabled = true;
-        loginBtn.textContent = 'Memeriksa...';
         loginError.textContent = '';
-
-        const { data, error } = await supabaseClient
-            .from('siswa')
-            .select('*')
-            .eq('nis', nis)
-            .single(); // .single() untuk mengambil satu baris data
+        
+        const { data, error } = await supabaseClient.from('siswa').select('*').eq('nis', nis).single();
 
         if (error || !data) {
             loginError.textContent = 'NIS tidak ditemukan.';
@@ -246,37 +256,33 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (data.sudah_mengerjakan) {
             loginError.textContent = 'Anda sudah pernah mengerjakan ujian ini.';
         } else {
-            // Login berhasil
             siswaSaatIni = data;
             document.getElementById('student-name').textContent = siswaSaatIni.nama;
-            
-            // Ambil jumlah soal dari database untuk ditampilkan di instruksi
             const { count } = await supabaseClient.from('soal_ujian').select('*', { count: 'exact', head: true });
             document.getElementById('total-questions-info').textContent = count || 0;
             document.getElementById('time-limit-info').textContent = WAKTU_UJIAN;
-            
             navigateTo('instructions');
         }
-
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'Masuk';
     });
 
     document.getElementById('start-exam-btn').addEventListener('click', () => {
-        navigateTo('exam');
-        loadQuestions();
-        startTimer(WAKTU_UJIAN);
+        // Meminta mode layar penuh
+        document.documentElement.requestFullscreen().then(() => {
+            navigateTo('exam');
+            loadQuestions();
+            startTimer(WAKTU_UJIAN);
+            setupCheatingDetection(); // Aktifkan deteksi setelah ujian dimulai
+        }).catch(err => {
+            alert(`Gagal masuk mode layar penuh. Fitur ini diperlukan untuk ujian. Error: ${err.message}`);
+        });
     });
 
     document.getElementById('submit-exam-btn').addEventListener('click', () => {
-        // ** BARU: Validasi untuk memastikan semua soal dijawab **
         if (Object.keys(jawabanSiswa).length < soalUjian.length) {
             alert('Anda harus menjawab semua soal sebelum dapat mengirimkan jawaban.');
-            return; // Menghentikan proses jika ada soal yang belum dijawab
+            return;
         }
-
-        const confirmation = confirm("Apakah Anda yakin ingin mengirimkan jawaban Anda? Anda tidak bisa mengubahnya lagi setelah ini.");
-        if (confirmation) {
+        if (confirm("Apakah Anda yakin ingin mengirimkan jawaban Anda?")) {
             submitExam();
         }
     });
