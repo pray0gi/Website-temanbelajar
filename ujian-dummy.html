@@ -107,7 +107,6 @@
                 </div>
 
                 <div class="mt-8 text-center">
-                    <!-- ** DIUBAH: Tombol Selesai ** -->
                     <button id="finish-review-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-8 rounded-lg">Selesai</button>
                 </div>
             </div>
@@ -130,19 +129,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const WAKTU_UJIAN = 90;
     let isExamSubmitted = false;
     
-    // ... (Elemen Modal tidak berubah) ...
     const customModalEl = document.getElementById('custom-modal');
     const modalTitleEl = document.getElementById('modal-title');
     const modalMessageEl = document.getElementById('modal-message');
     const modalButtonsEl = document.getElementById('modal-buttons');
 
-    // FUNGSI NAVIGASI
     const navigateTo = (pageName) => { document.querySelectorAll('[data-page]').forEach(p => p.classList.remove('active')); document.querySelector(`[data-page="${pageName}"]`).classList.add('active'); };
     
-    // FUNGSI UJIAN
     const startTimer = (duration) => { let timer = duration * 60; const timerElement = document.getElementById('timer'); timerInterval = setInterval(() => { if (isExamSubmitted) return; const minutes = Math.floor(timer / 60); const seconds = timer % 60; timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; if (--timer < 0) submitExam(); }, 1000); };
     
-    // ... (Fungsi loadQuestions tidak berubah) ...
     const loadQuestions = async () => {
         const examContent = document.getElementById('exam-content');
         const { data, error } = await supabaseClient.from('soal_ujian').select('*').eq('mapel_id', mapelSaatIni.id);
@@ -161,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
         examContent.addEventListener('change', (e) => { if (e.target.type === 'radio') { jawabanSiswa[e.target.name] = e.target.value; } });
     };
     
-    // ** DIUBAH: Logika submit untuk merekam percobaan pertama & terakhir **
     const submitExam = async () => {
         if (isExamSubmitted) return;
         isExamSubmitted = true;
@@ -173,30 +167,35 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const skorAkhir = soalUjian.length > 0 ? parseInt(((correctAnswers / soalUjian.length) * 100).toFixed(0)) : 0;
 
-        // Cek apakah percobaan pertama sudah ada
-        const { data: firstAttempt, error: checkError } = await supabaseClient.from('hasil_latihan')
-            .select('id')
-            .eq('nis_siswa', siswaSaatIni.nis)
-            .eq('mapel_id', mapelSaatIni.id)
-            .eq('jenis_percobaan', 'pertama')
-            .maybeSingle();
-
-        if (firstAttempt) {
-            // Jika sudah ada, ini percobaan selanjutnya, jadi UPDATE yang 'terakhir'
-            await supabaseClient.from('hasil_latihan')
-                .update({ skor: skorAkhir, waktu_pengerjaan: new Date().toISOString() })
+        try {
+            const { data: firstAttempt, error: checkError } = await supabaseClient.from('hasil_latihan')
+                .select('id')
                 .eq('nis_siswa', siswaSaatIni.nis)
                 .eq('mapel_id', mapelSaatIni.id)
-                .eq('jenis_percobaan', 'terakhir');
-        } else {
-            // Jika belum ada, ini percobaan pertama, INSERT 'pertama' dan 'terakhir'
-            await supabaseClient.from('hasil_latihan').insert([
-                { nis_siswa: siswaSaatIni.nis, mapel_id: mapelSaatIni.id, skor: skorAkhir, jenis_percobaan: 'pertama' },
-                { nis_siswa: siswaSaatIni.nis, mapel_id: mapelSaatIni.id, skor: skorAkhir, jenis_percobaan: 'terakhir' }
-            ]);
+                .eq('jenis_percobaan', 'pertama')
+                .maybeSingle();
+
+            if (checkError) throw checkError;
+
+            if (firstAttempt) {
+                const { error: updateError } = await supabaseClient.from('hasil_latihan')
+                    .update({ skor: skorAkhir, waktu_pengerjaan: new Date().toISOString() })
+                    .eq('nis_siswa', siswaSaatIni.nis)
+                    .eq('mapel_id', mapelSaatIni.id)
+                    .eq('jenis_percobaan', 'terakhir');
+                if (updateError) throw updateError;
+            } else {
+                const { error: insertError } = await supabaseClient.from('hasil_latihan').insert([
+                    { nis_siswa: siswaSaatIni.nis, mapel_id: mapelSaatIni.id, skor: skorAkhir, jenis_percobaan: 'pertama' },
+                    { nis_siswa: siswaSaatIni.nis, mapel_id: mapelSaatIni.id, skor: skorAkhir, jenis_percobaan: 'terakhir' }
+                ]);
+                if (insertError) throw insertError;
+            }
+        } catch (error) {
+            console.error("Gagal merekam hasil latihan:", error);
+            // Anda bisa menampilkan pesan error kepada siswa jika perlu
         }
 
-        // Tampilkan pembahasan (logika ini tetap sama)
         const reviewContainer = document.getElementById('review-container');
         reviewContainer.innerHTML = '';
         soalUjian.forEach((soal, index) => {
@@ -217,11 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
         navigateTo('complete');
     };
 
-    // ... (Fungsi modal tidak berubah) ...
-    const showModal = (title, message, buttons) => { /* ... */ };
-    const hideModal = () => { /* ... */ };
-    
-    // ... (Fungsi showMapelSelection tidak berubah) ...
     const showMapelSelection = async () => {
         const { data: mapelList, error } = await supabaseClient.from('mata_pelajaran').select('*');
         if (error) { document.getElementById('mapel-list').innerHTML = `<p class="text-red-400">Gagal memuat mata pelajaran.</p>`; return; }
@@ -275,7 +269,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('submit-exam-btn').addEventListener('click', submitExam);
     
-    // ** DIUBAH: Tombol baru untuk menyelesaikan review **
     document.getElementById('finish-review-btn').addEventListener('click', showMapelSelection);
 });
 </script>
