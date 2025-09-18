@@ -23,21 +23,23 @@
 <body class="bg-slate-900 text-white min-h-screen">
 
     <!-- Halaman Login Admin -->
-    <div data-page="login" class="active flex items-center justify-center min-h-screen p-4">
-        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl max-w-md w-full fade-in">
-            <h1 class="text-3xl font-bold text-center mb-6 text-sky-400">Admin Login</h1>
-            <form id="admin-login-form">
-                <div class="mb-4">
-                    <label for="username" class="block mb-2 text-sm font-medium text-slate-300">Username</label>
-                    <input type="text" id="username" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" required>
-                </div>
-                <div class="mb-6">
-                    <label for="admin-password" class="block mb-2 text-sm font-medium text-slate-300">Password</label>
-                    <input type="password" id="admin-password" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" required>
-                </div>
-                <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg transition-transform duration-200 hover:scale-105">Masuk</button>
-                <p id="admin-login-error" class="text-red-400 text-center text-sm mt-4 h-5"></p>
-            </form>
+    <div data-page="login" class="active">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-slate-800 p-8 rounded-xl shadow-2xl max-w-md w-full fade-in">
+                <h1 class="text-3xl font-bold text-center mb-6 text-sky-400">Admin Login</h1>
+                <form id="admin-login-form">
+                    <div class="mb-4">
+                        <label for="username" class="block mb-2 text-sm font-medium text-slate-300">Username</label>
+                        <input type="text" id="username" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="admin-password" class="block mb-2 text-sm font-medium text-slate-300">Password</label>
+                        <input type="password" id="admin-password" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" required>
+                    </div>
+                    <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg transition-transform duration-200 hover:scale-105">Masuk</button>
+                    <p id="admin-login-error" class="text-red-400 text-center text-sm mt-4 h-5"></p>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -71,6 +73,7 @@
                                     <th class="p-3">NIS</th>
                                     <th class="p-3">Nama</th>
                                     <th class="p-3">Sudah Mengerjakan</th>
+                                    <th class="p-3">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="siswa-table-body" class="bg-slate-800">
@@ -97,6 +100,7 @@
                                     <th class="p-3">ID</th>
                                     <th class="p-3">Pertanyaan</th>
                                     <th class="p-3">Jawaban Benar</th>
+                                    <th class="p-3">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="soal-table-body" class="bg-slate-800">
@@ -194,7 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
         showPage('login');
     };
 
-    // Check for logged in admin on page load
     const checkSession = () => {
         const adminData = sessionStorage.getItem('adminUser');
         if (adminData) {
@@ -222,6 +225,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td class="p-3">${s.nis}</td>
                     <td class="p-3">${s.nama}</td>
                     <td class="p-3 ${s.sudah_mengerjakan ? 'text-green-400' : 'text-yellow-400'}">${s.sudah_mengerjakan ? 'Sudah' : 'Belum'}</td>
+                    <td class="p-3">
+                        <button class="text-red-400 hover:text-red-600 font-semibold delete-siswa-btn" data-nis="${s.nis}">Hapus</button>
+                    </td>
                 </tr>
             `).join('');
         }
@@ -236,13 +242,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td class="p-3">${s.id}</td>
                     <td class="p-3">${s.pertanyaan}</td>
                     <td class="p-3 text-green-400">${s.jawaban_benar}</td>
+                    <td class="p-3">
+                        <button class="text-red-400 hover:text-red-600 font-semibold delete-soal-btn" data-id="${s.id}">Hapus</button>
+                    </td>
                 </tr>
             `).join('');
         }
     };
 
     const fetchAndRenderHasil = async () => {
-        // Ini adalah "join" query untuk mengambil nama siswa dari tabel siswa
         const { data, error } = await supabaseClient.from('hasil_ujian').select('*, siswa(nama)').order('waktu_pengerjaan', { ascending: false });
         if (data) {
             const tableBody = document.getElementById('hasil-table-body');
@@ -254,6 +262,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td class="p-3 font-bold ${h.skor_akhir >= 75 ? 'text-green-400' : 'text-red-400'}">${h.skor_akhir}</td>
                 </tr>
             `).join('');
+        }
+    };
+    
+    // =================================================================
+    // ** BARU: FUNGSI UNTUK MENGHAPUS DATA **
+    // =================================================================
+    const handleDeleteSiswa = async (nis) => {
+        if (confirm(`Apakah Anda yakin ingin menghapus siswa dengan NIS ${nis}? Tindakan ini tidak dapat diurungkan.`)) {
+            const { error } = await supabaseClient.from('siswa').delete().eq('nis', nis);
+            if (error) {
+                alert('Gagal menghapus siswa: ' + error.message);
+            } else {
+                alert('Siswa berhasil dihapus.');
+                fetchAndRenderSiswa(); // Refresh tabel siswa
+                fetchAndRenderHasil(); // Refresh tabel hasil untuk update nama siswa
+            }
+        }
+    };
+
+    const handleDeleteSoal = async (id) => {
+        if (confirm(`Apakah Anda yakin ingin menghapus soal dengan ID ${id}?`)) {
+            const { error } = await supabaseClient.from('soal_ujian').delete().eq('id', id);
+            if (error) {
+                alert('Gagal menghapus soal: ' + error.message);
+            } else {
+                alert('Soal berhasil dihapus.');
+                fetchAndRenderSoal(); // Refresh tabel soal
+            }
         }
     };
 
@@ -341,6 +377,19 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => showView(btn.dataset.target));
     });
 
+    // ** BARU: Event listener untuk tombol hapus (menggunakan event delegation) **
+    document.getElementById('siswa-table-body').addEventListener('click', (e) => {
+        if (e.target && e.target.classList.contains('delete-siswa-btn')) {
+            handleDeleteSiswa(e.target.dataset.nis);
+        }
+    });
+
+    document.getElementById('soal-table-body').addEventListener('click', (e) => {
+        if (e.target && e.target.classList.contains('delete-soal-btn')) {
+            handleDeleteSoal(e.target.dataset.id);
+        }
+    });
+
     // =================================================================
     // INISIALISASI
     // =================================================================
@@ -349,3 +398,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
