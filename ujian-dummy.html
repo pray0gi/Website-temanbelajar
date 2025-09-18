@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const WAKTU_UJIAN = 90;
     let isExamSubmitted = false;
     
+    // ... (Elemen Modal tidak berubah) ...
     const customModalEl = document.getElementById('custom-modal');
     const modalTitleEl = document.getElementById('modal-title');
     const modalMessageEl = document.getElementById('modal-message');
@@ -168,32 +169,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const skorAkhir = soalUjian.length > 0 ? parseInt(((correctAnswers / soalUjian.length) * 100).toFixed(0)) : 0;
 
         try {
-            const { data: firstAttempt, error: checkError } = await supabaseClient.from('hasil_latihan')
-                .select('id')
+            // ** DIUBAH: Logika perekaman dengan nomor percobaan **
+            // 1. Hitung percobaan ke berapa ini
+            const { count, error: countError } = await supabaseClient.from('hasil_latihan')
+                .select('*', { count: 'exact', head: true })
                 .eq('nis_siswa', siswaSaatIni.nis)
-                .eq('mapel_id', mapelSaatIni.id)
-                .eq('jenis_percobaan', 'pertama')
-                .maybeSingle();
+                .eq('mapel_id', mapelSaatIni.id);
+            
+            if (countError) throw countError;
+            const nomorPercobaanBaru = (count || 0) + 1;
 
-            if (checkError) throw checkError;
+            // 2. Simpan hasil latihan
+            const { error: insertError } = await supabaseClient.from('hasil_latihan').insert([
+                { 
+                    nis_siswa: siswaSaatIni.nis, 
+                    mapel_id: mapelSaatIni.id, 
+                    skor: skorAkhir, 
+                    nomor_percobaan: nomorPercobaanBaru 
+                }
+            ]);
+            if (insertError) throw insertError;
 
-            if (firstAttempt) {
-                const { error: updateError } = await supabaseClient.from('hasil_latihan')
-                    .update({ skor: skorAkhir, waktu_pengerjaan: new Date().toISOString() })
-                    .eq('nis_siswa', siswaSaatIni.nis)
-                    .eq('mapel_id', mapelSaatIni.id)
-                    .eq('jenis_percobaan', 'terakhir');
-                if (updateError) throw updateError;
-            } else {
-                const { error: insertError } = await supabaseClient.from('hasil_latihan').insert([
-                    { nis_siswa: siswaSaatIni.nis, mapel_id: mapelSaatIni.id, skor: skorAkhir, jenis_percobaan: 'pertama' },
-                    { nis_siswa: siswaSaatIni.nis, mapel_id: mapelSaatIni.id, skor: skorAkhir, jenis_percobaan: 'terakhir' }
-                ]);
-                if (insertError) throw insertError;
-            }
         } catch (error) {
             console.error("Gagal merekam hasil latihan:", error);
-            // Anda bisa menampilkan pesan error kepada siswa jika perlu
         }
 
         const reviewContainer = document.getElementById('review-container');
@@ -216,14 +214,26 @@ document.addEventListener('DOMContentLoaded', () => {
         navigateTo('complete');
     };
 
+    // ** DIUBAH: Fungsi untuk menampilkan jumlah percobaan **
     const showMapelSelection = async () => {
-        const { data: mapelList, error } = await supabaseClient.from('mata_pelajaran').select('*');
-        if (error) { document.getElementById('mapel-list').innerHTML = `<p class="text-red-400">Gagal memuat mata pelajaran.</p>`; return; }
+        const { data: mapelList, error: mapelError } = await supabaseClient.from('mata_pelajaran').select('*');
+        const { data: results, error: resultsError } = await supabaseClient.from('hasil_latihan').select('mapel_id').eq('nis_siswa', siswaSaatIni.nis);
+        
+        if (mapelError || resultsError) {
+            document.getElementById('mapel-list').innerHTML = `<p class="text-red-400">Gagal memuat mata pelajaran.</p>`;
+            return;
+        }
+
         const mapelListEl = document.getElementById('mapel-list');
         mapelListEl.innerHTML = '';
         mapelList.forEach(mapel => {
+            const attemptCount = results.filter(r => r.mapel_id === mapel.id).length;
+            
             const button = document.createElement('button');
-            button.innerHTML = `<h3 class="text-xl font-bold">${mapel.nama_mapel}</h3><p class="text-sm mt-2">Klik untuk memulai latihan</p>`;
+            button.innerHTML = `
+                <h3 class="text-xl font-bold">${mapel.nama_mapel}</h3>
+                <p class="text-sm mt-2">${attemptCount > 0 ? `Sudah dikerjakan ${attemptCount} kali` : 'Klik untuk memulai'}</p>
+            `;
             button.className = `p-6 rounded-lg transition-transform duration-200 w-full text-left bg-sky-700 hover:bg-sky-600 hover:scale-105`;
             button.onclick = async () => {
                 mapelSaatIni = mapel;
@@ -274,3 +284,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
