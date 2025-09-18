@@ -88,12 +88,24 @@
             <!-- View Manajemen Soal -->
             <div data-view="soal">
                  <div class="bg-slate-800 p-6 rounded-xl">
-                    <div class="flex flex-col md:flex-row justify-between items-center mb-4">
-                        <h2 class="text-2xl font-bold text-cyan-300 mb-4 md:mb-0">Bank Soal Ujian</h2>
-                        <button id="delete-selected-soal-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg hidden">Hapus Soal Terpilih</button>
+                    <div class="flex flex-col md:flex-row justify-between items-start mb-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-cyan-300 mb-2">Bank Soal Ujian</h2>
+                             <!-- ** BARU: Filter Mata Pelajaran ** -->
+                            <div class="flex items-center gap-2">
+                                <label for="filter-mapel" class="text-sm">Filter:</label>
+                                <select id="filter-mapel" class="bg-slate-700 text-white p-2 rounded-md text-sm">
+                                    <option value="all">Semua Mata Pelajaran</option>
+                                    <!-- Opsi mapel akan dimuat di sini -->
+                                </select>
+                            </div>
+                        </div>
+                        <button id="delete-selected-soal-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg hidden mt-4 md:mt-0">Hapus Soal Terpilih</button>
                     </div>
                     <div class="flex flex-wrap gap-4 mb-4">
                         <button id="download-soal-template" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">Download Template CSV</button>
+                        <!-- ** BARU: Tombol Download Kunci Mapel ** -->
+                        <button id="download-mapel-key" class="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded-lg">Download Kunci Mapel (ID)</button>
                         <input type="file" id="upload-soal-csv" class="hidden" accept=".csv,.txt">
                         <label for="upload-soal-csv" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg cursor-pointer">Upload CSV Soal</label>
                     </div>
@@ -103,8 +115,8 @@
                                 <tr>
                                     <th class="p-3 w-4"><input type="checkbox" id="select-all-soal"></th>
                                     <th class="p-3">ID</th>
+                                    <th class="p-3">Mata Pelajaran</th>
                                     <th class="p-3">Pertanyaan</th>
-                                    <th class="p-3">Gambar</th>
                                     <th class="p-3">Jawaban Benar</th>
                                     <th class="p-3">Aksi</th>
                                 </tr>
@@ -146,37 +158,48 @@
                 <input type="hidden" id="edit-soal-id">
                 <input type="hidden" id="edit-soal-image-path">
                 
-                <!-- ** BAGIAN BARU: Manajemen Gambar ** -->
-                <div class="mb-6">
-                    <label class="block mb-2 text-sm font-medium">Gambar Soal (Opsional)</label>
-                    <div class="flex items-center space-x-4">
-                        <img id="image-preview" src="https://placehold.co/150x100/1e293b/94a3b8?text=Tidak+Ada" alt="Preview Gambar" class="w-36 h-24 object-cover rounded-lg bg-slate-700">
-                        <div>
+                <div class="flex flex-col md:flex-row gap-6">
+                    <!-- Sisi Kiri: Gambar & Mapel -->
+                    <div class="flex-shrink-0">
+                         <!-- Manajemen Gambar -->
+                        <div class="mb-6">
+                            <label class="block mb-2 text-sm font-medium">Gambar Soal (Opsional)</label>
+                            <img id="image-preview" src="https://placehold.co/150x100/1e293b/94a3b8?text=Tidak+Ada" alt="Preview Gambar" class="w-48 h-32 object-cover rounded-lg bg-slate-700 mb-2">
                             <input type="file" id="image-upload" class="hidden" accept="image/png, image/jpeg, image/gif">
-                            <label for="image-upload" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg cursor-pointer text-sm">Pilih Gambar</label>
-                            <button type="button" id="remove-image-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg text-sm ml-2">Hapus Gambar</button>
-                            <p class="text-xs text-slate-400 mt-2">Maks. 1MB. Format: JPG, PNG, GIF.</p>
+                            <div class="flex gap-2">
+                                <label for="image-upload" class="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg cursor-pointer text-sm text-center">Pilih</label>
+                                <button type="button" id="remove-image-btn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg text-sm">Hapus</button>
+                            </div>
+                        </div>
+                        <!-- ** BARU: Pilihan Mata Pelajaran ** -->
+                         <div class="mb-4">
+                            <label for="edit-mapel" class="block mb-2 text-sm font-medium">Mata Pelajaran</label>
+                            <select id="edit-mapel" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600" required>
+                                <!-- Opsi mapel akan dimuat di sini -->
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Sisi Kanan: Pertanyaan & Opsi -->
+                    <div class="flex-grow">
+                        <div class="mb-4">
+                            <label for="edit-pertanyaan" class="block mb-2 text-sm font-medium">Pertanyaan</label>
+                            <textarea id="edit-pertanyaan" rows="3" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600" required></textarea>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div><label for="edit-opsiA" class="block mb-2 text-sm font-medium">Opsi A</label><input type="text" id="edit-opsiA" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600"></div>
+                            <div><label for="edit-opsiB" class="block mb-2 text-sm font-medium">Opsi B</label><input type="text" id="edit-opsiB" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600"></div>
+                            <div><label for="edit-opsiC" class="block mb-2 text-sm font-medium">Opsi C</label><input type="text" id="edit-opsiC" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600"></div>
+                            <div><label for="edit-opsiD" class="block mb-2 text-sm font-medium">Opsi D</label><input type="text" id="edit-opsiD" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600"></div>
+                            <div><label for="edit-opsiE" class="block mb-2 text-sm font-medium">Opsi E</label><input type="text" id="edit-opsiE" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600"></div>
+                        </div>
+                         <div class="mb-6">
+                            <label for="edit-jawaban-benar" class="block mb-2 text-sm font-medium">Jawaban Benar</label>
+                            <input type="text" id="edit-jawaban-benar" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600" required>
+                             <p class="text-xs text-slate-400 mt-1">Pastikan teks jawaban sama persis dengan salah satu opsi.</p>
                         </div>
                     </div>
                 </div>
-
-                <div class="mb-4">
-                    <label for="edit-pertanyaan" class="block mb-2 text-sm font-medium">Pertanyaan</label>
-                    <textarea id="edit-pertanyaan" rows="3" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" required></textarea>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div><label for="edit-opsiA" class="block mb-2 text-sm font-medium">Opsi A</label><input type="text" id="edit-opsiA" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600"></div>
-                    <div><label for="edit-opsiB" class="block mb-2 text-sm font-medium">Opsi B</label><input type="text" id="edit-opsiB" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600"></div>
-                    <div><label for="edit-opsiC" class="block mb-2 text-sm font-medium">Opsi C</label><input type="text" id="edit-opsiC" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600"></div>
-                    <div><label for="edit-opsiD" class="block mb-2 text-sm font-medium">Opsi D</label><input type="text" id="edit-opsiD" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600"></div>
-                    <div><label for="edit-opsiE" class="block mb-2 text-sm font-medium">Opsi E</label><input type="text" id="edit-opsiE" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600"></div>
-                </div>
-                 <div class="mb-6">
-                    <label for="edit-jawaban-benar" class="block mb-2 text-sm font-medium">Jawaban Benar</label>
-                    <input type="text" id="edit-jawaban-benar" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600" required>
-                     <p class="text-xs text-slate-400 mt-1">Pastikan teks jawaban benar sama persis dengan salah satu teks di kolom opsi.</p>
-                </div>
-                <div class="flex justify-end space-x-4">
+                <div class="flex justify-end space-x-4 mt-6 border-t border-slate-700 pt-6">
                     <button type="button" id="cancel-edit-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg">Batal</button>
                     <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg">Simpan Perubahan</button>
                 </div>
@@ -194,120 +217,85 @@ document.addEventListener('DOMContentLoaded', () => {
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentAdmin = null;
+    let mataPelajaranList = []; // ** BARU: Variabel untuk menyimpan daftar mapel **
 
     // ... (Fungsi navigasi, login, logout, session check tetap sama) ...
-    const showPage = (pageName) => {
-        document.querySelectorAll('[data-page]').forEach(p => p.classList.remove('active'));
-        document.querySelector(`[data-page="${pageName}"]`).classList.add('active');
-    };
-    const showView = (viewName) => {
-        document.querySelectorAll('[data-view]').forEach(v => v.classList.remove('active'));
-        document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.querySelector(`.nav-btn[data-target="${viewName}"]`).classList.add('active');
-    };
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('admin-password').value;
-        const errorEl = document.getElementById('admin-login-error');
-        errorEl.textContent = '';
-        const { data, error } = await supabaseClient.from('admin').select('*').eq('username', username).eq('password', password).single();
-        if (data) {
-            currentAdmin = data;
-            sessionStorage.setItem('adminUser', JSON.stringify(data));
-            showPage('dashboard');
-            loadInitialData();
-        } else {
-            errorEl.textContent = 'Username atau password salah.';
-        }
-    };
-    const handleLogout = () => {
-        currentAdmin = null;
-        sessionStorage.removeItem('adminUser');
-        showPage('login');
-    };
-    const checkSession = () => {
-        const adminData = sessionStorage.getItem('adminUser');
-        if (adminData) {
-            currentAdmin = JSON.parse(adminData);
-            showPage('dashboard');
-            loadInitialData();
-        }
-    };
+    const showPage = (pageName) => { document.querySelectorAll('[data-page]').forEach(p => p.classList.remove('active')); document.querySelector(`[data-page="${pageName}"]`).classList.add('active'); };
+    const showView = (viewName) => { document.querySelectorAll('[data-view]').forEach(v => v.classList.remove('active')); document.querySelector(`[data-view="${viewName}"]`).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.querySelector(`.nav-btn[data-target="${viewName}"]`).classList.add('active'); };
+    const handleLogin = async (e) => { e.preventDefault(); const username = document.getElementById('username').value; const password = document.getElementById('admin-password').value; const errorEl = document.getElementById('admin-login-error'); errorEl.textContent = ''; const { data } = await supabaseClient.from('admin').select('*').eq('username', username).eq('password', password).single(); if (data) { currentAdmin = data; sessionStorage.setItem('adminUser', JSON.stringify(data)); showPage('dashboard'); loadInitialData(); } else { errorEl.textContent = 'Username atau password salah.'; } };
+    const handleLogout = () => { currentAdmin = null; sessionStorage.removeItem('adminUser'); showPage('login'); };
+    const checkSession = () => { const adminData = sessionStorage.getItem('adminUser'); if (adminData) { currentAdmin = JSON.parse(adminData); showPage('dashboard'); loadInitialData(); } };
     
     // =================================================================
     // FUNGSI UNTUK MEMUAT & MENAMPILKAN DATA
     // =================================================================
-    const loadInitialData = () => {
+    const loadInitialData = async () => {
+        await fetchMataPelajaran(); // Muat mapel dulu
         fetchAndRenderSiswa();
         fetchAndRenderSoal();
         fetchAndRenderHasil();
     };
-
-    const fetchAndRenderSiswa = async () => {
-        const { data, error } = await supabaseClient.from('siswa').select('*').order('nis', { ascending: true });
+    
+    // ** BARU: Fungsi untuk mengambil data mata pelajaran **
+    const fetchMataPelajaran = async () => {
+        const { data, error } = await supabaseClient.from('mata_pelajaran').select('id, nama_mapel');
         if (data) {
-            const tableBody = document.getElementById('siswa-table-body');
-            tableBody.innerHTML = data.map(s => `
-                <tr class="border-b border-slate-700">
-                    <td class="p-3 w-4"><input type="checkbox" class="siswa-checkbox" data-nis="${s.nis}"></td>
-                    <td class="p-3">${s.nis}</td>
-                    <td class="p-3">${s.nama}</td>
-                    <td class="p-3 ${s.sudah_mengerjakan ? 'text-green-400' : 'text-yellow-400'}">${s.sudah_mengerjakan ? 'Sudah' : 'Belum'}</td>
-                    <td class="p-3">
-                        ${s.sudah_mengerjakan ? `<button class="text-green-400 hover:text-green-600 font-semibold mr-4 reset-siswa-btn" data-nis="${s.nis}">Reset</button>` : ''}
-                        <button class="text-red-400 hover:text-red-600 font-semibold delete-siswa-btn" data-nis="${s.nis}">Hapus</button>
-                    </td>
-                </tr>
-            `).join('');
+            mataPelajaranList = data;
+            // Populate filter dropdown
+            const filterSelect = document.getElementById('filter-mapel');
+            filterSelect.innerHTML = '<option value="all">Semua Mata Pelajaran</option>'; // Reset
+            data.forEach(mapel => {
+                const option = document.createElement('option');
+                option.value = mapel.id;
+                option.textContent = mapel.nama_mapel;
+                filterSelect.appendChild(option);
+            });
         }
     };
 
+    const fetchAndRenderSiswa = async () => { /* ... (fungsi ini tidak berubah) ... */ const { data } = await supabaseClient.from('siswa').select('*').order('nis'); if (data) { const tbody = document.getElementById('siswa-table-body'); tbody.innerHTML = data.map(s => `<tr><td class="p-3 w-4"><input type="checkbox" class="siswa-checkbox" data-nis="${s.nis}"></td><td class="p-3">${s.nis}</td><td class="p-3">${s.nama}</td><td class="p-3 ${s.sudah_mengerjakan ? 'text-green-400' : 'text-yellow-400'}">${s.sudah_mengerjakan ? 'Sudah' : 'Belum'}</td><td class="p-3">${s.sudah_mengerjakan ? `<button class="text-green-400 hover:text-green-600 font-semibold mr-4 reset-siswa-btn" data-nis="${s.nis}">Reset</button>` : ''}<button class="text-red-400 hover:text-red-600 font-semibold delete-siswa-btn" data-nis="${s.nis}">Hapus</button></td></tr>`).join(''); } };
+
+    // ** DIUBAH: Fungsi render soal untuk handle filter dan nama mapel **
     const fetchAndRenderSoal = async () => {
-        const { data, error } = await supabaseClient.from('soal_ujian').select('*').order('id', { ascending: true });
+        const filterMapelId = document.getElementById('filter-mapel').value;
+        let query = supabaseClient.from('soal_ujian').select('*').order('id', { ascending: true });
+        
+        if (filterMapelId && filterMapelId !== 'all') {
+            query = query.eq('mapel_id', filterMapelId);
+        }
+
+        const { data, error } = await query;
         if (data) {
             const tableBody = document.getElementById('soal-table-body');
-            tableBody.innerHTML = data.map(s => `
+            tableBody.innerHTML = data.map(s => {
+                const mapel = mataPelajaranList.find(m => m.id === s.mapel_id);
+                return `
                 <tr class="border-b border-slate-700">
                     <td class="p-3 w-4"><input type="checkbox" class="soal-checkbox" data-id="${s.id}"></td>
                     <td class="p-3">${s.id}</td>
+                    <td class="p-3">${mapel ? mapel.nama_mapel : 'N/A'}</td>
                     <td class="p-3">${s.pertanyaan}</td>
-                    <td class="p-3">${s.url_gambar ? '<span class="text-green-400">Ya</span>' : 'Tidak'}</td>
                     <td class="p-3 text-green-400">${s.jawaban_benar}</td>
                     <td class="p-3">
                         <button class="text-sky-400 hover:text-sky-600 font-semibold mr-4 edit-soal-btn" data-id="${s.id}">Edit</button>
                         <button class="text-red-400 hover:text-red-600 font-semibold delete-soal-btn" data-id="${s.id}">Hapus</button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
     };
 
-    const fetchAndRenderHasil = async () => {
-        const { data, error } = await supabaseClient.from('hasil_ujian').select('*, siswa(nama)').order('waktu_pengerjaan', { ascending: false });
-        if (data) {
-            const tableBody = document.getElementById('hasil-table-body');
-            tableBody.innerHTML = data.map(h => `
-                <tr class="border-b border-slate-700">
-                    <td class="p-3">${new Date(h.waktu_pengerjaan).toLocaleString('id-ID')}</td>
-                    <td class="p-3">${h.nis_siswa}</td>
-                    <td class="p-3">${h.siswa ? h.siswa.nama : 'N/A'}</td>
-                    <td class="p-3 font-bold ${h.skor_akhir >= 75 ? 'text-green-400' : 'text-red-400'}">${h.skor_akhir}</td>
-                </tr>
-            `).join('');
-        }
-    };
+    const fetchAndRenderHasil = async () => { /* ... (fungsi ini tidak berubah) ... */ const { data } = await supabaseClient.from('hasil_ujian').select('*, siswa(nama)').order('waktu_pengerjaan', { ascending: false }); if (data) { const tbody = document.getElementById('hasil-table-body'); tbody.innerHTML = data.map(h => `<tr><td class="p-3">${new Date(h.waktu_pengerjaan).toLocaleString('id-ID')}</td><td class="p-3">${h.nis_siswa}</td><td class="p-3">${h.siswa ? h.siswa.nama : 'N/A'}</td><td class="p-3 font-bold ${h.skor_akhir >= 75 ? 'text-green-400' : 'text-red-400'}">${h.skor_akhir}</td></tr>`).join(''); } };
     
     // ... (Fungsi hapus dan reset tetap sama) ...
-    const handleDeleteSiswa = async (nis) => { if (confirm(`Apakah Anda yakin ingin menghapus siswa dengan NIS ${nis}?`)) { const { error } = await supabaseClient.from('siswa').delete().eq('nis', nis); if (error) { alert('Gagal menghapus siswa: ' + error.message); } else { alert('Siswa berhasil dihapus.'); fetchAndRenderSiswa(); fetchAndRenderHasil(); } } };
-    const handleDeleteSoal = async (id) => { if (confirm(`Apakah Anda yakin ingin menghapus soal dengan ID ${id}?`)) { const { error } = await supabaseClient.from('soal_ujian').delete().eq('id', id); if (error) { alert('Gagal menghapus soal: ' + error.message); } else { alert('Soal berhasil dihapus.'); fetchAndRenderSoal(); } } };
-    const handleResetSiswa = async (nis) => { if (confirm(`Apakah Anda yakin ingin mereset status ujian untuk siswa NIS ${nis}?`)) { await supabaseClient.from('hasil_ujian').delete().eq('nis_siswa', nis); const { error } = await supabaseClient.from('siswa').update({ sudah_mengerjakan: false }).eq('nis', nis); if (error) { alert('Gagal mereset status siswa: ' + error.message); } else { alert('Status siswa berhasil direset.'); fetchAndRenderSiswa(); fetchAndRenderHasil(); } } };
-    const handleDeleteSelectedSiswa = async () => { const nisToDelete = Array.from(document.querySelectorAll('.siswa-checkbox:checked')).map(cb => cb.dataset.nis); if (nisToDelete.length === 0) return alert('Pilih siswa untuk dihapus.'); if (confirm(`Hapus ${nisToDelete.length} siswa terpilih?`)) { const { error } = await supabaseClient.from('siswa').delete().in('nis', nisToDelete); if (error) { alert('Gagal menghapus: ' + error.message); } else { alert('Siswa terpilih berhasil dihapus.'); fetchAndRenderSiswa(); fetchAndRenderHasil(); } } };
-    const handleDeleteSelectedSoal = async () => { const idsToDelete = Array.from(document.querySelectorAll('.soal-checkbox:checked')).map(cb => cb.dataset.id); if (idsToDelete.length === 0) return alert('Pilih soal untuk dihapus.'); if (confirm(`Hapus ${idsToDelete.length} soal terpilih?`)) { const { error } = await supabaseClient.from('soal_ujian').delete().in('id', idsToDelete); if (error) { alert('Gagal menghapus: ' + error.message); } else { alert('Soal terpilih berhasil dihapus.'); fetchAndRenderSoal(); } } };
+    const handleDeleteSiswa = async (nis) => { if (confirm(`Hapus siswa NIS ${nis}?`)) { await supabaseClient.from('siswa').delete().eq('nis', nis); fetchAndRenderSiswa(); fetchAndRenderHasil(); } };
+    const handleDeleteSoal = async (id) => { if (confirm(`Hapus soal ID ${id}?`)) { await supabaseClient.from('soal_ujian').delete().eq('id', id); fetchAndRenderSoal(); } };
+    const handleResetSiswa = async (nis) => { if (confirm(`Reset status ujian untuk NIS ${nis}?`)) { await supabaseClient.from('hasil_ujian').delete().eq('nis_siswa', nis); await supabaseClient.from('siswa').update({ sudah_mengerjakan: false }).eq('nis', nis); fetchAndRenderSiswa(); fetchAndRenderHasil(); } };
+    const handleDeleteSelectedSiswa = async () => { const nisToDelete = Array.from(document.querySelectorAll('.siswa-checkbox:checked')).map(cb => cb.dataset.nis); if (nisToDelete.length === 0) return; if (confirm(`Hapus ${nisToDelete.length} siswa?`)) { await supabaseClient.from('siswa').delete().in('nis', nisToDelete); fetchAndRenderSiswa(); fetchAndRenderHasil(); } };
+    const handleDeleteSelectedSoal = async () => { const idsToDelete = Array.from(document.querySelectorAll('.soal-checkbox:checked')).map(cb => cb.dataset.id); if (idsToDelete.length === 0) return; if (confirm(`Hapus ${idsToDelete.length} soal?`)) { await supabaseClient.from('soal_ujian').delete().in('id', idsToDelete); fetchAndRenderSoal(); } };
 
     // =================================================================
-    // FUNGSI MODAL EDIT SOAL & UPLOAD GAMBAR
+    // FUNGSI MODAL EDIT SOAL
     // =================================================================
     const editSoalModal = document.getElementById('edit-soal-modal');
     const editSoalForm = document.getElementById('edit-soal-form');
@@ -319,12 +307,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const openEditSoalModal = async (id) => {
         const { data: soal, error } = await supabaseClient.from('soal_ujian').select('*').eq('id', id).single();
         if (error) return alert('Gagal mengambil data soal.');
+        
+        // Populate mapel dropdown in modal
+        const mapelSelect = document.getElementById('edit-mapel');
+        mapelSelect.innerHTML = '';
+        mataPelajaranList.forEach(mapel => {
+            const option = document.createElement('option');
+            option.value = mapel.id;
+            option.textContent = mapel.nama_mapel;
+            mapelSelect.appendChild(option);
+        });
 
         document.getElementById('edit-soal-id').value = soal.id;
         document.getElementById('edit-pertanyaan').value = soal.pertanyaan;
         document.getElementById('edit-jawaban-benar').value = soal.jawaban_benar;
+        document.getElementById('edit-mapel').value = soal.mapel_id || '';
         
-        // ** BARU: Tampilkan gambar yang sudah ada **
         if (soal.url_gambar) {
             imagePreview.src = soal.url_gambar;
             document.getElementById('edit-soal-image-path').value = soal.url_gambar;
@@ -341,46 +339,29 @@ document.addEventListener('DOMContentLoaded', () => {
         editSoalModal.classList.remove('hidden');
     };
 
-    const closeEditSoalModal = () => {
-        editSoalModal.classList.add('hidden');
-        editSoalForm.reset();
-        imageFileToUpload = null;
-        shouldRemoveImage = false;
-        imageUploadInput.value = ''; // Reset file input
-        imagePreview.src = 'https://placehold.co/150x100/1e293b/94a3b8?text=Tidak+Ada';
-    };
+    const closeEditSoalModal = () => { /* ... (fungsi ini tidak berubah) ... */ editSoalModal.classList.add('hidden'); editSoalForm.reset(); imageFileToUpload = null; shouldRemoveImage = false; imageUploadInput.value = ''; imagePreview.src = 'https://placehold.co/150x100/1e293b/94a3b8?text=Tidak+Ada'; };
 
     const handleUpdateSoal = async (e) => {
         e.preventDefault();
         const id = document.getElementById('edit-soal-id').value;
         let imageUrl = document.getElementById('edit-soal-image-path').value;
 
-        // ** LOGIKA BARU: Proses upload/hapus gambar **
-        // 1. Jika ada file baru dipilih untuk di-upload
         if (imageFileToUpload) {
             const filePath = `soal-${id}-${Date.now()}-${imageFileToUpload.name}`;
-            const { error: uploadError } = await supabaseClient.storage
-                .from('gambar_soal')
-                .upload(filePath, imageFileToUpload);
-
-            if (uploadError) return alert('Gagal mengunggah gambar: ' + uploadError.message);
-            
-            const { data: publicUrlData } = supabaseClient.storage
-                .from('gambar_soal')
-                .getPublicUrl(filePath);
-            imageUrl = publicUrlData.publicUrl;
-        } 
-        // 2. Jika tombol "Hapus Gambar" diklik
-        else if (shouldRemoveImage) {
+            const { error } = await supabaseClient.storage.from('gambar_soal').upload(filePath, imageFileToUpload);
+            if (error) return alert('Gagal upload gambar: ' + error.message);
+            const { data } = supabaseClient.storage.from('gambar_soal').getPublicUrl(filePath);
+            imageUrl = data.publicUrl;
+        } else if (shouldRemoveImage) {
             imageUrl = null;
-            // Di sini Anda bisa menambahkan logika untuk menghapus file lama dari storage jika perlu
         }
         
         const updateData = {
             pertanyaan: document.getElementById('edit-pertanyaan').value,
             jawaban_benar: document.getElementById('edit-jawaban-benar').value,
             pilihan: ['A', 'B', 'C', 'D', 'E'].map(c => document.getElementById(`edit-opsi${c}`).value).filter(Boolean),
-            url_gambar: imageUrl
+            url_gambar: imageUrl,
+            mapel_id: document.getElementById('edit-mapel').value
         };
 
         const { error } = await supabaseClient.from('soal_ujian').update(updateData).eq('id', id);
@@ -393,33 +374,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Preview gambar saat dipilih
-    imageUploadInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            imageFileToUpload = file;
-            shouldRemoveImage = false;
-            imagePreview.src = URL.createObjectURL(file);
-        }
-    });
+    // ... (Event listener untuk gambar tetap sama) ...
+    imageUploadInput.addEventListener('change', (e) => { const file = e.target.files[0]; if (file) { imageFileToUpload = file; shouldRemoveImage = false; imagePreview.src = URL.createObjectURL(file); } });
+    document.getElementById('remove-image-btn').addEventListener('click', () => { imageFileToUpload = null; shouldRemoveImage = true; imageUploadInput.value = ''; imagePreview.src = 'https://placehold.co/150x100/1e293b/94a3b8?text=Tidak+Ada'; });
 
-    // Hapus gambar
-    document.getElementById('remove-image-btn').addEventListener('click', () => {
-        imageFileToUpload = null;
-        shouldRemoveImage = true;
-        imageUploadInput.value = '';
-        imagePreview.src = 'https://placehold.co/150x100/1e293b/94a3b8?text=Tidak+Ada';
-    });
-
-    // ... (Fungsi CSV tetap sama) ...
+    // =================================================================
+    // FUNGSI UNTUK MANAJEMEN CSV
+    // =================================================================
     const downloadCSV = (data, filename) => { const csv = Papa.unparse(data); const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.setAttribute('download', filename); document.body.appendChild(link); link.click(); document.body.removeChild(link); };
     document.getElementById('download-siswa-template').addEventListener('click', () => { downloadCSV([{ nis: '', nama: '', password: '' }], 'template_siswa.csv'); });
-    document.getElementById('download-soal-template').addEventListener('click', () => { downloadCSV([{ pertanyaan: '', opsiA: '', opsiB: '', opsiC: '', opsiD: '', opsiE: '', jawaban_benar: '' }], 'template_soal.csv'); });
-    document.getElementById('download-hasil').addEventListener('click', async () => { const { data } = await supabaseClient.from('hasil_ujian').select('waktu_pengerjaan, nis_siswa, skor_akhir, siswa(nama)'); if (data) { const d = data.map(i => ({ waktu: new Date(i.waktu_pengerjaan).toLocaleString('id-ID'), nis: i.nis_siswa, nama: i.siswa?.nama || 'N/A', skor: i.skor_akhir })); downloadCSV(d, 'hasil_ujian.csv'); } });
-    const handleFileUpload = (file, tableName, transformFn) => { if (!file) return; Papa.parse(file, { header: true, skipEmptyLines: true, complete: async (results) => { try { const data = transformFn(results.data); const { error } = await supabaseClient.from(tableName).insert(data); if (error) throw error; alert('Data berhasil diunggah!'); loadInitialData(); } catch (error) { alert('Gagal mengunggah data: ' + error.message); } } }); };
-    document.getElementById('upload-siswa-csv').addEventListener('change', (e) => { handleFileUpload(e.target.files[0], 'siswa', d => d.map(r => ({ nis: r.nis, nama: r.nama, password: r.password, sudah_mengerjakan: false }))); });
-    document.getElementById('upload-soal-csv').addEventListener('change', (e) => { handleFileUpload(e.target.files[0], 'soal_ujian', d => d.map(r => ({ pertanyaan: r.pertanyaan, pilihan: [r.opsiA, r.opsiB, r.opsiC, r.opsiD, r.opsiE].filter(Boolean), jawaban_benar: r.jawaban_benar }))); });
+    
+    // ** DIUBAH: Download template soal dengan mapel_id **
+    document.getElementById('download-soal-template').addEventListener('click', () => {
+        downloadCSV([{ mapel_id: '', pertanyaan: '', opsiA: '', opsiB: '', opsiC: '', opsiD: '', opsiE: '', jawaban_benar: '' }], 'template_soal.csv');
+    });
 
+    // ** BARU: Download kunci mapel **
+    document.getElementById('download-mapel-key').addEventListener('click', () => {
+        const mapelData = mataPelajaranList.map(m => ({ id_mapel: m.id, nama_mapel: m.nama_mapel }));
+        downloadCSV(mapelData, 'kunci_mapel.csv');
+    });
+
+    document.getElementById('download-hasil').addEventListener('click', async () => { const { data } = await supabaseClient.from('hasil_ujian').select('waktu_pengerjaan, nis_siswa, skor_akhir, siswa(nama)'); if (data) { const d = data.map(i => ({ waktu: new Date(i.waktu_pengerjaan).toLocaleString('id-ID'), nis: i.nis_siswa, nama: i.siswa?.nama || 'N/A', skor: i.skor_akhir })); downloadCSV(d, 'hasil_ujian.csv'); } });
+    
+    // ** DIUBAH: Upload soal dengan mapel_id **
+    document.getElementById('upload-soal-csv').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: async (results) => {
+                try {
+                    const dataToInsert = results.data.map(row => {
+                        const pilihanArray = [row.opsiA, row.opsiB, row.opsiC, row.opsiD, row.opsiE].filter(opsi => opsi && opsi.trim() !== '');
+                        return { mapel_id: row.mapel_id, pertanyaan: row.pertanyaan, pilihan: pilihanArray, jawaban_benar: row.jawaban_benar };
+                    });
+                    const { error } = await supabaseClient.from('soal_ujian').insert(dataToInsert);
+                    if (error) throw error;
+                    alert('Data soal berhasil diunggah!');
+                    fetchAndRenderSoal();
+                } catch (error) {
+                    alert('Gagal mengunggah data: ' + error.message);
+                }
+            }
+        });
+    });
+
+    document.getElementById('upload-siswa-csv').addEventListener('change', (e) => { const file = e.target.files[0]; if (!file) return; Papa.parse(file, { header: true, skipEmptyLines: true, complete: async (results) => { try { const data = results.data.map(r => ({ nis: r.nis, nama: r.nama, password: r.password, sudah_mengerjakan: false })); const { error } = await supabaseClient.from('siswa').insert(data); if (error) throw error; alert('Data siswa berhasil diunggah!'); fetchAndRenderSiswa(); } catch (error) { alert('Gagal mengunggah data: ' + error.message); } } }); });
 
     // =================================================================
     // EVENT LISTENERS
@@ -428,14 +430,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
     document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.target)));
     
-    document.getElementById('siswa-table-body').addEventListener('click', (e) => {
-        if (e.target.classList.contains('delete-siswa-btn')) handleDeleteSiswa(e.target.dataset.nis);
-        if (e.target.classList.contains('reset-siswa-btn')) handleResetSiswa(e.target.dataset.nis);
-    });
-    document.getElementById('soal-table-body').addEventListener('click', (e) => {
-        if (e.target.classList.contains('delete-soal-btn')) handleDeleteSoal(e.target.dataset.id);
-        if (e.target.classList.contains('edit-soal-btn')) openEditSoalModal(e.target.dataset.id);
-    });
+    document.getElementById('siswa-table-body').addEventListener('click', (e) => { if (e.target.classList.contains('delete-siswa-btn')) handleDeleteSiswa(e.target.dataset.nis); if (e.target.classList.contains('reset-siswa-btn')) handleResetSiswa(e.target.dataset.nis); });
+    document.getElementById('soal-table-body').addEventListener('click', (e) => { if (e.target.classList.contains('delete-soal-btn')) handleDeleteSoal(e.target.dataset.id); if (e.target.classList.contains('edit-soal-btn')) openEditSoalModal(e.target.dataset.id); });
     
     document.getElementById('delete-selected-siswa-btn').addEventListener('click', handleDeleteSelectedSiswa);
     document.getElementById('delete-selected-soal-btn').addEventListener('click', handleDeleteSelectedSoal);
@@ -446,6 +442,9 @@ document.addEventListener('DOMContentLoaded', () => {
     editSoalForm.addEventListener('submit', handleUpdateSoal);
     document.getElementById('cancel-edit-btn').addEventListener('click', closeEditSoalModal);
     editSoalModal.addEventListener('click', (e) => { if (e.target === editSoalModal) closeEditSoalModal(); });
+    
+    // ** BARU: Event listener untuk filter mapel **
+    document.getElementById('filter-mapel').addEventListener('change', fetchAndRenderSoal);
 
     checkSession();
 });
