@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ujian Latihan (Dummy) - temanbelajar.my.id</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://css-proxy.vercel.app/api/fonts/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        [data-page] { display: none; }
+        [data-page].active { display: block; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .jawaban-radio:checked + label { border-color: #38bdf8; background-color: #0c4a6e; }
+        /* ** BARU: Style untuk pembahasan ** */
+        .correct-answer-review { border-left: 4px solid #22c55e; }
+        .incorrect-answer-review { border-left: 4px solid #ef4444; }
+    </style>
+</head>
+<body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
+
+    <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md fade-in text-center">
+            <h2 id="modal-title" class="text-2xl font-bold mb-4 text-sky-400"></h2>
+            <p id="modal-message" class="text-slate-300 mb-6"></p>
+            <div id="modal-buttons" class="flex justify-center space-x-4"></div>
+        </div>
+    </div>
+
+    <div class="w-full max-w-4xl mx-auto">
+        <!-- Halaman Login -->
+        <div data-page="login" class="active fade-in">
+            <div class="bg-slate-800 p-8 rounded-xl shadow-2xl max-w-md mx-auto">
+                <h1 class="text-3xl font-bold text-center mb-2 bg-gradient-to-r from-sky-400 to-cyan-300 text-transparent bg-clip-text">Login Siswa (Latihan)</h1>
+                <p class="text-center text-slate-400 mb-6">Silakan masuk untuk memulai sesi latihan.</p>
+                <form id="login-form">
+                    <div class="mb-4">
+                        <label for="nis" class="block mb-2 text-sm font-medium text-slate-300">Nomor Induk Siswa (NIS)</label>
+                        <input type="text" id="nis" name="nis" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="password" class="block mb-2 text-sm font-medium text-slate-300">Password (Nomor Absen)</label>
+                        <input type="password" id="password" name="password" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" required>
+                    </div>
+                    <button id="login-btn" type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg transition-transform duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-wait">Masuk</button>
+                    <p id="login-error" class="text-red-400 text-center text-sm mt-4 h-5"></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Halaman Pemilihan Mata Pelajaran -->
+        <div data-page="select-mapel" class="fade-in">
+            <div class="bg-slate-800 p-8 rounded-xl shadow-2xl text-center">
+                 <h1 class="text-3xl font-bold mb-2 text-cyan-300">Selamat Datang, <span id="student-name-select"></span>!</h1>
+                 <p class="text-slate-300 mb-8">Silakan pilih mata pelajaran untuk latihan.</p>
+                 <div id="mapel-list" class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+                     <p class="text-slate-400 md:col-span-3">Memuat mata pelajaran...</p>
+                 </div>
+            </div>
+        </div>
+
+        <!-- Halaman Instruksi -->
+        <div data-page="instructions" class="fade-in">
+            <div class="bg-slate-800 p-8 rounded-xl shadow-2xl text-center">
+                <h1 class="text-3xl font-bold mb-2 text-cyan-300">Latihan <span id="instruction-mapel-name"></span></h1>
+                <p class="text-slate-300 mb-6 max-w-2xl mx-auto">Anda akan memulai sesi latihan. Harap perhatikan instruksi di bawah ini.</p>
+                <div class="bg-slate-900 p-6 rounded-lg text-left max-w-lg mx-auto mb-8">
+                    <ul class="list-disc list-inside space-y-3 text-slate-300">
+                        <li>Latihan terdiri dari <strong id="total-questions-info"></strong> soal pilihan ganda.</li>
+                        <li>Waktu pengerjaan adalah <strong id="time-limit-info"></strong> menit.</li>
+                        <li>Anda bisa mengerjakan latihan ini berulang kali.</li>
+                        <li>Setelah selesai, Anda akan melihat pembahasan jawaban.</li>
+                    </ul>
+                </div>
+                <button id="start-exam-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-transform duration-200 hover:scale-105 text-lg">Mulai Latihan</button>
+            </div>
+        </div>
+
+        <!-- Halaman Ujian -->
+        <div data-page="exam" class="fade-in">
+             <div class="bg-slate-800 p-6 md:p-8 rounded-xl shadow-2xl">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                    <h1 class="text-2xl font-bold text-cyan-300 mb-4 md:mb-0">Latihan <span id="exam-mapel-name"></span></h1>
+                    <div id="timer" class="bg-red-700 text-white text-2xl font-bold px-6 py-2 rounded-lg shadow-lg">00:00</div>
+                </div>
+                <div id="exam-content"><p class="text-center text-slate-400">Memuat soal...</p></div>
+                <div class="mt-8 text-center">
+                    <button id="submit-exam-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-8 rounded-lg">Kirim Jawaban</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Halaman Selesai / Pembahasan -->
+        <div data-page="complete" class="fade-in">
+            <div class="bg-slate-800 p-8 rounded-xl shadow-2xl">
+                <div class="text-center border-b border-slate-700 pb-6 mb-6">
+                    <h1 class="text-3xl font-bold mb-2 text-green-400">Latihan Selesai!</h1>
+                    <p class="text-slate-300 text-lg">Berikut adalah hasil dan pembahasan latihan Anda, <span id="student-name-final"></span>.</p>
+                    <p id="final-score" class="text-5xl font-bold my-4 text-sky-400"></p>
+                </div>
+                
+                <!-- ** BARU: Kontainer untuk pembahasan ** -->
+                <div id="review-container" class="space-y-6 max-h-[50vh] overflow-y-auto pr-4">
+                    <!-- Pembahasan akan dimuat di sini -->
+                </div>
+
+                <div class="mt-8 text-center">
+                    <button id="back-to-selection-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-8 rounded-lg">Kembali ke Pemilihan Mapel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // KONEKSI KE SUPABASE
+    const SUPABASE_URL = 'https://mtadhiyfducemvckpnkb.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10YWRoaXlmZHVjZW12Y2twbmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjAwMjcsImV4cCI6MjA3MzczNjAyN30.BbjPW_FDSVN_cpf6uf3xXfZnl0fKgYi2rs-m8ytBWkk';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // VARIABEL GLOBAL
+    let siswaSaatIni = null;
+    let mapelSaatIni = null;
+    let soalUjian = [];
+    let timerInterval = null;
+    let jawabanSiswa = {};
+    const WAKTU_UJIAN = 90;
+    let isExamSubmitted = false;
+    
+    const customModalEl = document.getElementById('custom-modal');
+    const modalTitleEl = document.getElementById('modal-title');
+    const modalMessageEl = document.getElementById('modal-message');
+    const modalButtonsEl = document.getElementById('modal-buttons');
+
+    // FUNGSI NAVIGASI
+    const navigateTo = (pageName) => { document.querySelectorAll('[data-page]').forEach(p => p.classList.remove('active')); document.querySelector(`[data-page="${pageName}"]`).classList.add('active'); };
+    
+    // FUNGSI UJIAN
+    const startTimer = (duration) => { let timer = duration * 60; const timerElement = document.getElementById('timer'); timerInterval = setInterval(() => { if (isExamSubmitted) return; const minutes = Math.floor(timer / 60); const seconds = timer % 60; timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; if (--timer < 0) submitExam(); }, 1000); };
+
+    const loadQuestions = async () => {
+        const examContent = document.getElementById('exam-content');
+        const { data, error } = await supabaseClient.from('soal_ujian').select('*').eq('mapel_id', mapelSaatIni.id);
+        if (error) {
+            examContent.innerHTML = `<p class="text-center text-red-400">Gagal memuat soal.</p>`;
+            return;
+        }
+        for (let i = data.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [data[i], data[j]] = [data[j], data[i]]; }
+        soalUjian = data;
+        examContent.innerHTML = '';
+        soalUjian.forEach((soal, index) => {
+            const soalDiv = document.createElement('div');
+            soalDiv.className = 'mb-6 pb-4 border-b border-slate-700';
+            const imageHtml = soal.url_gambar ? `<div class="my-4"><img src="${soal.url_gambar}" alt="Gambar Soal" class="max-h-64 w-auto mx-auto rounded-lg"></div>` : '';
+            let pilihanHTML = soal.pilihan.map(p => `<div><input type="radio" id="soal-${soal.id}-${p}" name="soal-${soal.id}" value="${p}" class="hidden jawaban-radio"><label for="soal-${soal.id}-${p}" class="block p-3 rounded-lg border-2 border-slate-600 hover:bg-slate-700 cursor-pointer">${p}</label></div>`).join('');
+            soalDiv.innerHTML = `<p class="text-lg text-slate-200">${index + 1}. ${soal.pertanyaan}</p>${imageHtml}<div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">${pilihanHTML}</div>`;
+            examContent.appendChild(soalDiv);
+        });
+        examContent.addEventListener('change', (e) => {
+            if (e.target.type === 'radio') {
+                jawabanSiswa[e.target.name] = e.target.value;
+            }
+        });
+    };
+    
+    // ** DIUBAH: Fungsi submit untuk menampilkan pembahasan **
+    const submitExam = () => {
+        if (isExamSubmitted) return;
+        isExamSubmitted = true;
+        clearInterval(timerInterval);
+        
+        let correctAnswers = 0;
+        const reviewContainer = document.getElementById('review-container');
+        reviewContainer.innerHTML = '';
+
+        soalUjian.forEach((soal, index) => {
+            const jawaban = jawabanSiswa[`soal-${soal.id}`];
+            const isCorrect = jawaban === soal.jawaban_benar;
+            if (isCorrect) correctAnswers++;
+
+            const reviewHtml = `
+                <div class="p-4 rounded-lg ${isCorrect ? 'correct-answer-review bg-green-900/20' : 'incorrect-answer-review bg-red-900/20'}">
+                    <p class="font-semibold text-slate-300">${index + 1}. ${soal.pertanyaan}</p>
+                    <p class="text-sm mt-2">Jawaban Anda: <span class="${isCorrect ? 'text-green-400' : 'text-red-400'}">${jawaban || 'Tidak dijawab'}</span></p>
+                    ${!isCorrect ? `<p class="text-sm mt-1">Jawaban Benar: <span class="text-green-400">${soal.jawaban_benar}</span></p>` : ''}
+                </div>
+            `;
+            reviewContainer.innerHTML += reviewHtml;
+        });
+        
+        const skorAkhir = soalUjian.length > 0 ? parseInt(((correctAnswers / soalUjian.length) * 100).toFixed(0)) : 0;
+        
+        document.getElementById('student-name-final').textContent = siswaSaatIni.nama;
+        document.getElementById('final-score').textContent = `Skor Anda: ${skorAkhir}`;
+        navigateTo('complete');
+    };
+
+    const showModal = (title, message, buttons) => {
+        // ... (fungsi modal tidak berubah)
+    };
+    const hideModal = () => {
+        // ... (fungsi modal tidak berubah)
+    };
+    
+    const showMapelSelection = async () => {
+        const { data: mapelList, error } = await supabaseClient.from('mata_pelajaran').select('*');
+        if (error) {
+            document.getElementById('mapel-list').innerHTML = `<p class="text-red-400">Gagal memuat mata pelajaran.</p>`;
+            return;
+        }
+        const mapelListEl = document.getElementById('mapel-list');
+        mapelListEl.innerHTML = '';
+        mapelList.forEach(mapel => {
+            const button = document.createElement('button');
+            button.innerHTML = `<h3 class="text-xl font-bold">${mapel.nama_mapel}</h3><p class="text-sm mt-2">Klik untuk memulai latihan</p>`;
+            button.className = `p-6 rounded-lg transition-transform duration-200 w-full text-left bg-sky-700 hover:bg-sky-600 hover:scale-105`;
+            button.onclick = async () => {
+                mapelSaatIni = mapel;
+                const { count } = await supabaseClient.from('soal_ujian').select('*', { count: 'exact', head: true }).eq('mapel_id', mapel.id);
+                document.getElementById('instruction-mapel-name').textContent = mapel.nama_mapel;
+                document.getElementById('exam-mapel-name').textContent = mapel.nama_mapel;
+                document.getElementById('total-questions-info').textContent = count || 0;
+                document.getElementById('time-limit-info').textContent = WAKTU_UJIAN;
+                navigateTo('instructions');
+            };
+            mapelListEl.appendChild(button);
+        });
+        navigateTo('select-mapel');
+    };
+
+    // EVENT LISTENERS
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nis = document.getElementById('nis').value;
+        const password = document.getElementById('password').value;
+        const loginError = document.getElementById('login-error');
+        const loginBtn = document.getElementById('login-btn');
+        loginError.textContent = '';
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Memeriksa...';
+        
+        try {
+            const { data, error } = await supabaseClient.from('siswa').select('*').eq('nis', nis).single();
+            if (error || !data) {
+                loginError.textContent = 'NIS tidak ditemukan.';
+            } else if (data.password !== password) {
+                loginError.textContent = 'Password salah.';
+            } else {
+                siswaSaatIni = data;
+                document.getElementById('student-name-select').textContent = siswaSaatIni.nama;
+                showMapelSelection();
+            }
+        } catch (err) {
+            loginError.textContent = 'Kesalahan jaringan.';
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Masuk';
+        }
+    });
+
+    document.getElementById('start-exam-btn').addEventListener('click', async () => {
+        isExamSubmitted = false;
+        jawabanSiswa = {};
+        navigateTo('exam');
+        await loadQuestions();
+        startTimer(WAKTU_UJIAN);
+    });
+
+    document.getElementById('submit-exam-btn').addEventListener('click', submitExam);
+    
+    document.getElementById('back-to-selection-btn').addEventListener('click', showMapelSelection);
+});
+</script>
+</body>
+</html>
