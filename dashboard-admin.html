@@ -235,6 +235,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td class="p-3">${s.nama}</td>
                     <td class="p-3 ${s.sudah_mengerjakan ? 'text-green-400' : 'text-yellow-400'}">${s.sudah_mengerjakan ? 'Sudah' : 'Belum'}</td>
                     <td class="p-3">
+                        ${s.sudah_mengerjakan ? `
+                            <button class="text-green-400 hover:text-green-600 font-semibold mr-4 reset-siswa-btn" data-nis="${s.nis}">Reset</button>
+                        ` : ''}
                         <button class="text-red-400 hover:text-red-600 font-semibold delete-siswa-btn" data-nis="${s.nis}">Hapus</button>
                     </td>
                 </tr>
@@ -276,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // =================================================================
-    // FUNGSI UNTUK MENGHAPUS DATA
+    // FUNGSI UNTUK MENGHAPUS & MERESET DATA
     // =================================================================
     const handleDeleteSiswa = async (nis) => {
         if (confirm(`Apakah Anda yakin ingin menghapus siswa dengan NIS ${nis}? Tindakan ini tidak dapat diurungkan.`)) {
@@ -302,8 +305,34 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
+
+    // ** BARU: Fungsi untuk mereset status siswa **
+    const handleResetSiswa = async (nis) => {
+        if (confirm(`Apakah Anda yakin ingin mereset status ujian untuk siswa NIS ${nis}? Siswa ini akan dapat mengerjakan ujian kembali.`)) {
+            // 1. Hapus hasil ujian lama siswa tersebut
+            const { error: deleteError } = await supabaseClient.from('hasil_ujian').delete().eq('nis_siswa', nis);
+
+            if (deleteError) {
+                alert('Gagal menghapus hasil ujian lama: ' + deleteError.message);
+                return; // Hentikan proses jika gagal menghapus hasil lama
+            }
+
+            // 2. Update status siswa menjadi 'belum mengerjakan'
+            const { error: updateError } = await supabaseClient
+                .from('siswa')
+                .update({ sudah_mengerjakan: false })
+                .eq('nis', nis);
+
+            if (updateError) {
+                alert('Gagal mereset status siswa: ' + updateError.message);
+            } else {
+                alert('Status siswa berhasil direset.');
+                fetchAndRenderSiswa();
+                fetchAndRenderHasil();
+            }
+        }
+    };
     
-    // ** BARU: Fungsi untuk menghapus data terpilih **
     const handleDeleteSelectedSiswa = async () => {
         const selectedCheckboxes = document.querySelectorAll('.siswa-checkbox:checked');
         if (selectedCheckboxes.length === 0) {
@@ -340,7 +369,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
-
 
     // =================================================================
     // FUNGSI UNTUK MANAJEMEN CSV
@@ -396,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const { error } = await supabaseClient.from(tableName).insert(dataToInsert);
                     if (error) throw error;
                     alert('Data berhasil diunggah!');
-                    loadInitialData(); // Refresh all data
+                    loadInitialData();
                 } catch (error) {
                     alert('Gagal mengunggah data. Periksa format CSV Anda.\nError: ' + error.message);
                 }
@@ -439,24 +467,25 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => showView(btn.dataset.target));
     });
 
-    // Event delegation untuk tombol hapus individual
     document.getElementById('siswa-table-body').addEventListener('click', (e) => {
-        if (e.target && e.target.classList.contains('delete-siswa-btn')) {
+        if (e.target.classList.contains('delete-siswa-btn')) {
             handleDeleteSiswa(e.target.dataset.nis);
+        }
+        // ** BARU: Menambahkan listener untuk tombol reset **
+        if (e.target.classList.contains('reset-siswa-btn')) {
+            handleResetSiswa(e.target.dataset.nis);
         }
     });
 
     document.getElementById('soal-table-body').addEventListener('click', (e) => {
-        if (e.target && e.target.classList.contains('delete-soal-btn')) {
+        if (e.target.classList.contains('delete-soal-btn')) {
             handleDeleteSoal(e.target.dataset.id);
         }
     });
 
-    // ** BARU: Event listener untuk hapus massal **
     document.getElementById('delete-selected-siswa-btn').addEventListener('click', handleDeleteSelectedSiswa);
     document.getElementById('delete-selected-soal-btn').addEventListener('click', handleDeleteSelectedSoal);
 
-    // ** BARU: Logika untuk checkbox "select all" dan menampilkan tombol hapus massal **
     const setupCheckboxLogic = (selectAllId, checkboxClass, deleteButtonId) => {
         const selectAllCheckbox = document.getElementById(selectAllId);
         const deleteButton = document.getElementById(deleteButtonId);
@@ -480,7 +509,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupCheckboxLogic('select-all-siswa', 'siswa-checkbox', 'delete-selected-siswa-btn');
     setupCheckboxLogic('select-all-soal', 'soal-checkbox', 'delete-selected-soal-btn');
-
 
     // =================================================================
     // INISIALISASI
