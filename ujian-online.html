@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // FUNGSI UTAMA
     // =================================================================
-    const navigateTo = (page) => {
+    const navigateTo = (pageName) => {
         document.querySelectorAll('[data-page]').forEach(p => p.classList.remove('active'));
         document.querySelector(`[data-page="${pageName}"]`).classList.add('active');
     };
@@ -193,7 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('student-name-final').textContent = siswaSaatIni.nama;
         
-        // ** DIPERBAIKI: Logika untuk pesan selesai **
         let completionText = "";
         if (reason === "Waktu Habis") {
             completionText = "Waktu pengerjaan Anda telah habis.";
@@ -252,7 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const loginBtn = document.getElementById('login-btn');
         loginError.textContent = '';
         
-        // ** DIPERBAIKI: Menambahkan feedback visual saat login **
         loginBtn.disabled = true;
         loginBtn.textContent = 'Memeriksa...';
         
@@ -268,16 +266,24 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 siswaSaatIni = data;
                 document.getElementById('student-name').textContent = siswaSaatIni.nama;
-                const { count } = await supabaseClient.from('soal_ujian').select('*', { count: 'exact', head: true });
-                document.getElementById('total-questions-info').textContent = count || 0;
-                document.getElementById('time-limit-info').textContent = WAKTU_UJIAN;
-                navigateTo('instructions');
+                
+                // ** DIPERBAIKI: Penanganan error saat mengambil jumlah soal **
+                try {
+                    const { count, error: countError } = await supabaseClient.from('soal_ujian').select('*', { count: 'exact', head: true });
+                    if (countError) throw countError; // Lemparkan error agar ditangkap oleh catch luar
+
+                    document.getElementById('total-questions-info').textContent = count || 0;
+                    document.getElementById('time-limit-info').textContent = WAKTU_UJIAN;
+                    navigateTo('instructions');
+                } catch (countErr) {
+                    loginError.textContent = 'Gagal mengambil data ujian. Coba lagi.';
+                    console.error("Error fetching question count:", countErr);
+                }
             }
         } catch (err) {
             loginError.textContent = 'Terjadi kesalahan jaringan. Coba lagi.';
             console.error("Login error:", err);
         } finally {
-            // ** DIPERBAIKI: Mengembalikan tombol ke keadaan normal **
             loginBtn.disabled = false;
             loginBtn.textContent = 'Masuk';
         }
