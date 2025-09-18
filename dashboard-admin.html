@@ -47,7 +47,6 @@
         <header class="bg-slate-800 p-4 flex justify-between items-center shadow-md">
             <div class="flex items-center gap-4">
                 <h1 class="text-xl font-bold text-sky-400">Dashboard Guru</h1>
-                <!-- ** BARU: Tombol Refresh Data ** -->
                 <button id="refresh-data-btn" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg text-sm flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M20 4h-5v5M4 20h5v-5"/></svg>
                     Refresh Data
@@ -134,7 +133,16 @@
             <!-- View Hasil Ujian -->
             <div data-view="hasil">
                 <div class="bg-slate-800 p-6 rounded-xl">
-                    <h2 class="text-2xl font-bold mb-4 text-cyan-300">Hasil Pengerjaan Siswa</h2>
+                    <div class="flex flex-col md:flex-row justify-between items-start mb-4">
+                         <h2 class="text-2xl font-bold text-cyan-300 mb-2">Hasil Pengerjaan Siswa</h2>
+                         <!-- ** BARU: Filter Hasil Ujian ** -->
+                         <div class="flex items-center gap-2">
+                            <label for="filter-hasil-mapel" class="text-sm">Filter:</label>
+                            <select id="filter-hasil-mapel" class="bg-slate-700 text-white p-2 rounded-md text-sm">
+                                <option value="all">Semua Mata Pelajaran</option>
+                            </select>
+                        </div>
+                    </div>
                     <button id="download-hasil" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg mb-4">Download Hasil (CSV)</button>
                      <div class="overflow-x-auto">
                         <table class="w-full text-left">
@@ -143,7 +151,6 @@
                                     <th class="p-3">Waktu Pengerjaan</th>
                                     <th class="p-3">NIS</th>
                                     <th class="p-3">Nama Siswa</th>
-                                    <!-- ** BARU: Kolom Mata Pelajaran ** -->
                                     <th class="p-3">Mata Pelajaran</th>
                                     <th class="p-3">Skor Akhir</th>
                                 </tr>
@@ -245,18 +252,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const { data, error } = await supabaseClient.from('mata_pelajaran').select('id, nama_mapel');
         if (data) {
             mataPelajaranList = data;
-            const filterSelect = document.getElementById('filter-mapel');
-            filterSelect.innerHTML = '<option value="all">Semua Mata Pelajaran</option>';
+            // ** DIUBAH: Populate kedua filter dropdown **
+            const filterSoalSelect = document.getElementById('filter-mapel');
+            const filterHasilSelect = document.getElementById('filter-hasil-mapel');
+            
+            filterSoalSelect.innerHTML = '<option value="all">Semua Mata Pelajaran</option>';
+            filterHasilSelect.innerHTML = '<option value="all">Semua Mata Pelajaran</option>';
+
             data.forEach(mapel => {
                 const option = document.createElement('option');
                 option.value = mapel.id;
                 option.textContent = mapel.nama_mapel;
-                filterSelect.appendChild(option);
+                filterSoalSelect.appendChild(option.cloneNode(true));
+                filterHasilSelect.appendChild(option);
             });
         }
     };
 
-    const fetchAndRenderSiswa = async () => { /* ... (fungsi ini tidak berubah) ... */ const { data } = await supabaseClient.from('siswa').select('*').order('nis'); if (data) { const tbody = document.getElementById('siswa-table-body'); tbody.innerHTML = data.map(s => `<tr><td class="p-3 w-4"><input type="checkbox" class="siswa-checkbox" data-nis="${s.nis}"></td><td class="p-3">${s.nis}</td><td class="p-3">${s.nama}</td><td class="p-3 ${s.sudah_mengerjakan ? 'text-green-400' : 'text-yellow-400'}">${s.sudah_mengerjakan ? 'Sudah' : 'Belum'}</td><td class="p-3">${s.sudah_mengerjakan ? `<button class="text-green-400 hover:text-green-600 font-semibold mr-4 reset-siswa-btn" data-nis="${s.nis}">Reset</button>` : ''}<button class="text-red-400 hover:text-red-600 font-semibold delete-siswa-btn" data-nis="${s.nis}">Hapus</button></td></tr>`).join(''); } };
+    const fetchAndRenderSiswa = async () => { const { data } = await supabaseClient.from('siswa').select('*').order('nis'); if (data) { const tbody = document.getElementById('siswa-table-body'); tbody.innerHTML = data.map(s => `<tr><td class="p-3 w-4"><input type="checkbox" class="siswa-checkbox" data-nis="${s.nis}"></td><td class="p-3">${s.nis}</td><td class="p-3">${s.nama}</td><td class="p-3 ${s.sudah_mengerjakan ? 'text-green-400' : 'text-yellow-400'}">${s.sudah_mengerjakan ? 'Sudah' : 'Belum'}</td><td class="p-3">${s.sudah_mengerjakan ? `<button class="text-green-400 hover:text-green-600 font-semibold mr-4 reset-siswa-btn" data-nis="${s.nis}">Reset</button>` : ''}<button class="text-red-400 hover:text-red-600 font-semibold delete-siswa-btn" data-nis="${s.nis}">Hapus</button></td></tr>`).join(''); } };
 
     const fetchAndRenderSoal = async () => {
         const filterMapelId = document.getElementById('filter-mapel').value;
@@ -285,9 +298,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // ** DIUBAH: Query hasil ujian untuk mengambil nama mapel **
+    // ** DIUBAH: Query hasil ujian sekarang menggunakan filter **
     const fetchAndRenderHasil = async () => {
-        const { data, error } = await supabaseClient.from('hasil_ujian').select('*, siswa(nama), mata_pelajaran(nama_mapel)').order('waktu_pengerjaan', { ascending: false });
+        const filterMapelId = document.getElementById('filter-hasil-mapel').value;
+        let query = supabaseClient.from('hasil_ujian').select('*, siswa(nama), mata_pelajaran(nama_mapel)').order('waktu_pengerjaan', { ascending: false });
+
+        if (filterMapelId && filterMapelId !== 'all') {
+            query = query.eq('mapel_id', filterMapelId);
+        }
+
+        const { data, error } = await query;
         if (data) {
             const tableBody = document.getElementById('hasil-table-body');
             tableBody.innerHTML = data.map(h => `
@@ -343,8 +363,9 @@ document.addEventListener('DOMContentLoaded', () => {
     editSoalModal.addEventListener('click', (e) => { if (e.target === editSoalModal) closeEditSoalModal(); });
     
     document.getElementById('filter-mapel').addEventListener('change', fetchAndRenderSoal);
+    // ** BARU: Event listener untuk filter hasil **
+    document.getElementById('filter-hasil-mapel').addEventListener('change', fetchAndRenderHasil);
     
-    // ** BARU: Event listener untuk tombol refresh **
     document.getElementById('refresh-data-btn').addEventListener('click', loadInitialData);
 
     checkSession();
