@@ -35,6 +35,17 @@
         <button id="close-warning-btn" class="mt-8 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-8 rounded-lg">OK, Saya Mengerti</button>
     </div>
 
+    <!-- ** BARU: Modal Kustom Serbaguna ** -->
+    <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md fade-in text-center">
+            <h2 id="modal-title" class="text-2xl font-bold mb-4 text-sky-400"></h2>
+            <p id="modal-message" class="text-slate-300 mb-6"></p>
+            <div id="modal-buttons" class="flex justify-center space-x-4">
+                <!-- Tombol akan dimuat di sini oleh JavaScript -->
+            </div>
+        </div>
+    </div>
+
     <div class="w-full max-w-4xl mx-auto">
         <!-- Halaman Login -->
         <div data-page="login" class="active fade-in">
@@ -116,11 +127,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let jawabanSiswa = {};
     const WAKTU_UJIAN = 90;
     let isExamSubmitted = false;
+    let isCheatingDetectionActive = false;
     
     let violationCount = 0;
     const MAX_VIOLATIONS = 3;
     const violationWarningEl = document.getElementById('violation-warning');
     const violationCountEl = document.getElementById('violation-count');
+
+    // ** BARU: Elemen Modal Kustom **
+    const customModalEl = document.getElementById('custom-modal');
+    const modalTitleEl = document.getElementById('modal-title');
+    const modalMessageEl = document.getElementById('modal-message');
+    const modalButtonsEl = document.getElementById('modal-buttons');
 
     // =================================================================
     // FUNGSI UTAMA
@@ -224,9 +242,40 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // =================================================================
+    // ** BARU: Sistem Modal Kustom **
+    // =================================================================
+    const showModal = (title, message, buttons) => {
+        removeCheatingDetection(); // Jeda deteksi saat modal muncul
+        modalTitleEl.textContent = title;
+        modalMessageEl.textContent = message;
+        modalButtonsEl.innerHTML = ''; // Kosongkan tombol sebelumnya
+        
+        buttons.forEach(btnInfo => {
+            const button = document.createElement('button');
+            button.textContent = btnInfo.text;
+            button.className = btnInfo.class;
+            button.onclick = btnInfo.onClick;
+            modalButtonsEl.appendChild(button);
+        });
+
+        customModalEl.classList.remove('hidden');
+        customModalEl.classList.add('flex');
+    };
+
+    const hideModal = () => {
+        customModalEl.classList.add('hidden');
+        customModalEl.classList.remove('flex');
+        // Aktifkan kembali deteksi jika ujian belum selesai dan masih dalam fullscreen
+        if (!isExamSubmitted && document.fullscreenElement) {
+            setupCheatingDetection();
+        }
+    };
+
+    // =================================================================
     // FUNGSI DETEKSI KECURANGAN
     // =================================================================
     const handleVisibilityChange = () => {
+        if (!isCheatingDetectionActive) return;
         if (document.hidden && !isExamSubmitted) {
             violationCount++;
             violationCountEl.textContent = violationCount;
@@ -238,6 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const handleFullscreenChange = () => {
+        if (!isCheatingDetectionActive) return;
         if (!document.fullscreenElement && !isExamSubmitted) {
             violationCount++;
             violationCountEl.textContent = violationCount;
@@ -249,11 +299,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const setupCheatingDetection = () => {
+        isCheatingDetectionActive = true;
         document.addEventListener('visibilitychange', handleVisibilityChange);
         document.addEventListener('fullscreenchange', handleFullscreenChange);
     };
 
     const removeCheatingDetection = () => {
+        isCheatingDetectionActive = false;
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
@@ -319,33 +371,28 @@ document.addEventListener('DOMContentLoaded', () => {
             startTimer(WAKTU_UJIAN);
             setupCheatingDetection();
         }).catch(err => {
-            alert(`Gagal masuk mode layar penuh. Fitur ini diperlukan untuk ujian. Error: ${err.message}`);
+            showModal('Peringatan', `Gagal masuk mode layar penuh. Fitur ini diperlukan untuk ujian. Error: ${err.message}`, [
+                { text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg', onClick: hideModal }
+            ]);
         });
     });
 
-    // ** DIPERBAIKI: Logika tombol submit untuk menghindari pelanggaran palsu **
+    // ** DIPERBAIKI: Menggunakan Modal Kustom **
     document.getElementById('submit-exam-btn').addEventListener('click', () => {
-        // Nonaktifkan deteksi sementara
-        removeCheatingDetection();
-
         if (Object.keys(jawabanSiswa).length < soalUjian.length) {
-            alert('Anda harus menjawab semua soal sebelum dapat mengirimkan jawaban.');
-            // Aktifkan kembali deteksi jika siswa belum selesai
-            if (document.fullscreenElement) {
-                setupCheatingDetection();
-            }
+            showModal('Peringatan', 'Anda harus menjawab semua soal sebelum dapat mengirimkan jawaban.', [
+                { text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg', onClick: hideModal }
+            ]);
             return;
         }
 
-        const userConfirmed = confirm("Apakah Anda yakin ingin mengirimkan jawaban Anda?");
-        if (userConfirmed) {
-            submitExam();
-        } else {
-            // Aktifkan kembali deteksi jika siswa membatalkan
-            if (document.fullscreenElement) {
-                setupCheatingDetection();
-            }
-        }
+        showModal('Konfirmasi Pengiriman', 'Apakah Anda yakin ingin mengirimkan jawaban Anda? Anda tidak bisa mengubahnya lagi setelah ini.', [
+            { text: 'Batal', class: 'bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-6 rounded-lg', onClick: hideModal },
+            { text: 'Ya, Kirim', class: 'bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg', onClick: () => {
+                hideModal();
+                submitExam();
+            }}
+        ]);
     });
     
     document.getElementById('close-warning-btn').addEventListener('click', () => {
