@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let soalUjian = [];
     let timerInterval = null;
     let jawabanSiswa = {};
-    const WAKTU_UJIAN = 10; // 10 menit
+    const WAKTU_UJIAN = 90; // DIUBAH: Waktu ujian sekarang 90 menit
 
     // =================================================================
     // FUNGSI UTAMA (DIMODIFIKASI UNTUK SUPABASE)
@@ -185,7 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 correctAnswers++;
             }
         });
-        const skorAkhir = Math.round((correctAnswers / soalUjian.length) * 100);
+        // DIUBAH: Logika skor disempurnakan untuk memastikan skala 0-100
+        const skorAkhir = soalUjian.length > 0 ? parseInt(((correctAnswers / soalUjian.length) * 100).toFixed(0)) : 0;
 
         // 2. Simpan hasil ujian ke tabel hasil_ujian
         const { error: insertError } = await supabaseClient.from('hasil_ujian').insert([
@@ -268,6 +269,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('submit-exam-btn').addEventListener('click', () => {
+        // ** BARU: Validasi untuk memastikan semua soal dijawab **
+        if (Object.keys(jawabanSiswa).length < soalUjian.length) {
+            alert('Anda harus menjawab semua soal sebelum dapat mengirimkan jawaban.');
+            return; // Menghentikan proses jika ada soal yang belum dijawab
+        }
+
         const confirmation = confirm("Apakah Anda yakin ingin mengirimkan jawaban Anda? Anda tidak bisa mengubahnya lagi setelah ini.");
         if (confirmation) {
             submitExam();
