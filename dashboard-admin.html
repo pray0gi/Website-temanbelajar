@@ -247,12 +247,10 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // KONEKSI KE SUPABASE
     const SUPABASE_URL = 'https://mtadhiyfducemvckpnkb.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10YWRoaXlmZHVjZW12Y2twbmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjAwMjcsImV4cCI6MjA3MzczNjAyN30.BbjPW_FDSVN_cpf6uf3xXfZnl0fKgYi2rs-m8ytBWkk';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    // VARIABEL GLOBAL
     let currentAdmin = null;
     let mataPelajaranList = [];
     let hasilUjianList = [];
@@ -263,16 +261,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalMessageEl = document.getElementById('modal-message');
     const modalButtonsEl = document.getElementById('modal-buttons');
 
-    // FUNGSI NAVIGASI & Tampilan
     const showPage = (pageName) => { document.querySelectorAll('[data-page]').forEach(p => p.classList.remove('active')); document.querySelector(`[data-page="${pageName}"]`).classList.add('active'); };
     const showView = (viewName) => { document.querySelectorAll('[data-view]').forEach(v => v.classList.remove('active')); document.querySelector(`[data-view="${viewName}"]`).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.querySelector(`.nav-btn[data-target="${viewName}"]`).classList.add('active'); };
     
-    // FUNGSI AUTENTIKASI
     const handleLogin = async (e) => { e.preventDefault(); const username = document.getElementById('username').value; const password = document.getElementById('admin-password').value; const errorEl = document.getElementById('admin-login-error'); errorEl.textContent = ''; const { data } = await supabaseClient.from('admin').select('*').eq('username', username).eq('password', password).single(); if (data) { currentAdmin = data; sessionStorage.setItem('adminUser', JSON.stringify(data)); showPage('dashboard'); loadInitialData(); } else { errorEl.textContent = 'Username atau password salah.'; } };
     const handleLogout = () => { currentAdmin = null; sessionStorage.removeItem('adminUser'); showPage('login'); };
     const checkSession = () => { const adminData = sessionStorage.getItem('adminUser'); if (adminData) { currentAdmin = JSON.parse(adminData); showPage('dashboard'); loadInitialData(); } };
     
-    // FUNGSI MODAL
     const showModal = (title, message, buttons) => {
         modalTitleEl.textContent = title;
         modalMessageEl.textContent = message;
@@ -292,7 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const hideModal = () => { customModalEl.classList.add('hidden'); customModalEl.classList.remove('flex'); };
 
-    // FUNGSI MEMUAT DATA
     const loadInitialData = async () => {
         const refreshBtn = document.getElementById('refresh-data-btn');
         const refreshBtnText = refreshBtn.querySelector('span');
@@ -363,7 +357,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const fetchAndRenderHasil = async () => { const filterMapelId = document.getElementById('filter-hasil-mapel').value; let query = supabaseClient.from('hasil_ujian').select('*, siswa(nama), mata_pelajaran(nama_mapel)').order('waktu_pengerjaan', { ascending: false }); if (filterMapelId && filterMapelId !== 'all') query = query.eq('mapel_id', filterMapelId); const { data } = await query; if (data) { const tableBody = document.getElementById('hasil-table-body'); tableBody.innerHTML = data.map(h => `<tr class="border-b border-slate-700"><td class="p-3">${new Date(h.waktu_pengerjaan).toLocaleString('id-ID')}</td><td class="p-3">${h.nis_siswa}</td><td class="p-3">${h.siswa ? h.siswa.nama : 'N/A'}</td><td class="p-3">${h.mata_pelajaran ? h.mata_pelajaran.nama_mapel : 'N/A'}</td><td class="p-3 font-bold ${h.skor_akhir >= 75 ? 'text-green-400' : 'text-red-400'}">${h.skor_akhir}</td></tr>`).join(''); } };
 
-    // FUNGSI ANALITIK
     const fetchAndRenderAnalytics = async () => {
         const { data: hasilData } = await supabaseClient.from('hasil_ujian').select('skor_akhir, mapel_id, jawaban_siswa');
         const { data: soalData } = await supabaseClient.from('soal_ujian').select('id, pertanyaan, jawaban_benar');
@@ -399,17 +392,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderDifficultQuestions = (sortedData, soalList) => { const listEl = document.getElementById('difficult-questions-list'); if (sortedData.length === 0) { listEl.innerHTML = '<p class="text-slate-500">Belum ada data.</p>'; return; } listEl.innerHTML = sortedData.map(([qId, count]) => { const soal = soalList.find(s => s.id == qId); return `<div class="bg-slate-900 p-3 rounded-lg"><p class="text-sm text-slate-300 truncate">${soal ? soal.pertanyaan : `Soal ID: ${qId}`}</p><p class="text-xs text-red-400 font-semibold">${count} kali salah</p></div>`; }).join(''); };
     
     // FUNGSI MANAJEMEN DATA (CRUD)
-    const handleResetUjianSpesifik = (nis, mapelId, mapelName) => {
-        showModal('Konfirmasi Reset', `Yakin reset ujian "${mapelName}" untuk NIS ${nis}?`, [
-            { text: 'Batal', class: 'bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg' },
-            { text: 'Ya, Reset', class: 'bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg', onClick: async () => {
-                await supabaseClient.from('hasil_ujian').delete().eq('nis_siswa', nis).eq('mapel_id', mapelId);
-                loadInitialData();
-            }}
-        ]);
+    const handleResetUjianSpesifik = (nis, mapelId, mapelName) => { showModal('Konfirmasi Reset', `Yakin reset ujian "${mapelName}" untuk NIS ${nis}?`, [ { text: 'Batal', class: 'bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg' }, { text: 'Ya, Reset', class: 'bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg', onClick: async () => { await supabaseClient.from('hasil_ujian').delete().eq('nis_siswa', nis).eq('mapel_id', mapelId); loadInitialData(); }} ]); };
+    const handleDeleteSiswa = (nis) => { showModal('Konfirmasi Hapus', `Yakin hapus siswa NIS ${nis}?`, [ { text: 'Batal', class: 'bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg' }, { text: 'Ya, Hapus', class: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg', onClick: async () => { await supabaseClient.from('siswa').delete().eq('nis', nis); loadInitialData(); }} ]); };
+    const handleDeleteSoal = (id) => { showModal('Konfirmasi Hapus', `Yakin hapus soal ID ${id}?`, [ { text: 'Batal', class: 'bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg' }, { text: 'Ya, Hapus', class: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg', onClick: async () => { await supabaseClient.from('soal_ujian').delete().eq('id', id); loadInitialData(); }} ]); };
+    const handleDeleteSelectedSiswa = () => { const nisToDelete = Array.from(document.querySelectorAll('.siswa-checkbox:checked')).map(cb => cb.dataset.nis); if (nisToDelete.length === 0) return; showModal('Konfirmasi Hapus Massal', `Yakin hapus ${nisToDelete.length} siswa terpilih?`, [ { text: 'Batal', class: 'bg-slate-600 ...' }, { text: 'Ya, Hapus', class: 'bg-red-600 ...', onClick: async () => { await supabaseClient.from('siswa').delete().in('nis', nisToDelete); loadInitialData(); }} ]); };
+    const handleDeleteSelectedSoal = () => { const idsToDelete = Array.from(document.querySelectorAll('.soal-checkbox:checked')).map(cb => cb.dataset.id); if (idsToDelete.length === 0) return; showModal('Konfirmasi Hapus Massal', `Yakin hapus ${idsToDelete.length} soal terpilih?`, [ { text: 'Batal', class: 'bg-slate-600 ...' }, { text: 'Ya, Hapus', class: 'bg-red-600 ...', onClick: async () => { await supabaseClient.from('soal_ujian').delete().in('id', idsToDelete); loadInitialData(); }} ]); };
+    
+    const editSoalModal = document.getElementById('edit-soal-modal'); 
+    const editSoalForm = document.getElementById('edit-soal-form'); 
+    const imageUploadInput = document.getElementById('image-upload'); 
+    const imagePreview = document.getElementById('image-preview'); 
+    let imageFileToUpload = null; 
+    let shouldRemoveImage = false;
+
+    const openEditSoalModal = async (id) => { const { data: soal, error } = await supabaseClient.from('soal_ujian').select('*').eq('id', id).single(); if (error) return showModal('Error', 'Gagal mengambil data soal.'); const mapelSelect = document.getElementById('edit-mapel'); mapelSelect.innerHTML = ''; mataPelajaranList.forEach(mapel => { const option = document.createElement('option'); option.value = mapel.id; option.textContent = mapel.nama_mapel; mapelSelect.appendChild(option); }); document.getElementById('edit-soal-id').value = soal.id; document.getElementById('edit-pertanyaan').value = soal.pertanyaan; document.getElementById('edit-jawaban-benar').value = soal.jawaban_benar; document.getElementById('edit-mapel').value = soal.mapel_id || ''; if (soal.url_gambar) { imagePreview.src = soal.url_gambar; document.getElementById('edit-soal-image-path').value = soal.url_gambar; } else { imagePreview.src = 'https://placehold.co/150x100/1e293b/94a3b8?text=Tidak+Ada'; document.getElementById('edit-soal-image-path').value = ''; } const options = soal.pilihan || []; ['A', 'B', 'C', 'D', 'E'].forEach((char, index) => { document.getElementById(`edit-opsi${char}`).value = options[index] || ''; }); editSoalModal.classList.remove('hidden'); };
+    const closeEditSoalModal = () => { editSoalModal.classList.add('hidden'); editSoalForm.reset(); imageFileToUpload = null; shouldRemoveImage = false; imageUploadInput.value = ''; imagePreview.src = 'https://placehold.co/150x100/1e293b/94a3b8?text=Tidak+Ada'; };
+    const handleUpdateSoal = async (e) => { e.preventDefault(); const id = document.getElementById('edit-soal-id').value; let imageUrl = document.getElementById('edit-soal-image-path').value; if (imageFileToUpload) { const filePath = `soal-${id}-${Date.now()}-${imageFileToUpload.name}`; const { error } = await supabaseClient.storage.from('gambar_soal').upload(filePath, imageFileToUpload); if (error) return showModal('Error Upload', `Gagal mengunggah gambar: ${error.message}`); const { data } = supabaseClient.storage.from('gambar_soal').getPublicUrl(filePath); imageUrl = data.publicUrl; } else if (shouldRemoveImage) { imageUrl = null; } const updateData = { pertanyaan: document.getElementById('edit-pertanyaan').value, jawaban_benar: document.getElementById('edit-jawaban-benar').value, pilihan: ['A', 'B', 'C', 'D', 'E'].map(c => document.getElementById(`edit-opsi${c}`).value).filter(Boolean), url_gambar: imageUrl, mapel_id: document.getElementById('edit-mapel').value }; const { error } = await supabaseClient.from('soal_ujian').update(updateData).eq('id', id); if (error) { showModal('Error', `Gagal menyimpan: ${error.message}`); } else { showModal('Sukses', 'Soal diperbarui.'); closeEditSoalModal(); fetchAndRenderSoal(); } };
+    
+    const downloadCSV = (data, filename) => { const csv = Papa.unparse(data); const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.setAttribute('download', filename); document.body.appendChild(link); link.click(); document.body.removeChild(link); };
+    const handleFileUpload = (file, tableName, transformFn) => {
+        if (!file) return;
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: async (results) => {
+                try {
+                    const dataToInsert = transformFn(results.data);
+                    const { error } = await supabaseClient.from(tableName).insert(dataToInsert);
+                    if (error) throw error;
+                    showModal('Sukses', 'Data berhasil diunggah!');
+                    loadInitialData();
+                } catch (error) {
+                    showModal('Error Upload', `Gagal mengunggah data. Periksa format CSV Anda.\nError: ${error.message}`);
+                }
+            }
+        });
     };
-    const handleDeleteSiswa = (nis) => { showModal('Konfirmasi Hapus', `Yakin hapus siswa NIS ${nis}?`, [ { text: 'Batal', class: 'bg-slate-600 ...' }, { text: 'Ya, Hapus', class: 'bg-red-600 ...', onClick: async () => { await supabaseClient.from('siswa').delete().eq('nis', nis); loadInitialData(); }} ]); };
-    // ... (sisa fungsi CRUD tidak berubah)
     
     // EVENT LISTENERS
     document.getElementById('admin-login-form').addEventListener('submit', handleLogin);
@@ -420,8 +438,49 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.classList.contains('delete-siswa-btn')) handleDeleteSiswa(e.target.dataset.nis);
         if (e.target.classList.contains('reset-siswa-btn')) handleResetUjianSpesifik(e.target.dataset.nis, e.target.dataset.mapelId, e.target.dataset.mapelName);
     });
-    // ... (sisa event listener tidak berubah) ...
+    document.getElementById('soal-table-body').addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-soal-btn')) handleDeleteSoal(e.target.dataset.id);
+        if (e.target.classList.contains('edit-soal-btn')) openEditSoalModal(e.target.dataset.id);
+    });
+    document.getElementById('delete-selected-siswa-btn').addEventListener('click', handleDeleteSelectedSiswa);
+    document.getElementById('delete-selected-soal-btn').addEventListener('click', handleDeleteSelectedSoal);
     document.getElementById('filter-siswa-mapel').addEventListener('change', fetchAndRenderSiswa);
+    document.getElementById('filter-mapel').addEventListener('change', fetchAndRenderSoal);
+    document.getElementById('filter-hasil-mapel').addEventListener('change', fetchAndRenderHasil);
+    
+    document.getElementById('download-siswa-template').addEventListener('click', () => { downloadCSV([{ nis: '', nama: '', password: '' }], 'template_siswa.csv'); });
+    document.getElementById('download-soal-template').addEventListener('click', () => { downloadCSV([{ mapel_id: '', pertanyaan: '', opsiA: '', opsiB: '', opsiC: '', opsiD: '', opsiE: '', jawaban_benar: '' }], 'template_soal.csv'); });
+    document.getElementById('download-mapel-key').addEventListener('click', () => { const mapelData = mataPelajaranList.map(m => ({ id_mapel: m.id, nama_mapel: m.nama_mapel })); downloadCSV(mapelData, 'kunci_mapel.csv'); });
+    document.getElementById('download-hasil').addEventListener('click', async () => { const { data } = await supabaseClient.from('hasil_ujian').select('waktu_pengerjaan, nis_siswa, skor_akhir, siswa(nama)'); if (data) { const d = data.map(i => ({ waktu: new Date(i.waktu_pengerjaan).toLocaleString('id-ID'), nis: i.nis_siswa, nama: i.siswa?.nama || 'N/A', skor: i.skor_akhir })); downloadCSV(d, 'hasil_ujian.csv'); } });
+    
+    document.getElementById('upload-soal-csv').addEventListener('change', (e) => {
+        handleFileUpload(e.target.files[0], 'soal_ujian', (data) =>
+            data.map(row => ({
+                mapel_id: row.mapel_id,
+                pertanyaan: row.pertanyaan,
+                pilihan: [row.opsiA, row.opsiB, row.opsiC, row.opsiD, row.opsiE].filter(Boolean),
+                jawaban_benar: row.jawaban_benar
+            }))
+        );
+    });
+    
+    document.getElementById('upload-siswa-csv').addEventListener('change', (e) => {
+        handleFileUpload(e.target.files[0], 'siswa', (data) => 
+            data.map(row => ({
+                nis: row.nis,
+                nama: row.nama,
+                password: row.password
+            }))
+        );
+    });
+    
+    const setupCheckboxLogic = (selectAllId, checkboxClass, deleteButtonId) => { const selectAllCheckbox = document.getElementById(selectAllId); const deleteButton = document.getElementById(deleteButtonId); const tableBody = selectAllCheckbox.closest('table').querySelector('tbody'); tableBody.addEventListener('change', () => { const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length; deleteButton.classList.toggle('hidden', selected === 0); }); selectAllCheckbox.addEventListener('change', (e) => { document.querySelectorAll(`.${checkboxClass}`).forEach(checkbox => { checkbox.checked = e.target.checked; }); const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length; deleteButton.classList.toggle('hidden', selected === 0); }); };
+    setupCheckboxLogic('select-all-siswa', 'siswa-checkbox', 'delete-selected-siswa-btn');
+    setupCheckboxLogic('select-all-soal', 'soal-checkbox', 'delete-selected-soal-btn');
+    
+    editSoalForm.addEventListener('submit', handleUpdateSoal);
+    document.getElementById('cancel-edit-btn').addEventListener('click', closeEditSoalModal);
+    editSoalModal.addEventListener('click', (e) => { if (e.target === editSoalModal) closeEditSoalModal(); });
     
     checkSession();
 });
