@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - temanbelajar.my.id</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://css-proxy.vercel.app/api/fonts/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase & CSV Parser Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        [data-page], [data-view] { display: none; }
+        [data-page].active, [data-view].active { display: block; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .nav-btn.active { background-color: #0ea5e9; color: white; }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen">
+
+    <!-- Halaman Login Admin -->
+    <div data-page="login" class="active flex items-center justify-center min-h-screen p-4">
+        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl max-w-md w-full fade-in">
+            <h1 class="text-3xl font-bold text-center mb-6 text-sky-400">Admin Login</h1>
+            <form id="admin-login-form">
+                <div class="mb-4">
+                    <label for="username" class="block mb-2 text-sm font-medium text-slate-300">Username</label>
+                    <input type="text" id="username" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" required>
+                </div>
+                <div class="mb-6">
+                    <label for="admin-password" class="block mb-2 text-sm font-medium text-slate-300">Password</label>
+                    <input type="password" id="admin-password" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" required>
+                </div>
+                <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg transition-transform duration-200 hover:scale-105">Masuk</button>
+                <p id="admin-login-error" class="text-red-400 text-center text-sm mt-4 h-5"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Halaman Dashboard Utama -->
+    <div data-page="dashboard" class="fade-in">
+        <header class="bg-slate-800 p-4 flex justify-between items-center shadow-md">
+            <h1 class="text-xl font-bold text-sky-400">Dashboard Guru</h1>
+            <button id="logout-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg text-sm">Logout</button>
+        </header>
+
+        <main class="p-4 md:p-8">
+            <nav class="flex space-x-2 md:space-x-4 mb-6 bg-slate-800 p-2 rounded-lg">
+                <button data-target="siswa" class="nav-btn flex-1 py-2 px-4 rounded-md font-semibold transition-colors active">Manajemen Siswa</button>
+                <button data-target="soal" class="nav-btn flex-1 py-2 px-4 rounded-md font-semibold transition-colors">Manajemen Soal</button>
+                <button data-target="hasil" class="nav-btn flex-1 py-2 px-4 rounded-md font-semibold transition-colors">Hasil Ujian</button>
+            </nav>
+
+            <!-- View Manajemen Siswa -->
+            <div data-view="siswa" class="active">
+                <div class="bg-slate-800 p-6 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-4 text-cyan-300">Daftar Siswa</h2>
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        <button id="download-siswa-template" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">Download Template CSV</button>
+                        <input type="file" id="upload-siswa-csv" class="hidden" accept=".csv">
+                        <label for="upload-siswa-csv" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg cursor-pointer">Upload CSV Siswa</label>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-700">
+                                <tr>
+                                    <th class="p-3">NIS</th>
+                                    <th class="p-3">Nama</th>
+                                    <th class="p-3">Sudah Mengerjakan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="siswa-table-body" class="bg-slate-800">
+                                <!-- Data siswa akan dimuat di sini -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Manajemen Soal -->
+            <div data-view="soal">
+                 <div class="bg-slate-800 p-6 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-4 text-cyan-300">Bank Soal Ujian</h2>
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        <button id="download-soal-template" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">Download Template CSV</button>
+                        <input type="file" id="upload-soal-csv" class="hidden" accept=".csv">
+                        <label for="upload-soal-csv" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg cursor-pointer">Upload CSV Soal</label>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-700">
+                                <tr>
+                                    <th class="p-3">ID</th>
+                                    <th class="p-3">Pertanyaan</th>
+                                    <th class="p-3">Jawaban Benar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="soal-table-body" class="bg-slate-800">
+                                <!-- Data soal akan dimuat di sini -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Hasil Ujian -->
+            <div data-view="hasil">
+                <div class="bg-slate-800 p-6 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-4 text-cyan-300">Hasil Pengerjaan Siswa</h2>
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        <button id="download-hasil" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">Download Hasil (CSV)</button>
+                    </div>
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-700">
+                                <tr>
+                                    <th class="p-3">Waktu Pengerjaan</th>
+                                    <th class="p-3">NIS</th>
+                                    <th class="p-3">Nama Siswa</th>
+                                    <th class="p-3">Skor Akhir</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hasil-table-body" class="bg-slate-800">
+                                <!-- Data hasil ujian akan dimuat di sini -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // =================================================================
+    // KONEKSI KE SUPABASE
+    // Ganti dengan URL & Kunci dari proyek Supabase Anda
+    // =================================================================
+    const SUPABASE_URL = 'https://mtadhiyfducemvckpnkb.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10YWRoaXlmZHVjZW12Y2twbmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjAwMjcsImV4cCI6MjA3MzczNjAyN30.BbjPW_FDSVN_cpf6uf3xXfZnl0fKgYi2rs-m8ytBWkk';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentAdmin = null;
+
+    // =================================================================
+    // FUNGSI NAVIGASI & Tampilan
+    // =================================================================
+    const showPage = (pageName) => {
+        document.querySelectorAll('[data-page]').forEach(p => p.classList.remove('active'));
+        document.querySelector(`[data-page="${pageName}"]`).classList.add('active');
+    };
+
+    const showView = (viewName) => {
+        document.querySelectorAll('[data-view]').forEach(v => v.classList.remove('active'));
+        document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.nav-btn[data-target="${viewName}"]`).classList.add('active');
+    };
+
+    // =================================================================
+    // FUNGSI AUTENTIKASI ADMIN
+    // =================================================================
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('admin-password').value;
+        const errorEl = document.getElementById('admin-login-error');
+        errorEl.textContent = '';
+
+        const { data, error } = await supabase
+            .from('admin')
+            .select('*')
+            .eq('username', username)
+            .eq('password', password)
+            .single();
+
+        if (data) {
+            currentAdmin = data;
+            sessionStorage.setItem('adminUser', JSON.stringify(data));
+            showPage('dashboard');
+            loadInitialData();
+        } else {
+            errorEl.textContent = 'Username atau password salah.';
+        }
+    };
+
+    const handleLogout = () => {
+        currentAdmin = null;
+        sessionStorage.removeItem('adminUser');
+        showPage('login');
+    };
+
+    // Check for logged in admin on page load
+    const checkSession = () => {
+        const adminData = sessionStorage.getItem('adminUser');
+        if (adminData) {
+            currentAdmin = JSON.parse(adminData);
+            showPage('dashboard');
+            loadInitialData();
+        }
+    };
+    
+    // =================================================================
+    // FUNGSI UNTUK MEMUAT & MENAMPILKAN DATA
+    // =================================================================
+    const loadInitialData = () => {
+        fetchAndRenderSiswa();
+        fetchAndRenderSoal();
+        fetchAndRenderHasil();
+    };
+
+    const fetchAndRenderSiswa = async () => {
+        const { data, error } = await supabase.from('siswa').select('*').order('nis', { ascending: true });
+        if (data) {
+            const tableBody = document.getElementById('siswa-table-body');
+            tableBody.innerHTML = data.map(s => `
+                <tr class="border-b border-slate-700">
+                    <td class="p-3">${s.nis}</td>
+                    <td class="p-3">${s.nama}</td>
+                    <td class="p-3 ${s.sudah_mengerjakan ? 'text-green-400' : 'text-yellow-400'}">${s.sudah_mengerjakan ? 'Sudah' : 'Belum'}</td>
+                </tr>
+            `).join('');
+        }
+    };
+
+    const fetchAndRenderSoal = async () => {
+        const { data, error } = await supabase.from('soal_ujian').select('*').order('id', { ascending: true });
+        if (data) {
+            const tableBody = document.getElementById('soal-table-body');
+            tableBody.innerHTML = data.map(s => `
+                <tr class="border-b border-slate-700">
+                    <td class="p-3">${s.id}</td>
+                    <td class="p-3">${s.pertanyaan}</td>
+                    <td class="p-3 text-green-400">${s.jawaban_benar}</td>
+                </tr>
+            `).join('');
+        }
+    };
+
+    const fetchAndRenderHasil = async () => {
+        // Ini adalah "join" query untuk mengambil nama siswa dari tabel siswa
+        const { data, error } = await supabase.from('hasil_ujian').select('*, siswa(nama)').order('waktu_pengerjaan', { ascending: false });
+        if (data) {
+            const tableBody = document.getElementById('hasil-table-body');
+            tableBody.innerHTML = data.map(h => `
+                <tr class="border-b border-slate-700">
+                    <td class="p-3">${new Date(h.waktu_pengerjaan).toLocaleString('id-ID')}</td>
+                    <td class="p-3">${h.nis_siswa}</td>
+                    <td class="p-3">${h.siswa ? h.siswa.nama : 'N/A'}</td>
+                    <td class="p-3 font-bold ${h.skor_akhir >= 75 ? 'text-green-400' : 'text-red-400'}">${h.skor_akhir}</td>
+                </tr>
+            `).join('');
+        }
+    };
+
+    // =================================================================
+    // FUNGSI UNTUK MANAJEMEN CSV
+    // =================================================================
+    const downloadCSV = (data, filename) => {
+        const csv = Papa.unparse(data);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    document.getElementById('download-siswa-template').addEventListener('click', () => {
+        downloadCSV([{ nis: '', nama: '', password: '' }], 'template_siswa.csv');
+    });
+
+    document.getElementById('download-soal-template').addEventListener('click', () => {
+        downloadCSV([{ pertanyaan: '', pilihan: 'opsiA;opsiB;opsiC;opsiD', jawaban_benar: '' }], 'template_soal.csv');
+    });
+
+    document.getElementById('download-hasil').addEventListener('click', async () => {
+        const { data, error } = await supabase.from('hasil_ujian').select('waktu_pengerjaan, nis_siswa, skor_akhir, siswa(nama)');
+        if (data) {
+            const flattenedData = data.map(item => ({
+                waktu_pengerjaan: new Date(item.waktu_pengerjaan).toLocaleString('id-ID'),
+                nis: item.nis_siswa,
+                nama: item.siswa ? item.siswa.nama : 'N/A',
+                skor: item.skor_akhir
+            }));
+            downloadCSV(flattenedData, 'hasil_ujian.csv');
+        }
+    });
+
+    const handleFileUpload = (file, tableName, transformFn) => {
+        if (!file) return;
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: async (results) => {
+                try {
+                    const dataToInsert = transformFn(results.data);
+                    const { error } = await supabase.from(tableName).insert(dataToInsert);
+                    if (error) throw error;
+                    alert('Data berhasil diunggah!');
+                    loadInitialData(); // Refresh all data
+                } catch (error) {
+                    alert('Gagal mengunggah data. Periksa format CSV Anda.\nError: ' + error.message);
+                }
+            }
+        });
+    };
+
+    document.getElementById('upload-siswa-csv').addEventListener('change', (e) => {
+        handleFileUpload(e.target.files[0], 'siswa', (data) => 
+            data.map(row => ({
+                nis: row.nis,
+                nama: row.nama,
+                password: row.password,
+                sudah_mengerjakan: false
+            }))
+        );
+    });
+
+    document.getElementById('upload-soal-csv').addEventListener('change', (e) => {
+        handleFileUpload(e.target.files[0], 'soal_ujian', (data) =>
+            data.map(row => ({
+                pertanyaan: row.pertanyaan,
+                pilihan: row.pilihan.split(';'), // Memecah string menjadi array
+                jawaban_benar: row.jawaban_benar
+            }))
+        );
+    });
+
+    // =================================================================
+    // EVENT LISTENERS
+    // =================================================================
+    document.getElementById('admin-login-form').addEventListener('submit', handleLogin);
+    document.getElementById('logout-btn').addEventListener('click', handleLogout);
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => showView(btn.dataset.target));
+    });
+
+    // =================================================================
+    // INISIALISASI
+    // =================================================================
+    checkSession();
+});
+</script>
+</body>
+</html>
