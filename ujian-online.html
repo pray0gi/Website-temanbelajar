@@ -135,9 +135,19 @@ document.addEventListener('DOMContentLoaded', () => {
         soalUjian.forEach((soal, index) => {
             const soalDiv = document.createElement('div');
             soalDiv.className = 'mb-6 pb-4 border-b border-slate-700';
-            const imageHtml = soal.url_gambar ? `<div class="mb-4"><img src="${soal.url_gambar}" alt="Gambar Soal ${index + 1}" class="max-h-64 w-auto mx-auto rounded-lg"></div>` : '';
+            
+            // ** PERUBAHAN DI SINI: Urutan HTML diubah **
+            const imageHtml = soal.url_gambar 
+                ? `<div class="my-4"><img src="${soal.url_gambar}" alt="Gambar Soal ${index + 1}" class="max-h-64 w-auto mx-auto rounded-lg"></div>` 
+                : '';
+
             let pilihanHTML = soal.pilihan.map(p => `<div><input type="radio" id="soal-${soal.id}-${p}" name="soal-${soal.id}" value="${p}" class="hidden jawaban-radio"><label for="soal-${soal.id}-${p}" class="block p-3 rounded-lg border-2 border-slate-600 hover:bg-slate-700 cursor-pointer">${p}</label></div>`).join('');
-            soalDiv.innerHTML = `${imageHtml}<p class="text-lg text-slate-200 mb-4">${index + 1}. ${soal.pertanyaan}</p><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${pilihanHTML}</div>`;
+            
+            soalDiv.innerHTML = `
+                <p class="text-lg text-slate-200">${index + 1}. ${soal.pertanyaan}</p>
+                ${imageHtml}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">${pilihanHTML}</div>
+            `;
             examContent.appendChild(soalDiv);
         });
         examContent.addEventListener('change', (e) => {
