@@ -32,6 +32,8 @@
             Jumlah Pelanggaran: <span id="violation-count" class="text-red-500">0</span> / 3
         </p>
         <p class="text-sm text-slate-400 mt-4">Jika Anda melakukan 3 kali pelanggaran, ujian akan dihentikan secara otomatis.</p>
+        <!-- ** BARU: Tombol OK pada peringatan ** -->
+        <button id="close-warning-btn" class="mt-8 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-8 rounded-lg">OK, Saya Mengerti</button>
     </div>
 
     <div class="w-full max-w-4xl mx-auto">
@@ -142,6 +144,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, 1000);
     };
+
+    // ** BARU: Fungsi untuk merender jawaban yang tersimpan **
+    const renderSavedAnswers = () => {
+        for (const questionName in jawabanSiswa) {
+            const answerValue = jawabanSiswa[questionName];
+            // Escape special characters in value for querySelector
+            const escapedValue = CSS.escape(answerValue);
+            const radioToSelect = document.querySelector(`input[name="${questionName}"][value="${escapedValue}"]`);
+            if (radioToSelect) {
+                radioToSelect.checked = true;
+            }
+        }
+    };
     
     const loadQuestions = async () => {
         const examContent = document.getElementById('exam-content');
@@ -170,6 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
         examContent.addEventListener('change', (e) => {
             if (e.target.type === 'radio') {
                 jawabanSiswa[e.target.name] = e.target.value;
+                // ** BARU: Simpan progres ke sessionStorage setiap kali jawaban berubah **
+                sessionStorage.setItem('savedAnswers', JSON.stringify(jawabanSiswa));
             }
         });
     };
@@ -201,6 +218,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         document.getElementById('completion-reason').textContent = completionText;
 
+        // ** BARU: Hapus progres tersimpan setelah submit berhasil **
+        sessionStorage.removeItem('savedAnswers');
+
         navigateTo('complete');
         
         if (document.fullscreenElement) {
@@ -219,16 +239,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (violationCount >= MAX_VIOLATIONS) {
                 submitExam("Pelanggaran Maksimal");
             }
-        } else {
-            // Sembunyikan peringatan saat siswa kembali ke tab
-            violationWarningEl.style.display = 'none';
         }
     };
 
-    // ** DIPERBAIKI: Logika untuk deteksi keluar dari fullscreen **
     const handleFullscreenChange = () => {
         if (!document.fullscreenElement && !isExamSubmitted) {
-            // Ini adalah pelanggaran terpisah
             violationCount++;
             violationCountEl.textContent = violationCount;
             violationWarningEl.style.display = 'flex';
@@ -297,9 +312,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('start-exam-btn').addEventListener('click', () => {
-        document.documentElement.requestFullscreen().then(() => {
+        // ** BARU: Cek dan muat progres yang tersimpan sebelum ujian dimulai **
+        const savedAnswers = sessionStorage.getItem('savedAnswers');
+        if (savedAnswers) {
+            jawabanSiswa = JSON.parse(savedAnswers);
+        }
+
+        document.documentElement.requestFullscreen().then(async () => {
             navigateTo('exam');
-            loadQuestions();
+            await loadQuestions(); // Tunggu soal selesai dimuat
+            renderSavedAnswers(); // Baru terapkan jawaban yang tersimpan
             startTimer(WAKTU_UJIAN);
             setupCheatingDetection();
         }).catch(err => {
@@ -315,6 +337,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (confirm("Apakah Anda yakin ingin mengirimkan jawaban Anda?")) {
             submitExam();
         }
+    });
+    
+    // ** BARU: Event listener untuk tombol OK pada peringatan **
+    document.getElementById('close-warning-btn').addEventListener('click', () => {
+        violationWarningEl.style.display = 'none';
     });
 });
 </script>
