@@ -6,29 +6,17 @@
     <title>Ujian Online - temanbelajar.my.id</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
     <link href="https://css-proxy.vercel.app/api/fonts/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- ** BARU: Tambahkan Supabase Client Library ** -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        [data-page] {
-            display: none;
-        }
-        [data-page].active {
-            display: block;
-        }
-        .fade-in {
-            animation: fadeIn 0.5s ease-in-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .jawaban-radio:checked + label {
-            border-color: #38bdf8; /* sky-400 */
-            background-color: #0c4a6e; /* sky-900 */
-        }
+        body { font-family: 'Inter', sans-serif; }
+        [data-page] { display: none; }
+        [data-page].active { display: block; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .jawaban-radio:checked + label { border-color: #38bdf8; background-color: #0c4a6e; }
     </style>
 </head>
 <body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
@@ -49,7 +37,7 @@
                         <label for="password" class="block mb-2 text-sm font-medium text-slate-300">Password (Nomor Absen)</label>
                         <input type="password" id="password" name="password" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" required>
                     </div>
-                    <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg transition-transform duration-200 hover:scale-105">Masuk</button>
+                    <button id="login-btn" type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg transition-transform duration-200 hover:scale-105">Masuk</button>
                     <p id="login-error" class="text-red-400 text-center text-sm mt-4 h-5"></p>
                 </form>
             </div>
@@ -79,16 +67,12 @@
                 <!-- Header Ujian -->
                 <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-slate-700 pb-4">
                     <h1 class="text-2xl font-bold text-cyan-300 mb-4 md:mb-0">Ujian Struktur Data</h1>
-                    <div id="timer" class="bg-red-700 text-white text-2xl font-bold px-6 py-2 rounded-lg shadow-lg">
-                        00:00
-                    </div>
+                    <div id="timer" class="bg-red-700 text-white text-2xl font-bold px-6 py-2 rounded-lg shadow-lg">00:00</div>
                 </div>
-
                 <!-- Konten Soal -->
                 <div id="exam-content">
-                    <!-- Soal akan dimuat di sini oleh JavaScript -->
+                     <p class="text-center text-slate-400">Memuat soal...</p>
                 </div>
-
                 <!-- Tombol Kirim -->
                 <div class="mt-8 text-center">
                     <button id="submit-exam-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-8 rounded-lg transition-transform duration-200 hover:scale-105 text-lg">Kirim Jawaban</button>
@@ -102,9 +86,6 @@
                 <h1 class="text-3xl font-bold mb-4 text-green-400">Ujian Selesai!</h1>
                 <p class="text-slate-300 mb-6 text-lg">Terima kasih, <span id="student-name-final"></span>. Jawaban Anda telah berhasil direkam.</p>
                 <p class="text-slate-400">Anda dapat menutup halaman ini sekarang.</p>
-                <div id="hasil-jawaban" class="mt-6 text-left bg-slate-900 p-4 rounded-lg max-w-md mx-auto">
-                    <!-- Hasil jawaban akan ditampilkan di sini -->
-                </div>
             </div>
         </div>
     </div>
@@ -113,103 +94,40 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // =================================================================
-    // PENGATURAN & DATABASE PURWARUPA (diganti dengan database asli)
+    // ** PENTING: KONEKSI KE SUPABASE **
+    // ** GANTI DUA BARIS DI BAWAH INI DENGAN URL & KUNCI DARI PROYEK SUPABASE ANDA **
+    // Anda bisa menemukannya di: Dashboard Supabase > Settings > API
     // =================================================================
+    const SUPABASE_URL = 'https://mtadhiyfducemvckpnkb.supabase.co'; // <-- GANTI DENGAN URL PROYEK ANDA YANG SEBENARNYA
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10YWRoaXlmZHVjZW12Y2twbmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjAwMjcsImV4cCI6MjA3MzczNjAyN30.BbjPW_FDSVN_cpf6uf3xXfZnl0fKgYi2rs-m8ytBWkk'; // <-- GANTI DENGAN KUNCI ANON ANDA YANG SEBENARNYA
 
-    // Data Siswa (NIS sebagai username, Nomor Absen sebagai password)
-    const dataSiswa = [
-        { nis: '12345', password: '1', nama: 'Budi Santoso' },
-        { nis: '12346', password: '2', nama: 'Citra Lestari' },
-        { nis: '12347', password: '3', nama: 'Dewi Anggraini' },
-        { nis: '12348', password: '4', nama: 'Eko Prasetyo' },
-    ];
-
-    // Bank Soal Ujian
-    const soalUjian = [
-        {
-            pertanyaan: "Struktur data yang menggunakan prinsip Last-In, First-Out (LIFO) adalah...",
-            pilihan: ["Queue", "Stack", "Tree", "Array"],
-            jawaban: "Stack"
-        },
-        {
-            pertanyaan: "Operasi untuk menambahkan elemen ke dalam sebuah Queue disebut...",
-            pilihan: ["Push", "Pop", "Enqueue", "Dequeue"],
-            jawaban: "Enqueue"
-        },
-        {
-            pertanyaan: "Dalam sebuah Tree, node yang tidak memiliki anak disebut...",
-            pilihan: ["Root", "Parent", "Branch", "Leaf"],
-            jawaban: "Leaf"
-        },
-        {
-            pertanyaan: "Fitur 'Undo' (Ctrl+Z) pada aplikasi teks editor paling cocok diimplementasikan menggunakan...",
-            pilihan: ["Queue", "Stack", "Linked List", "Graph"],
-            jawaban: "Stack"
-        },
-        {
-            pertanyaan: "Manakah dari berikut ini yang merupakan contoh penggunaan Queue di dunia nyata?",
-            pilihan: ["Tumpukan piring", "Tombol 'Back' browser", "Antrean cetak dokumen", "Silsilah keluarga"],
-            jawaban: "Antrean cetak dokumen"
-        }
-    ];
-
-    // Pengaturan Waktu Ujian (dalam menit)
-    const WAKTU_UJIAN = 10; // 10 menit
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // =================================================================
     // VARIABEL GLOBAL & STATE APLIKASI
     // =================================================================
     let siswaSaatIni = null;
+    let soalUjian = [];
     let timerInterval = null;
     let jawabanSiswa = {};
+    const WAKTU_UJIAN = 10; // 10 menit
 
     // =================================================================
-    // FUNGSI UTAMA
+    // FUNGSI UTAMA (DIMODIFIKASI UNTUK SUPABASE)
     // =================================================================
     
-    // Fungsi untuk berpindah halaman
     function navigateTo(page) {
         document.querySelectorAll('[data-page]').forEach(p => p.classList.remove('active'));
         document.querySelector(`[data-page="${page}"]`).classList.add('active');
     }
 
-    // Fungsi untuk inisialisasi status ujian dari localStorage
-    function initExamStatus() {
-        let status = localStorage.getItem('examStatus');
-        if (!status) {
-            const initialStatus = dataSiswa.map(s => ({ nis: s.nis, hasTakenExam: false }));
-            localStorage.setItem('examStatus', JSON.stringify(initialStatus));
-        }
-    }
-
-    // Fungsi untuk mengecek apakah siswa sudah pernah ujian
-    function hasStudentTakenExam(nis) {
-        const status = JSON.parse(localStorage.getItem('examStatus'));
-        const studentStatus = status.find(s => s.nis === nis);
-        return studentStatus ? studentStatus.hasTakenExam : false;
-    }
-
-    // Fungsi untuk menandai siswa sudah mengerjakan ujian
-    function markExamAsTaken(nis) {
-        const status = JSON.parse(localStorage.getItem('examStatus'));
-        const studentIndex = status.findIndex(s => s.nis === nis);
-        if (studentIndex !== -1) {
-            status[studentIndex].hasTakenExam = true;
-            localStorage.setItem('examStatus', JSON.stringify(status));
-        }
-    }
-
-    // Fungsi untuk memulai timer hitungan mundur
     function startTimer(duration) {
         let timer = duration * 60;
         const timerElement = document.getElementById('timer');
-
         timerInterval = setInterval(() => {
             const minutes = Math.floor(timer / 60);
             const seconds = timer % 60;
-
             timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            
             if (--timer < 0) {
                 clearInterval(timerInterval);
                 submitExam();
@@ -217,9 +135,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
     
-    // Fungsi untuk memuat soal ke halaman
-    function loadQuestions() {
+    // ** BARU: Fungsi untuk memuat soal dari database **
+    async function loadQuestions() {
         const examContent = document.getElementById('exam-content');
+        const { data, error } = await supabaseClient.from('soal_ujian').select('*');
+
+        if (error) {
+            examContent.innerHTML = `<p class="text-center text-red-400">Gagal memuat soal. Coba muat ulang halaman.</p>`;
+            console.error('Error fetching questions:', error);
+            return;
+        }
+
+        soalUjian = data; // Simpan soal ke variabel global
         examContent.innerHTML = '';
         soalUjian.forEach((soal, index) => {
             const soalDiv = document.createElement('div');
@@ -227,23 +154,18 @@ document.addEventListener('DOMContentLoaded', () => {
             
             let pilihanHTML = soal.pilihan.map(p => `
                 <div>
-                    <input type="radio" id="soal-${index}-${p}" name="soal-${index}" value="${p}" class="hidden jawaban-radio">
-                    <label for="soal-${index}-${p}" class="block p-3 rounded-lg border-2 border-slate-600 hover:bg-slate-700 cursor-pointer transition-colors">
-                        ${p}
-                    </label>
+                    <input type="radio" id="soal-${soal.id}-${p}" name="soal-${soal.id}" value="${p}" class="hidden jawaban-radio">
+                    <label for="soal-${soal.id}-${p}" class="block p-3 rounded-lg border-2 border-slate-600 hover:bg-slate-700 cursor-pointer transition-colors">${p}</label>
                 </div>
             `).join('');
 
             soalDiv.innerHTML = `
                 <p class="text-lg text-slate-200 mb-4">${index + 1}. ${soal.pertanyaan}</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    ${pilihanHTML}
-                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">${pilihanHTML}</div>
             `;
             examContent.appendChild(soalDiv);
         });
 
-        // Menambahkan listener untuk merekam jawaban secara real-time
         examContent.addEventListener('change', (e) => {
             if (e.target.type === 'radio') {
                 jawabanSiswa[e.target.name] = e.target.value;
@@ -251,78 +173,106 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Fungsi untuk mengirimkan jawaban
-    function submitExam() {
+    // ** BARU: Fungsi untuk mengirimkan jawaban ke database **
+    async function submitExam() {
         clearInterval(timerInterval);
-        markExamAsTaken(siswaSaatIni.nis);
-
-        // Menampilkan hasil jawaban di halaman selesai
-        const hasilContainer = document.getElementById('hasil-jawaban');
-        hasilContainer.innerHTML = '<h3 class="font-bold text-lg mb-2 text-cyan-300">Rekap Jawaban Anda:</h3>';
-        let correctAnswers = 0;
-        soalUjian.forEach((soal, index) => {
-            const jawaban = jawabanSiswa[`soal-${index}`] || "Tidak dijawab";
-            const isCorrect = jawaban === soal.jawaban;
-            if (isCorrect) correctAnswers++;
-
-            hasilContainer.innerHTML += `
-                <div class="text-sm mb-1">
-                    <p><strong>Soal ${index + 1}:</strong> ${jawaban} <span class="${isCorrect ? 'text-green-400' : 'text-red-400'}">${isCorrect ? ' (Benar)' : ' (Salah)'}</span></p>
-                </div>
-            `;
-        });
         
-        hasilContainer.innerHTML += `<p class="mt-4 font-bold text-xl text-center">Skor Akhir: ${((correctAnswers / soalUjian.length) * 100).toFixed(0)}</p>`;
+        // 1. Hitung skor
+        let correctAnswers = 0;
+        soalUjian.forEach(soal => {
+            const jawaban = jawabanSiswa[`soal-${soal.id}`];
+            if (jawaban === soal.jawaban_benar) {
+                correctAnswers++;
+            }
+        });
+        const skorAkhir = Math.round((correctAnswers / soalUjian.length) * 100);
+
+        // 2. Simpan hasil ujian ke tabel hasil_ujian
+        const { error: insertError } = await supabaseClient.from('hasil_ujian').insert([
+            { 
+                nis_siswa: siswaSaatIni.nis,
+                jawaban_siswa: jawabanSiswa,
+                skor_akhir: skorAkhir
+            }
+        ]);
+        
+        if (insertError) {
+            console.error('Gagal menyimpan hasil ujian:', insertError);
+            alert('Terjadi kesalahan saat menyimpan jawaban Anda. Harap hubungi guru.');
+            return;
+        }
+
+        // 3. Update status siswa menjadi sudah mengerjakan
+        const { error: updateError } = await supabaseClient
+            .from('siswa')
+            .update({ sudah_mengerjakan: true })
+            .eq('nis', siswaSaatIni.nis);
+
+        if (updateError) {
+            console.error('Gagal update status siswa:', updateError);
+        }
+
         document.getElementById('student-name-final').textContent = siswaSaatIni.nama;
         navigateTo('complete');
     }
 
     // =================================================================
-    // EVENT LISTENERS
+    // EVENT LISTENERS (DIMODIFIKASI UNTUK SUPABASE)
     // =================================================================
     
-    // Handler untuk form login
-    document.getElementById('login-form').addEventListener('submit', (e) => {
+    // ** BARU: Handler login yang terhubung ke database **
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const nis = document.getElementById('nis').value;
         const password = document.getElementById('password').value;
         const loginError = document.getElementById('login-error');
+        const loginBtn = document.getElementById('login-btn');
 
-        const siswa = dataSiswa.find(s => s.nis === nis && s.password === password);
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Memeriksa...';
+        loginError.textContent = '';
 
-        if (siswa) {
-            if (hasStudentTakenExam(nis)) {
-                loginError.textContent = 'Anda sudah pernah mengerjakan ujian ini.';
-            } else {
-                siswaSaatIni = siswa;
-                document.getElementById('student-name').textContent = siswa.nama;
-                document.getElementById('total-questions-info').textContent = soalUjian.length;
-                document.getElementById('time-limit-info').textContent = WAKTU_UJIAN;
-                navigateTo('instructions');
-            }
+        const { data, error } = await supabaseClient
+            .from('siswa')
+            .select('*')
+            .eq('nis', nis)
+            .single(); // .single() untuk mengambil satu baris data
+
+        if (error || !data) {
+            loginError.textContent = 'NIS tidak ditemukan.';
+        } else if (data.password !== password) {
+            loginError.textContent = 'Password salah.';
+        } else if (data.sudah_mengerjakan) {
+            loginError.textContent = 'Anda sudah pernah mengerjakan ujian ini.';
         } else {
-            loginError.textContent = 'NIS atau Password salah.';
+            // Login berhasil
+            siswaSaatIni = data;
+            document.getElementById('student-name').textContent = siswaSaatIni.nama;
+            
+            // Ambil jumlah soal dari database untuk ditampilkan di instruksi
+            const { count } = await supabaseClient.from('soal_ujian').select('*', { count: 'exact', head: true });
+            document.getElementById('total-questions-info').textContent = count || 0;
+            document.getElementById('time-limit-info').textContent = WAKTU_UJIAN;
+            
+            navigateTo('instructions');
         }
+
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Masuk';
     });
 
-    // Handler untuk tombol mulai ujian
     document.getElementById('start-exam-btn').addEventListener('click', () => {
         navigateTo('exam');
         loadQuestions();
         startTimer(WAKTU_UJIAN);
     });
 
-    // Handler untuk tombol kirim jawaban
     document.getElementById('submit-exam-btn').addEventListener('click', () => {
-        // Konfirmasi sebelum mengirim
         const confirmation = confirm("Apakah Anda yakin ingin mengirimkan jawaban Anda? Anda tidak bisa mengubahnya lagi setelah ini.");
         if (confirmation) {
             submitExam();
         }
     });
-
-    // Inisialisasi status ujian saat halaman dimuat
-    initExamStatus();
 });
 </script>
 </body>
