@@ -64,7 +64,6 @@
                 <button data-target="hasil" class="nav-btn flex-1 py-2 px-4 rounded-md font-semibold transition-colors">Hasil Ujian</button>
             </nav>
 
-            <!-- View Analitik -->
             <div data-view="analitik" class="active">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-2 bg-slate-800 p-6 rounded-xl">
@@ -83,7 +82,6 @@
                 </div>
             </div>
 
-            <!-- View Manajemen Siswa -->
             <div data-view="siswa">
                 <div class="bg-slate-800 p-6 rounded-xl">
                     <div class="flex flex-col md:flex-row justify-between items-start mb-4">
@@ -248,7 +246,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const SUPABASE_URL = 'https://mtadhiyfducemvckpnkb.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10YWRoaXlmZHVjZW12Y2twbmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjAwMjcsImV4cCI6MjA3MzczNjAyN30.BbjPW_FDSVN_cpf6uf3xXfZnl0fKgYi2rs-m8ytBWkk';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI uncooked';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
     let currentAdmin = null;
@@ -418,12 +416,17 @@ document.addEventListener('DOMContentLoaded', () => {
             complete: async (results) => {
                 try {
                     const dataToInsert = transformFn(results.data);
+                    if (results.errors.length > 0) throw new Error(`CSV tidak dapat dibaca. Baris ${results.errors[0].row}: ${results.errors[0].message}`);
+                    if (!dataToInsert || dataToInsert.length === 0) throw new Error("File CSV kosong atau header tidak sesuai.");
                     const { error } = await supabaseClient.from(tableName).insert(dataToInsert);
-                    if (error) throw error;
+                    if (error) { if (error.message.includes("invalid input syntax")) throw new Error("Tipe data tidak cocok. Pastikan 'mapel_id' berisi angka."); throw error; }
                     showModal('Sukses', 'Data berhasil diunggah!', [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]);
                     loadInitialData();
                 } catch (error) {
-                    showModal('Error Upload', `Gagal mengunggah data. Periksa format CSV Anda.\nError: ${error.message}`, [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]);
+                    showModal('Error Upload', `Gagal mengunggah data.\n\nSaran: Pastikan format file CSV Anda benar, gunakan koma (,) sebagai pemisah, dan header sesuai template.\n\nDetail: ${error.message}`, [{ text: 'Mengerti', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]);
+                } finally {
+                    document.getElementById('upload-soal-csv').value = null;
+                    document.getElementById('upload-siswa-csv').value = null;
                 }
             }
         });
@@ -454,24 +457,30 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('download-hasil').addEventListener('click', async () => { const { data } = await supabaseClient.from('hasil_ujian').select('waktu_pengerjaan, nis_siswa, skor_akhir, siswa(nama)'); if (data) { const d = data.map(i => ({ waktu: new Date(i.waktu_pengerjaan).toLocaleString('id-ID'), nis: i.nis_siswa, nama: i.siswa?.nama || 'N/A', skor: i.skor_akhir })); downloadCSV(d, 'hasil_ujian.csv'); } });
     
     document.getElementById('upload-soal-csv').addEventListener('change', (e) => {
-        handleFileUpload(e.target.files[0], 'soal_ujian', (data) =>
-            data.map(row => ({
-                mapel_id: row.mapel_id,
-                pertanyaan: row.pertanyaan,
-                pilihan: [row.opsiA, row.opsiB, row.opsiC, row.opsiD, row.opsiE].filter(Boolean),
-                jawaban_benar: row.jawaban_benar
-            }))
-        );
+        const file = e.target.files[0];
+        if (file) {
+            handleFileUpload(file, 'soal_ujian', (data) =>
+                data.map(row => ({
+                    mapel_id: row.mapel_id,
+                    pertanyaan: row.pertanyaan,
+                    pilihan: [row.opsiA, row.opsiB, row.opsiC, row.opsiD, row.opsiE].filter(Boolean),
+                    jawaban_benar: row.jawaban_benar
+                }))
+            );
+        }
     });
     
     document.getElementById('upload-siswa-csv').addEventListener('change', (e) => {
-        handleFileUpload(e.target.files[0], 'siswa', (data) => 
-            data.map(row => ({
-                nis: row.nis,
-                nama: row.nama,
-                password: row.password
-            }))
-        );
+        const file = e.target.files[0];
+        if (file) {
+            handleFileUpload(file, 'siswa', (data) => 
+                data.map(row => ({
+                    nis: row.nis,
+                    nama: row.nama,
+                    password: row.password
+                }))
+            );
+        }
     });
     
     const setupCheckboxLogic = (selectAllId, checkboxClass, deleteButtonId) => { const selectAllCheckbox = document.getElementById(selectAllId); const deleteButton = document.getElementById(deleteButtonId); const tableBody = selectAllCheckbox.closest('table').querySelector('tbody'); tableBody.addEventListener('change', () => { const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length; deleteButton.classList.toggle('hidden', selected === 0); }); selectAllCheckbox.addEventListener('change', (e) => { document.querySelectorAll(`.${checkboxClass}`).forEach(checkbox => { checkbox.checked = e.target.checked; }); const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length; deleteButton.classList.toggle('hidden', selected === 0); }); };
