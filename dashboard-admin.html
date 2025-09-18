@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // =================================================================
-    // ** BARU: FUNGSI UNTUK MENGHAPUS DATA **
+    // FUNGSI UNTUK MENGHAPUS DATA
     // =================================================================
     const handleDeleteSiswa = async (nis) => {
         if (confirm(`Apakah Anda yakin ingin menghapus siswa dengan NIS ${nis}? Tindakan ini tidak dapat diurungkan.`)) {
@@ -311,8 +311,17 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadCSV([{ nis: '', nama: '', password: '' }], 'template_siswa.csv');
     });
 
+    // ** DIUBAH: Download template soal dengan 5 opsi **
     document.getElementById('download-soal-template').addEventListener('click', () => {
-        downloadCSV([{ pertanyaan: '', pilihan: 'opsiA;opsiB;opsiC;opsiD', jawaban_benar: '' }], 'template_soal.csv');
+        downloadCSV([{ 
+            pertanyaan: '', 
+            opsiA: '', 
+            opsiB: '', 
+            opsiC: '', 
+            opsiD: '', 
+            opsiE: '', 
+            jawaban_benar: '' 
+        }], 'template_soal.csv');
     });
 
     document.getElementById('download-hasil').addEventListener('click', async () => {
@@ -358,13 +367,20 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     });
 
+    // ** DIUBAH: Upload soal dengan 5 opsi **
     document.getElementById('upload-soal-csv').addEventListener('change', (e) => {
         handleFileUpload(e.target.files[0], 'soal_ujian', (data) =>
-            data.map(row => ({
-                pertanyaan: row.pertanyaan,
-                pilihan: row.pilihan.split(';'), // Memecah string menjadi array
-                jawaban_benar: row.jawaban_benar
-            }))
+            data.map(row => {
+                // Mengambil semua opsi yang ada dan memfilternya
+                const pilihanArray = [row.opsiA, row.opsiB, row.opsiC, row.opsiD, row.opsiE]
+                    .filter(opsi => opsi && opsi.trim() !== ''); // Filter opsi yang kosong
+                
+                return {
+                    pertanyaan: row.pertanyaan,
+                    pilihan: pilihanArray,
+                    jawaban_benar: row.jawaban_benar
+                };
+            })
         );
     });
 
@@ -377,7 +393,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => showView(btn.dataset.target));
     });
 
-    // ** BARU: Event listener untuk tombol hapus (menggunakan event delegation) **
     document.getElementById('siswa-table-body').addEventListener('click', (e) => {
         if (e.target && e.target.classList.contains('delete-siswa-btn')) {
             handleDeleteSiswa(e.target.dataset.nis);
@@ -398,4 +413,3 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
-
