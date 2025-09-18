@@ -20,7 +20,7 @@
 </head>
 <body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
 
-    <!-- ** BARU: Modal Peringatan Pelanggaran ** -->
+    <!-- Modal Peringatan Pelanggaran -->
     <div id="violation-warning" class="fixed inset-0 bg-black bg-opacity-80 flex-col items-center justify-center p-4 hidden z-50 text-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-yellow-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -220,13 +220,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 submitExam("Pelanggaran Maksimal");
             }
         } else {
+            // Sembunyikan peringatan saat siswa kembali ke tab
             violationWarningEl.style.display = 'none';
         }
     };
 
+    // ** DIPERBAIKI: Logika untuk deteksi keluar dari fullscreen **
     const handleFullscreenChange = () => {
         if (!document.fullscreenElement && !isExamSubmitted) {
-            handleVisibilityChange();
+            // Ini adalah pelanggaran terpisah
+            violationCount++;
+            violationCountEl.textContent = violationCount;
+            violationWarningEl.style.display = 'flex';
+            if (violationCount >= MAX_VIOLATIONS) {
+                submitExam("Pelanggaran Maksimal");
+            }
         }
     };
     
@@ -267,10 +275,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 siswaSaatIni = data;
                 document.getElementById('student-name').textContent = siswaSaatIni.nama;
                 
-                // ** DIPERBAIKI: Penanganan error saat mengambil jumlah soal **
                 try {
                     const { count, error: countError } = await supabaseClient.from('soal_ujian').select('*', { count: 'exact', head: true });
-                    if (countError) throw countError; // Lemparkan error agar ditangkap oleh catch luar
+                    if (countError) throw countError;
 
                     document.getElementById('total-questions-info').textContent = count || 0;
                     document.getElementById('time-limit-info').textContent = WAKTU_UJIAN;
