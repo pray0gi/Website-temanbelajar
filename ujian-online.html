@@ -32,7 +32,6 @@
             Jumlah Pelanggaran: <span id="violation-count" class="text-red-500">0</span> / 3
         </p>
         <p class="text-sm text-slate-400 mt-4">Jika Anda melakukan 3 kali pelanggaran, ujian akan dihentikan secara otomatis.</p>
-        <!-- ** BARU: Tombol OK pada peringatan ** -->
         <button id="close-warning-btn" class="mt-8 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-8 rounded-lg">OK, Saya Mengerti</button>
     </div>
 
@@ -145,11 +144,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     };
 
-    // ** BARU: Fungsi untuk merender jawaban yang tersimpan **
     const renderSavedAnswers = () => {
         for (const questionName in jawabanSiswa) {
             const answerValue = jawabanSiswa[questionName];
-            // Escape special characters in value for querySelector
             const escapedValue = CSS.escape(answerValue);
             const radioToSelect = document.querySelector(`input[name="${questionName}"][value="${escapedValue}"]`);
             if (radioToSelect) {
@@ -185,7 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
         examContent.addEventListener('change', (e) => {
             if (e.target.type === 'radio') {
                 jawabanSiswa[e.target.name] = e.target.value;
-                // ** BARU: Simpan progres ke sessionStorage setiap kali jawaban berubah **
                 sessionStorage.setItem('savedAnswers', JSON.stringify(jawabanSiswa));
             }
         });
@@ -218,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         document.getElementById('completion-reason').textContent = completionText;
 
-        // ** BARU: Hapus progres tersimpan setelah submit berhasil **
         sessionStorage.removeItem('savedAnswers');
 
         navigateTo('complete');
@@ -312,7 +307,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('start-exam-btn').addEventListener('click', () => {
-        // ** BARU: Cek dan muat progres yang tersimpan sebelum ujian dimulai **
         const savedAnswers = sessionStorage.getItem('savedAnswers');
         if (savedAnswers) {
             jawabanSiswa = JSON.parse(savedAnswers);
@@ -320,8 +314,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.documentElement.requestFullscreen().then(async () => {
             navigateTo('exam');
-            await loadQuestions(); // Tunggu soal selesai dimuat
-            renderSavedAnswers(); // Baru terapkan jawaban yang tersimpan
+            await loadQuestions();
+            renderSavedAnswers();
             startTimer(WAKTU_UJIAN);
             setupCheatingDetection();
         }).catch(err => {
@@ -339,9 +333,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // ** BARU: Event listener untuk tombol OK pada peringatan **
+    // ** DIPERBAIKI: Event listener untuk tombol OK pada peringatan **
     document.getElementById('close-warning-btn').addEventListener('click', () => {
         violationWarningEl.style.display = 'none';
+        // Coba masuk kembali ke mode layar penuh jika siswa belum kembali
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                // Gagal secara diam-diam jika browser menolak, karena siswa sudah diperingatkan.
+                console.warn(`Gagal masuk kembali ke mode layar penuh: ${err.message}`);
+            });
+        }
     });
 });
 </script>
