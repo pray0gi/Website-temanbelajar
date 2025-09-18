@@ -20,34 +20,23 @@
 </head>
 <body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
 
-    <!-- Modal Peringatan Pelanggaran -->
     <div id="violation-warning" class="fixed inset-0 bg-black bg-opacity-80 flex-col items-center justify-center p-4 hidden z-50 text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-yellow-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-yellow-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
         <h2 class="text-4xl font-bold text-yellow-400 mb-4">PERINGATAN!</h2>
         <p class="text-xl text-white mb-2">Anda terdeteksi meninggalkan halaman ujian.</p>
-        <p class="text-lg text-slate-300">Kembali ke halaman ujian sekarang untuk melanjutkan.</p>
-        <p class="text-2xl font-bold mt-6">
-            Jumlah Pelanggaran: <span id="violation-count" class="text-red-500">0</span> / 3
-        </p>
-        <p class="text-sm text-slate-400 mt-4">Jika Anda melakukan 3 kali pelanggaran, ujian akan dihentikan secara otomatis.</p>
-        <button id="close-warning-btn" class="mt-8 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-8 rounded-lg">OK, Saya Mengerti</button>
+        <p class="text-lg text-slate-300">Kembali ke halaman ujian sekarang.</p>
+        <p class="text-2xl font-bold mt-6">Pelanggaran: <span id="violation-count" class="text-red-500">0</span> / 3</p>
+        <button id="close-warning-btn" class="mt-8 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-8 rounded-lg">OK</button>
     </div>
-
-    <!-- ** BARU: Modal Kustom Serbaguna ** -->
     <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md fade-in text-center">
             <h2 id="modal-title" class="text-2xl font-bold mb-4 text-sky-400"></h2>
             <p id="modal-message" class="text-slate-300 mb-6"></p>
-            <div id="modal-buttons" class="flex justify-center space-x-4">
-                <!-- Tombol akan dimuat di sini oleh JavaScript -->
-            </div>
+            <div id="modal-buttons" class="flex justify-center space-x-4"></div>
         </div>
     </div>
 
     <div class="w-full max-w-4xl mx-auto">
-        <!-- Halaman Login -->
         <div data-page="login" class="active fade-in">
             <div class="bg-slate-800 p-8 rounded-xl shadow-2xl max-w-md mx-auto">
                 <h1 class="text-3xl font-bold text-center mb-2 bg-gradient-to-r from-sky-400 to-cyan-300 text-transparent bg-clip-text">Login Siswa</h1>
@@ -66,8 +55,6 @@
                 </form>
             </div>
         </div>
-
-        <!-- Halaman Instruksi -->
         <div data-page="instructions" class="fade-in">
             <div class="bg-slate-800 p-8 rounded-xl shadow-2xl text-center">
                 <h1 class="text-3xl font-bold mb-4 text-cyan-300">Selamat Datang, <span id="student-name"></span>!</h1>
@@ -84,8 +71,6 @@
                 <button id="start-exam-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-transform duration-200 hover:scale-105 text-lg">Mulai Ujian</button>
             </div>
         </div>
-
-        <!-- Halaman Ujian -->
         <div data-page="exam" class="fade-in">
              <div class="bg-slate-800 p-6 md:p-8 rounded-xl shadow-2xl">
                 <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-slate-700 pb-4">
@@ -94,12 +79,10 @@
                 </div>
                 <div id="exam-content"><p class="text-center text-slate-400">Memuat soal...</p></div>
                 <div class="mt-8 text-center">
-                    <button id="submit-exam-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-8 rounded-lg transition-transform duration-200 hover:scale-105 text-lg">Kirim Jawaban</button>
+                    <button id="submit-exam-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-8 rounded-lg">Kirim Jawaban</button>
                 </div>
             </div>
         </div>
-
-        <!-- Halaman Selesai -->
         <div data-page="complete" class="fade-in">
             <div class="bg-slate-800 p-8 rounded-xl shadow-2xl text-center">
                 <h1 class="text-3xl font-bold mb-4 text-green-400">Ujian Selesai!</h1>
@@ -111,16 +94,12 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // =================================================================
     // KONEKSI KE SUPABASE
-    // =================================================================
     const SUPABASE_URL = 'https://mtadhiyfducemvckpnkb.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10YWRoaXlmZHVjZW12Y2twbmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjAwMjcsImV4cCI6MjA3MzczNjAyN30.BbjPW_FDSVN_cpf6uf3xXfZnl0fKgYi2rs-m8ytBWkk';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // =================================================================
-    // VARIABEL GLOBAL & STATE APLIKASI
-    // =================================================================
+    
+    // VARIABEL GLOBAL
     let siswaSaatIni = null;
     let soalUjian = [];
     let timerInterval = null;
@@ -128,56 +107,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const WAKTU_UJIAN = 90;
     let isExamSubmitted = false;
     let isCheatingDetectionActive = false;
-    
     let violationCount = 0;
     const MAX_VIOLATIONS = 3;
     const violationWarningEl = document.getElementById('violation-warning');
     const violationCountEl = document.getElementById('violation-count');
-
-    // ** BARU: Elemen Modal Kustom **
     const customModalEl = document.getElementById('custom-modal');
     const modalTitleEl = document.getElementById('modal-title');
     const modalMessageEl = document.getElementById('modal-message');
     const modalButtonsEl = document.getElementById('modal-buttons');
 
-    // =================================================================
-    // FUNGSI UTAMA
-    // =================================================================
-    const navigateTo = (pageName) => {
-        document.querySelectorAll('[data-page]').forEach(p => p.classList.remove('active'));
-        document.querySelector(`[data-page="${pageName}"]`).classList.add('active');
-    };
-
-    const startTimer = (duration) => {
-        let timer = duration * 60;
-        const timerElement = document.getElementById('timer');
-        timerInterval = setInterval(() => {
-            if (isExamSubmitted) return;
-            const minutes = Math.floor(timer / 60);
-            const seconds = timer % 60;
-            timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            if (--timer < 0) {
-                submitExam("Waktu Habis");
-            }
-        }, 1000);
-    };
-
-    const renderSavedAnswers = () => {
-        for (const questionName in jawabanSiswa) {
-            const answerValue = jawabanSiswa[questionName];
-            const escapedValue = CSS.escape(answerValue);
-            const radioToSelect = document.querySelector(`input[name="${questionName}"][value="${escapedValue}"]`);
-            if (radioToSelect) {
-                radioToSelect.checked = true;
-            }
-        }
-    };
+    // FUNGSI NAVIGASI
+    const navigateTo = (pageName) => { document.querySelectorAll('[data-page]').forEach(p => p.classList.remove('active')); document.querySelector(`[data-page="${pageName}"]`).classList.add('active'); };
     
+    // FUNGSI UJIAN
+    const startTimer = (duration) => { let timer = duration * 60; const timerElement = document.getElementById('timer'); timerInterval = setInterval(() => { if (isExamSubmitted) return; const minutes = Math.floor(timer / 60); const seconds = timer % 60; timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; if (--timer < 0) submitExam("Waktu Habis"); }, 1000); };
+    const renderSavedAnswers = () => { for (const qName in jawabanSiswa) { const aValue = jawabanSiswa[qName]; const radio = document.querySelector(`input[name="${qName}"][value="${CSS.escape(aValue)}"]`); if (radio) radio.checked = true; } };
+
     const loadQuestions = async () => {
         const examContent = document.getElementById('exam-content');
-        const { data, error } = await supabaseClient.from('soal_ujian').select('*');
+        const { data, error } = await supabaseClient.from('soal_ujian').select('id, pertanyaan, pilihan, jawaban_benar, url_gambar');
         if (error) {
-            examContent.innerHTML = `<p class="text-center text-red-400">Gagal memuat soal. Coba muat ulang halaman.</p>`;
+            examContent.innerHTML = `<p class="text-center text-red-400">Gagal memuat soal.</p>`;
             return;
         }
         soalUjian = data;
@@ -185,16 +135,9 @@ document.addEventListener('DOMContentLoaded', () => {
         soalUjian.forEach((soal, index) => {
             const soalDiv = document.createElement('div');
             soalDiv.className = 'mb-6 pb-4 border-b border-slate-700';
-            let pilihanHTML = soal.pilihan.map(p => `
-                <div>
-                    <input type="radio" id="soal-${soal.id}-${p}" name="soal-${soal.id}" value="${p}" class="hidden jawaban-radio">
-                    <label for="soal-${soal.id}-${p}" class="block p-3 rounded-lg border-2 border-slate-600 hover:bg-slate-700 cursor-pointer transition-colors">${p}</label>
-                </div>
-            `).join('');
-            soalDiv.innerHTML = `
-                <p class="text-lg text-slate-200 mb-4">${index + 1}. ${soal.pertanyaan}</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">${pilihanHTML}</div>
-            `;
+            const imageHtml = soal.url_gambar ? `<div class="mb-4"><img src="${soal.url_gambar}" alt="Gambar Soal ${index + 1}" class="max-h-64 w-auto mx-auto rounded-lg"></div>` : '';
+            let pilihanHTML = soal.pilihan.map(p => `<div><input type="radio" id="soal-${soal.id}-${p}" name="soal-${soal.id}" value="${p}" class="hidden jawaban-radio"><label for="soal-${soal.id}-${p}" class="block p-3 rounded-lg border-2 border-slate-600 hover:bg-slate-700 cursor-pointer">${p}</label></div>`).join('');
+            soalDiv.innerHTML = `${imageHtml}<p class="text-lg text-slate-200 mb-4">${index + 1}. ${soal.pertanyaan}</p><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${pilihanHTML}</div>`;
             examContent.appendChild(soalDiv);
         });
         examContent.addEventListener('change', (e) => {
@@ -205,204 +148,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const submitExam = async (reason = "Jawaban telah dikirim") => {
-        if (isExamSubmitted) return;
-        isExamSubmitted = true;
-        
-        clearInterval(timerInterval);
-        removeCheatingDetection();
-        
-        let correctAnswers = 0;
-        soalUjian.forEach(soal => {
-            const jawaban = jawabanSiswa[`soal-${soal.id}`];
-            if (jawaban === soal.jawaban_benar) correctAnswers++;
-        });
-        const skorAkhir = soalUjian.length > 0 ? parseInt(((correctAnswers / soalUjian.length) * 100).toFixed(0)) : 0;
-
-        await supabaseClient.from('hasil_ujian').insert([{ nis_siswa: siswaSaatIni.nis, jawaban_siswa: jawabanSiswa, skor_akhir: skorAkhir }]);
-        await supabaseClient.from('siswa').update({ sudah_mengerjakan: true }).eq('nis', siswaSaatIni.nis);
-
-        document.getElementById('student-name-final').textContent = siswaSaatIni.nama;
-        
-        let completionText = "";
-        if (reason === "Waktu Habis") {
-            completionText = "Waktu pengerjaan Anda telah habis.";
-        } else if (reason === "Pelanggaran Maksimal") {
-            completionText = "Ujian dihentikan karena terdeteksi pelanggaran.";
-        }
-        document.getElementById('completion-reason').textContent = completionText;
-
-        sessionStorage.removeItem('savedAnswers');
-
-        navigateTo('complete');
-        
-        if (document.fullscreenElement) {
-            document.exitFullscreen();
-        }
-    };
-
-    // =================================================================
-    // ** BARU: Sistem Modal Kustom **
-    // =================================================================
-    const showModal = (title, message, buttons) => {
-        removeCheatingDetection(); // Jeda deteksi saat modal muncul
-        modalTitleEl.textContent = title;
-        modalMessageEl.textContent = message;
-        modalButtonsEl.innerHTML = ''; // Kosongkan tombol sebelumnya
-        
-        buttons.forEach(btnInfo => {
-            const button = document.createElement('button');
-            button.textContent = btnInfo.text;
-            button.className = btnInfo.class;
-            button.onclick = btnInfo.onClick;
-            modalButtonsEl.appendChild(button);
-        });
-
-        customModalEl.classList.remove('hidden');
-        customModalEl.classList.add('flex');
-    };
-
-    const hideModal = () => {
-        customModalEl.classList.add('hidden');
-        customModalEl.classList.remove('flex');
-        // Aktifkan kembali deteksi jika ujian belum selesai dan masih dalam fullscreen
-        if (!isExamSubmitted && document.fullscreenElement) {
-            setupCheatingDetection();
-        }
-    };
-
-    // =================================================================
-    // FUNGSI DETEKSI KECURANGAN
-    // =================================================================
-    const handleVisibilityChange = () => {
-        if (!isCheatingDetectionActive) return;
-        if (document.hidden && !isExamSubmitted) {
-            violationCount++;
-            violationCountEl.textContent = violationCount;
-            violationWarningEl.style.display = 'flex';
-            if (violationCount >= MAX_VIOLATIONS) {
-                submitExam("Pelanggaran Maksimal");
-            }
-        }
-    };
-
-    const handleFullscreenChange = () => {
-        if (!isCheatingDetectionActive) return;
-        if (!document.fullscreenElement && !isExamSubmitted) {
-            violationCount++;
-            violationCountEl.textContent = violationCount;
-            violationWarningEl.style.display = 'flex';
-            if (violationCount >= MAX_VIOLATIONS) {
-                submitExam("Pelanggaran Maksimal");
-            }
-        }
-    };
+    const submitExam = async (reason = "Jawaban dikirim") => { if (isExamSubmitted) return; isExamSubmitted = true; clearInterval(timerInterval); removeCheatingDetection(); let correct = 0; soalUjian.forEach(s => { if (jawabanSiswa[`soal-${s.id}`] === s.jawaban_benar) correct++; }); const skor = soalUjian.length > 0 ? parseInt(((correct / soalUjian.length) * 100).toFixed(0)) : 0; await supabaseClient.from('hasil_ujian').insert([{ nis_siswa: siswaSaatIni.nis, jawaban_siswa: jawabanSiswa, skor_akhir: skor }]); await supabaseClient.from('siswa').update({ sudah_mengerjakan: true }).eq('nis', siswaSaatIni.nis); document.getElementById('student-name-final').textContent = siswaSaatIni.nama; let completionText = ""; if (reason === "Waktu Habis") completionText = "Waktu pengerjaan habis."; else if (reason === "Pelanggaran Maksimal") completionText = "Ujian dihentikan karena pelanggaran."; document.getElementById('completion-reason').textContent = completionText; sessionStorage.removeItem('savedAnswers'); navigateTo('complete'); if (document.fullscreenElement) document.exitFullscreen(); };
     
-    const setupCheatingDetection = () => {
-        isCheatingDetectionActive = true;
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-    };
-
-    const removeCheatingDetection = () => {
-        isCheatingDetectionActive = false;
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-        document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    };
-
-    // =================================================================
+    // FUNGSI MODAL & DETEKSI KECURANGAN
+    const showModal = (title, message, buttons) => { removeCheatingDetection(); modalTitleEl.textContent = title; modalMessageEl.textContent = message; modalButtonsEl.innerHTML = ''; buttons.forEach(b => { const btn = document.createElement('button'); btn.textContent = b.text; btn.className = b.class; btn.onclick = b.onClick; modalButtonsEl.appendChild(btn); }); customModalEl.classList.remove('hidden'); customModalEl.classList.add('flex'); };
+    const hideModal = () => { customModalEl.classList.add('hidden'); if (!isExamSubmitted && document.fullscreenElement) setupCheatingDetection(); };
+    const handleVisibilityChange = () => { if (!isCheatingDetectionActive) return; if (document.hidden && !isExamSubmitted) { violationCount++; violationCountEl.textContent = violationCount; violationWarningEl.style.display = 'flex'; if (violationCount >= MAX_VIOLATIONS) submitExam("Pelanggaran Maksimal"); } };
+    const handleFullscreenChange = () => { if (!isCheatingDetectionActive) return; if (!document.fullscreenElement && !isExamSubmitted) { violationCount++; violationCountEl.textContent = violationCount; violationWarningEl.style.display = 'flex'; if (violationCount >= MAX_VIOLATIONS) submitExam("Pelanggaran Maksimal"); } };
+    const setupCheatingDetection = () => { isCheatingDetectionActive = true; document.addEventListener('visibilitychange', handleVisibilityChange); document.addEventListener('fullscreenchange', handleFullscreenChange); };
+    const removeCheatingDetection = () => { isCheatingDetectionActive = false; document.removeEventListener('visibilitychange', handleVisibilityChange); document.removeEventListener('fullscreenchange', handleFullscreenChange); };
+    
     // EVENT LISTENERS
-    // =================================================================
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const nis = document.getElementById('nis').value;
-        const password = document.getElementById('password').value;
-        const loginError = document.getElementById('login-error');
-        const loginBtn = document.getElementById('login-btn');
-        loginError.textContent = '';
-        
-        loginBtn.disabled = true;
-        loginBtn.textContent = 'Memeriksa...';
-        
-        try {
-            const { data, error } = await supabaseClient.from('siswa').select('*').eq('nis', nis).single();
+    document.getElementById('login-form').addEventListener('submit', async (e) => { e.preventDefault(); const nis = document.getElementById('nis').value; const password = document.getElementById('password').value; const loginError = document.getElementById('login-error'); const loginBtn = document.getElementById('login-btn'); loginError.textContent = ''; loginBtn.disabled = true; loginBtn.textContent = 'Memeriksa...'; try { const { data, error } = await supabaseClient.from('siswa').select('*').eq('nis', nis).single(); if (error || !data) loginError.textContent = 'NIS tidak ditemukan.'; else if (data.password !== password) loginError.textContent = 'Password salah.'; else if (data.sudah_mengerjakan) loginError.textContent = 'Anda sudah pernah mengerjakan ujian ini.'; else { siswaSaatIni = data; document.getElementById('student-name').textContent = siswaSaatIni.nama; try { const { count, error: countError } = await supabaseClient.from('soal_ujian').select('*', { count: 'exact', head: true }); if (countError) throw countError; document.getElementById('total-questions-info').textContent = count || 0; document.getElementById('time-limit-info').textContent = WAKTU_UJIAN; navigateTo('instructions'); } catch (countErr) { loginError.textContent = 'Gagal mengambil data ujian.'; } } } catch (err) { loginError.textContent = 'Kesalahan jaringan.'; } finally { loginBtn.disabled = false; loginBtn.textContent = 'Masuk'; } });
+    document.getElementById('start-exam-btn').addEventListener('click', () => { const savedAnswers = sessionStorage.getItem('savedAnswers'); if (savedAnswers) jawabanSiswa = JSON.parse(savedAnswers); document.documentElement.requestFullscreen().then(async () => { navigateTo('exam'); await loadQuestions(); renderSavedAnswers(); startTimer(WAKTU_UJIAN); setupCheatingDetection(); }).catch(err => { showModal('Peringatan', `Gagal masuk mode layar penuh: ${err.message}`, [{ text: 'OK', class: 'bg-sky-600 text-white font-bold py-2 px-6 rounded-lg', onClick: hideModal }]); }); });
+    document.getElementById('submit-exam-btn').addEventListener('click', () => { if (Object.keys(jawabanSiswa).length < soalUjian.length) { showModal('Peringatan', 'Anda harus menjawab semua soal.', [{ text: 'OK', class: 'bg-sky-600 text-white font-bold py-2 px-6 rounded-lg', onClick: hideModal }]); return; } showModal('Konfirmasi', 'Yakin ingin mengirim jawaban?', [{ text: 'Batal', class: 'bg-slate-600 text-white font-semibold py-2 px-6 rounded-lg', onClick: hideModal }, { text: 'Ya, Kirim', class: 'bg-green-600 text-white font-bold py-2 px-6 rounded-lg', onClick: () => { hideModal(); submitExam(); }}]); });
+    document.getElementById('close-warning-btn').addEventListener('click', () => { violationWarningEl.style.display = 'none'; if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(err => console.warn(err.message)); });
 
-            if (error || !data) {
-                loginError.textContent = 'NIS tidak ditemukan.';
-            } else if (data.password !== password) {
-                loginError.textContent = 'Password salah.';
-            } else if (data.sudah_mengerjakan) {
-                loginError.textContent = 'Anda sudah pernah mengerjakan ujian ini.';
-            } else {
-                siswaSaatIni = data;
-                document.getElementById('student-name').textContent = siswaSaatIni.nama;
-                
-                try {
-                    const { count, error: countError } = await supabaseClient.from('soal_ujian').select('*', { count: 'exact', head: true });
-                    if (countError) throw countError;
-
-                    document.getElementById('total-questions-info').textContent = count || 0;
-                    document.getElementById('time-limit-info').textContent = WAKTU_UJIAN;
-                    navigateTo('instructions');
-                } catch (countErr) {
-                    loginError.textContent = 'Gagal mengambil data ujian. Coba lagi.';
-                    console.error("Error fetching question count:", countErr);
-                }
-            }
-        } catch (err) {
-            loginError.textContent = 'Terjadi kesalahan jaringan. Coba lagi.';
-            console.error("Login error:", err);
-        } finally {
-            loginBtn.disabled = false;
-            loginBtn.textContent = 'Masuk';
-        }
-    });
-
-    document.getElementById('start-exam-btn').addEventListener('click', () => {
-        const savedAnswers = sessionStorage.getItem('savedAnswers');
-        if (savedAnswers) {
-            jawabanSiswa = JSON.parse(savedAnswers);
-        }
-
-        document.documentElement.requestFullscreen().then(async () => {
-            navigateTo('exam');
-            await loadQuestions();
-            renderSavedAnswers();
-            startTimer(WAKTU_UJIAN);
-            setupCheatingDetection();
-        }).catch(err => {
-            showModal('Peringatan', `Gagal masuk mode layar penuh. Fitur ini diperlukan untuk ujian. Error: ${err.message}`, [
-                { text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg', onClick: hideModal }
-            ]);
-        });
-    });
-
-    // ** DIPERBAIKI: Menggunakan Modal Kustom **
-    document.getElementById('submit-exam-btn').addEventListener('click', () => {
-        if (Object.keys(jawabanSiswa).length < soalUjian.length) {
-            showModal('Peringatan', 'Anda harus menjawab semua soal sebelum dapat mengirimkan jawaban.', [
-                { text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg', onClick: hideModal }
-            ]);
-            return;
-        }
-
-        showModal('Konfirmasi Pengiriman', 'Apakah Anda yakin ingin mengirimkan jawaban Anda? Anda tidak bisa mengubahnya lagi setelah ini.', [
-            { text: 'Batal', class: 'bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-6 rounded-lg', onClick: hideModal },
-            { text: 'Ya, Kirim', class: 'bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg', onClick: () => {
-                hideModal();
-                submitExam();
-            }}
-        ]);
-    });
-    
-    document.getElementById('close-warning-btn').addEventListener('click', () => {
-        violationWarningEl.style.display = 'none';
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => {
-                console.warn(`Gagal masuk kembali ke mode layar penuh: ${err.message}`);
-            });
-        }
-    });
 });
 </script>
 </body>
