@@ -135,7 +135,6 @@
                 <div class="bg-slate-800 p-6 rounded-xl">
                     <div class="flex flex-col md:flex-row justify-between items-start mb-4">
                          <h2 class="text-2xl font-bold text-cyan-300 mb-2">Hasil Pengerjaan Siswa</h2>
-                         <!-- ** BARU: Filter Hasil Ujian ** -->
                          <div class="flex items-center gap-2">
                             <label for="filter-hasil-mapel" class="text-sm">Filter:</label>
                             <select id="filter-hasil-mapel" class="bg-slate-700 text-white p-2 rounded-md text-sm">
@@ -252,13 +251,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const { data, error } = await supabaseClient.from('mata_pelajaran').select('id, nama_mapel');
         if (data) {
             mataPelajaranList = data;
-            // ** DIUBAH: Populate kedua filter dropdown **
             const filterSoalSelect = document.getElementById('filter-mapel');
             const filterHasilSelect = document.getElementById('filter-hasil-mapel');
-            
             filterSoalSelect.innerHTML = '<option value="all">Semua Mata Pelajaran</option>';
             filterHasilSelect.innerHTML = '<option value="all">Semua Mata Pelajaran</option>';
-
             data.forEach(mapel => {
                 const option = document.createElement('option');
                 option.value = mapel.id;
@@ -269,7 +265,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const fetchAndRenderSiswa = async () => { const { data } = await supabaseClient.from('siswa').select('*').order('nis'); if (data) { const tbody = document.getElementById('siswa-table-body'); tbody.innerHTML = data.map(s => `<tr><td class="p-3 w-4"><input type="checkbox" class="siswa-checkbox" data-nis="${s.nis}"></td><td class="p-3">${s.nis}</td><td class="p-3">${s.nama}</td><td class="p-3 ${s.sudah_mengerjakan ? 'text-green-400' : 'text-yellow-400'}">${s.sudah_mengerjakan ? 'Sudah' : 'Belum'}</td><td class="p-3">${s.sudah_mengerjakan ? `<button class="text-green-400 hover:text-green-600 font-semibold mr-4 reset-siswa-btn" data-nis="${s.nis}">Reset</button>` : ''}<button class="text-red-400 hover:text-red-600 font-semibold delete-siswa-btn" data-nis="${s.nis}">Hapus</button></td></tr>`).join(''); } };
+    // ** DIPERBAIKI: Fungsi render siswa untuk mengembalikan tombol reset **
+    const fetchAndRenderSiswa = async () => {
+        const { data, error } = await supabaseClient.from('siswa').select('*').order('nis');
+        if (data) {
+            const tbody = document.getElementById('siswa-table-body');
+            tbody.innerHTML = data.map(s => `
+                <tr class="border-b border-slate-700">
+                    <td class="p-3 w-4"><input type="checkbox" class="siswa-checkbox" data-nis="${s.nis}"></td>
+                    <td class="p-3">${s.nis}</td>
+                    <td class="p-3">${s.nama}</td>
+                    <td class="p-3 ${s.sudah_mengerjakan ? 'text-green-400' : 'text-yellow-400'}">${s.sudah_mengerjakan ? 'Sudah' : 'Belum'}</td>
+                    <td class="p-3">
+                        ${s.sudah_mengerjakan ? `<button class="text-green-400 hover:text-green-600 font-semibold mr-4 reset-siswa-btn" data-nis="${s.nis}">Reset</button>` : ''}
+                        <button class="text-red-400 hover:text-red-600 font-semibold delete-siswa-btn" data-nis="${s.nis}">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    };
 
     const fetchAndRenderSoal = async () => {
         const filterMapelId = document.getElementById('filter-mapel').value;
@@ -298,15 +312,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // ** DIUBAH: Query hasil ujian sekarang menggunakan filter **
     const fetchAndRenderHasil = async () => {
         const filterMapelId = document.getElementById('filter-hasil-mapel').value;
         let query = supabaseClient.from('hasil_ujian').select('*, siswa(nama), mata_pelajaran(nama_mapel)').order('waktu_pengerjaan', { ascending: false });
-
         if (filterMapelId && filterMapelId !== 'all') {
             query = query.eq('mapel_id', filterMapelId);
         }
-
         const { data, error } = await query;
         if (data) {
             const tableBody = document.getElementById('hasil-table-body');
@@ -322,10 +333,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // ... (Fungsi hapus, reset, edit, dan CSV tetap sama) ...
+    // ** DIPERBAIKI: Fungsi reset siswa dikembalikan **
+    const handleResetSiswa = async (nis) => {
+        if (confirm(`Apakah Anda yakin ingin mereset status ujian untuk siswa NIS ${nis}? Siswa ini akan dapat mengerjakan ujian kembali untuk SEMUA mata pelajaran.`)) {
+            // Hapus semua hasil ujian siswa tersebut
+            const { error: deleteError } = await supabaseClient.from('hasil_ujian').delete().eq('nis_siswa', nis);
+            if (deleteError) {
+                return alert('Gagal menghapus hasil ujian lama: ' + deleteError.message);
+            }
+            // Update status siswa menjadi 'belum mengerjakan'
+            const { error: updateError } = await supabaseClient.from('siswa').update({ sudah_mengerjakan: false }).eq('nis', nis);
+            if (updateError) {
+                alert('Gagal mereset status siswa: ' + updateError.message);
+            } else {
+                alert('Status siswa berhasil direset.');
+                loadInitialData();
+            }
+        }
+    };
+
+    // ... (Sisa fungsi tidak berubah) ...
     const handleDeleteSiswa = async (nis) => { if (confirm(`Hapus siswa NIS ${nis}?`)) { await supabaseClient.from('siswa').delete().eq('nis', nis); loadInitialData(); } };
     const handleDeleteSoal = async (id) => { if (confirm(`Hapus soal ID ${id}?`)) { await supabaseClient.from('soal_ujian').delete().eq('id', id); loadInitialData(); } };
-    const handleResetSiswa = async (nis) => { if (confirm(`Reset status ujian untuk NIS ${nis}?`)) { await supabaseClient.from('hasil_ujian').delete().eq('nis_siswa', nis); await supabaseClient.from('siswa').update({ sudah_mengerjakan: false }).eq('nis', nis); loadInitialData(); } };
     const handleDeleteSelectedSiswa = async () => { const nisToDelete = Array.from(document.querySelectorAll('.siswa-checkbox:checked')).map(cb => cb.dataset.nis); if (nisToDelete.length === 0) return; if (confirm(`Hapus ${nisToDelete.length} siswa?`)) { await supabaseClient.from('siswa').delete().in('nis', nisToDelete); loadInitialData(); } };
     const handleDeleteSelectedSoal = async () => { const idsToDelete = Array.from(document.querySelectorAll('.soal-checkbox:checked')).map(cb => cb.dataset.id); if (idsToDelete.length === 0) return; if (confirm(`Hapus ${idsToDelete.length} soal?`)) { await supabaseClient.from('soal_ujian').delete().in('id', idsToDelete); loadInitialData(); } };
     const editSoalModal = document.getElementById('edit-soal-modal'); const editSoalForm = document.getElementById('edit-soal-form'); const imageUploadInput = document.getElementById('image-upload'); const imagePreview = document.getElementById('image-preview'); let imageFileToUpload = null; let shouldRemoveImage = false;
@@ -349,7 +378,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
     document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.target)));
     
-    document.getElementById('siswa-table-body').addEventListener('click', (e) => { if (e.target.classList.contains('delete-siswa-btn')) handleDeleteSiswa(e.target.dataset.nis); if (e.target.classList.contains('reset-siswa-btn')) handleResetSiswa(e.target.dataset.nis); });
+    // ** DIPERBAIKI: Event listener untuk reset **
+    document.getElementById('siswa-table-body').addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-siswa-btn')) handleDeleteSiswa(e.target.dataset.nis);
+        if (e.target.classList.contains('reset-siswa-btn')) handleResetSiswa(e.target.dataset.nis);
+    });
+    
     document.getElementById('soal-table-body').addEventListener('click', (e) => { if (e.target.classList.contains('delete-soal-btn')) handleDeleteSoal(e.target.dataset.id); if (e.target.classList.contains('edit-soal-btn')) openEditSoalModal(e.target.dataset.id); });
     
     document.getElementById('delete-selected-siswa-btn').addEventListener('click', handleDeleteSelectedSiswa);
@@ -363,7 +397,6 @@ document.addEventListener('DOMContentLoaded', () => {
     editSoalModal.addEventListener('click', (e) => { if (e.target === editSoalModal) closeEditSoalModal(); });
     
     document.getElementById('filter-mapel').addEventListener('change', fetchAndRenderSoal);
-    // ** BARU: Event listener untuk filter hasil **
     document.getElementById('filter-hasil-mapel').addEventListener('change', fetchAndRenderHasil);
     
     document.getElementById('refresh-data-btn').addEventListener('click', loadInitialData);
