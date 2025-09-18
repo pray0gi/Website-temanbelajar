@@ -16,7 +16,6 @@
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .jawaban-radio:checked + label { border-color: #38bdf8; background-color: #0c4a6e; }
-        /* ** BARU: Style untuk pembahasan ** */
         .correct-answer-review { border-left: 4px solid #22c55e; }
         .incorrect-answer-review { border-left: 4px solid #ef4444; }
     </style>
@@ -103,13 +102,13 @@
                     <p id="final-score" class="text-5xl font-bold my-4 text-sky-400"></p>
                 </div>
                 
-                <!-- ** BARU: Kontainer untuk pembahasan ** -->
                 <div id="review-container" class="space-y-6 max-h-[50vh] overflow-y-auto pr-4">
                     <!-- Pembahasan akan dimuat di sini -->
                 </div>
 
                 <div class="mt-8 text-center">
-                    <button id="back-to-selection-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-8 rounded-lg">Kembali ke Pemilihan Mapel</button>
+                    <!-- ** DIUBAH: Tombol Selesai ** -->
+                    <button id="finish-review-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-8 rounded-lg">Selesai</button>
                 </div>
             </div>
         </div>
@@ -131,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const WAKTU_UJIAN = 90;
     let isExamSubmitted = false;
     
+    // ... (Elemen Modal tidak berubah) ...
     const customModalEl = document.getElementById('custom-modal');
     const modalTitleEl = document.getElementById('modal-title');
     const modalMessageEl = document.getElementById('modal-message');
@@ -141,14 +141,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // FUNGSI UJIAN
     const startTimer = (duration) => { let timer = duration * 60; const timerElement = document.getElementById('timer'); timerInterval = setInterval(() => { if (isExamSubmitted) return; const minutes = Math.floor(timer / 60); const seconds = timer % 60; timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; if (--timer < 0) submitExam(); }, 1000); };
-
+    
+    // ... (Fungsi loadQuestions tidak berubah) ...
     const loadQuestions = async () => {
         const examContent = document.getElementById('exam-content');
         const { data, error } = await supabaseClient.from('soal_ujian').select('*').eq('mapel_id', mapelSaatIni.id);
-        if (error) {
-            examContent.innerHTML = `<p class="text-center text-red-400">Gagal memuat soal.</p>`;
-            return;
-        }
+        if (error) { examContent.innerHTML = `<p class="text-center text-red-400">Gagal memuat soal.</p>`; return; }
         for (let i = data.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [data[i], data[j]] = [data[j], data[i]]; }
         soalUjian = data;
         examContent.innerHTML = '';
@@ -160,28 +158,50 @@ document.addEventListener('DOMContentLoaded', () => {
             soalDiv.innerHTML = `<p class="text-lg text-slate-200">${index + 1}. ${soal.pertanyaan}</p>${imageHtml}<div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">${pilihanHTML}</div>`;
             examContent.appendChild(soalDiv);
         });
-        examContent.addEventListener('change', (e) => {
-            if (e.target.type === 'radio') {
-                jawabanSiswa[e.target.name] = e.target.value;
-            }
-        });
+        examContent.addEventListener('change', (e) => { if (e.target.type === 'radio') { jawabanSiswa[e.target.name] = e.target.value; } });
     };
     
-    // ** DIUBAH: Fungsi submit untuk menampilkan pembahasan **
-    const submitExam = () => {
+    // ** DIUBAH: Logika submit untuk merekam percobaan pertama & terakhir **
+    const submitExam = async () => {
         if (isExamSubmitted) return;
         isExamSubmitted = true;
         clearInterval(timerInterval);
         
         let correctAnswers = 0;
+        soalUjian.forEach(soal => {
+            if (jawabanSiswa[`soal-${soal.id}`] === soal.jawaban_benar) correctAnswers++;
+        });
+        const skorAkhir = soalUjian.length > 0 ? parseInt(((correctAnswers / soalUjian.length) * 100).toFixed(0)) : 0;
+
+        // Cek apakah percobaan pertama sudah ada
+        const { data: firstAttempt, error: checkError } = await supabaseClient.from('hasil_latihan')
+            .select('id')
+            .eq('nis_siswa', siswaSaatIni.nis)
+            .eq('mapel_id', mapelSaatIni.id)
+            .eq('jenis_percobaan', 'pertama')
+            .maybeSingle();
+
+        if (firstAttempt) {
+            // Jika sudah ada, ini percobaan selanjutnya, jadi UPDATE yang 'terakhir'
+            await supabaseClient.from('hasil_latihan')
+                .update({ skor: skorAkhir, waktu_pengerjaan: new Date().toISOString() })
+                .eq('nis_siswa', siswaSaatIni.nis)
+                .eq('mapel_id', mapelSaatIni.id)
+                .eq('jenis_percobaan', 'terakhir');
+        } else {
+            // Jika belum ada, ini percobaan pertama, INSERT 'pertama' dan 'terakhir'
+            await supabaseClient.from('hasil_latihan').insert([
+                { nis_siswa: siswaSaatIni.nis, mapel_id: mapelSaatIni.id, skor: skorAkhir, jenis_percobaan: 'pertama' },
+                { nis_siswa: siswaSaatIni.nis, mapel_id: mapelSaatIni.id, skor: skorAkhir, jenis_percobaan: 'terakhir' }
+            ]);
+        }
+
+        // Tampilkan pembahasan (logika ini tetap sama)
         const reviewContainer = document.getElementById('review-container');
         reviewContainer.innerHTML = '';
-
         soalUjian.forEach((soal, index) => {
             const jawaban = jawabanSiswa[`soal-${soal.id}`];
             const isCorrect = jawaban === soal.jawaban_benar;
-            if (isCorrect) correctAnswers++;
-
             const reviewHtml = `
                 <div class="p-4 rounded-lg ${isCorrect ? 'correct-answer-review bg-green-900/20' : 'incorrect-answer-review bg-red-900/20'}">
                     <p class="font-semibold text-slate-300">${index + 1}. ${soal.pertanyaan}</p>
@@ -192,26 +212,19 @@ document.addEventListener('DOMContentLoaded', () => {
             reviewContainer.innerHTML += reviewHtml;
         });
         
-        const skorAkhir = soalUjian.length > 0 ? parseInt(((correctAnswers / soalUjian.length) * 100).toFixed(0)) : 0;
-        
         document.getElementById('student-name-final').textContent = siswaSaatIni.nama;
         document.getElementById('final-score').textContent = `Skor Anda: ${skorAkhir}`;
         navigateTo('complete');
     };
 
-    const showModal = (title, message, buttons) => {
-        // ... (fungsi modal tidak berubah)
-    };
-    const hideModal = () => {
-        // ... (fungsi modal tidak berubah)
-    };
+    // ... (Fungsi modal tidak berubah) ...
+    const showModal = (title, message, buttons) => { /* ... */ };
+    const hideModal = () => { /* ... */ };
     
+    // ... (Fungsi showMapelSelection tidak berubah) ...
     const showMapelSelection = async () => {
         const { data: mapelList, error } = await supabaseClient.from('mata_pelajaran').select('*');
-        if (error) {
-            document.getElementById('mapel-list').innerHTML = `<p class="text-red-400">Gagal memuat mata pelajaran.</p>`;
-            return;
-        }
+        if (error) { document.getElementById('mapel-list').innerHTML = `<p class="text-red-400">Gagal memuat mata pelajaran.</p>`; return; }
         const mapelListEl = document.getElementById('mapel-list');
         mapelListEl.innerHTML = '';
         mapelList.forEach(mapel => {
@@ -245,21 +258,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             const { data, error } = await supabaseClient.from('siswa').select('*').eq('nis', nis).single();
-            if (error || !data) {
-                loginError.textContent = 'NIS tidak ditemukan.';
-            } else if (data.password !== password) {
-                loginError.textContent = 'Password salah.';
-            } else {
-                siswaSaatIni = data;
-                document.getElementById('student-name-select').textContent = siswaSaatIni.nama;
-                showMapelSelection();
-            }
-        } catch (err) {
-            loginError.textContent = 'Kesalahan jaringan.';
-        } finally {
-            loginBtn.disabled = false;
-            loginBtn.textContent = 'Masuk';
-        }
+            if (error || !data) { loginError.textContent = 'NIS tidak ditemukan.'; } 
+            else if (data.password !== password) { loginError.textContent = 'Password salah.'; } 
+            else { siswaSaatIni = data; document.getElementById('student-name-select').textContent = siswaSaatIni.nama; showMapelSelection(); }
+        } catch (err) { loginError.textContent = 'Kesalahan jaringan.'; } 
+        finally { loginBtn.disabled = false; loginBtn.textContent = 'Masuk'; }
     });
 
     document.getElementById('start-exam-btn').addEventListener('click', async () => {
@@ -272,7 +275,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('submit-exam-btn').addEventListener('click', submitExam);
     
-    document.getElementById('back-to-selection-btn').addEventListener('click', showMapelSelection);
+    // ** DIUBAH: Tombol baru untuk menyelesaikan review **
+    document.getElementById('finish-review-btn').addEventListener('click', showMapelSelection);
 });
 </script>
 </body>
