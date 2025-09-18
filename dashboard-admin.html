@@ -60,7 +60,10 @@
             <!-- View Manajemen Siswa -->
             <div data-view="siswa" class="active">
                 <div class="bg-slate-800 p-6 rounded-xl">
-                    <h2 class="text-2xl font-bold mb-4 text-cyan-300">Daftar Siswa</h2>
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold text-cyan-300 mb-4 md:mb-0">Daftar Siswa</h2>
+                        <button id="delete-selected-siswa-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg hidden">Hapus Siswa Terpilih</button>
+                    </div>
                     <div class="flex flex-wrap gap-4 mb-4">
                         <button id="download-siswa-template" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">Download Template CSV</button>
                         <input type="file" id="upload-siswa-csv" class="hidden" accept=".csv">
@@ -70,6 +73,7 @@
                         <table class="w-full text-left">
                             <thead class="bg-slate-700">
                                 <tr>
+                                    <th class="p-3 w-4"><input type="checkbox" id="select-all-siswa"></th>
                                     <th class="p-3">NIS</th>
                                     <th class="p-3">Nama</th>
                                     <th class="p-3">Sudah Mengerjakan</th>
@@ -87,7 +91,10 @@
             <!-- View Manajemen Soal -->
             <div data-view="soal">
                  <div class="bg-slate-800 p-6 rounded-xl">
-                    <h2 class="text-2xl font-bold mb-4 text-cyan-300">Bank Soal Ujian</h2>
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold text-cyan-300 mb-4 md:mb-0">Bank Soal Ujian</h2>
+                        <button id="delete-selected-soal-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg hidden">Hapus Soal Terpilih</button>
+                    </div>
                     <div class="flex flex-wrap gap-4 mb-4">
                         <button id="download-soal-template" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">Download Template CSV</button>
                         <input type="file" id="upload-soal-csv" class="hidden" accept=".csv">
@@ -97,6 +104,7 @@
                         <table class="w-full text-left">
                             <thead class="bg-slate-700">
                                 <tr>
+                                    <th class="p-3 w-4"><input type="checkbox" id="select-all-soal"></th>
                                     <th class="p-3">ID</th>
                                     <th class="p-3">Pertanyaan</th>
                                     <th class="p-3">Jawaban Benar</th>
@@ -222,6 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tableBody = document.getElementById('siswa-table-body');
             tableBody.innerHTML = data.map(s => `
                 <tr class="border-b border-slate-700">
+                    <td class="p-3 w-4"><input type="checkbox" class="siswa-checkbox" data-nis="${s.nis}"></td>
                     <td class="p-3">${s.nis}</td>
                     <td class="p-3">${s.nama}</td>
                     <td class="p-3 ${s.sudah_mengerjakan ? 'text-green-400' : 'text-yellow-400'}">${s.sudah_mengerjakan ? 'Sudah' : 'Belum'}</td>
@@ -239,6 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tableBody = document.getElementById('soal-table-body');
             tableBody.innerHTML = data.map(s => `
                 <tr class="border-b border-slate-700">
+                    <td class="p-3 w-4"><input type="checkbox" class="soal-checkbox" data-id="${s.id}"></td>
                     <td class="p-3">${s.id}</td>
                     <td class="p-3">${s.pertanyaan}</td>
                     <td class="p-3 text-green-400">${s.jawaban_benar}</td>
@@ -275,8 +285,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Gagal menghapus siswa: ' + error.message);
             } else {
                 alert('Siswa berhasil dihapus.');
-                fetchAndRenderSiswa(); // Refresh tabel siswa
-                fetchAndRenderHasil(); // Refresh tabel hasil untuk update nama siswa
+                fetchAndRenderSiswa();
+                fetchAndRenderHasil();
             }
         }
     };
@@ -288,10 +298,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Gagal menghapus soal: ' + error.message);
             } else {
                 alert('Soal berhasil dihapus.');
-                fetchAndRenderSoal(); // Refresh tabel soal
+                fetchAndRenderSoal();
             }
         }
     };
+    
+    // ** BARU: Fungsi untuk menghapus data terpilih **
+    const handleDeleteSelectedSiswa = async () => {
+        const selectedCheckboxes = document.querySelectorAll('.siswa-checkbox:checked');
+        if (selectedCheckboxes.length === 0) {
+            alert('Pilih setidaknya satu siswa untuk dihapus.');
+            return;
+        }
+        const nisToDelete = Array.from(selectedCheckboxes).map(cb => cb.dataset.nis);
+        if (confirm(`Apakah Anda yakin ingin menghapus ${nisToDelete.length} siswa terpilih?`)) {
+            const { error } = await supabaseClient.from('siswa').delete().in('nis', nisToDelete);
+            if (error) {
+                alert('Gagal menghapus siswa terpilih: ' + error.message);
+            } else {
+                alert(`${nisToDelete.length} siswa berhasil dihapus.`);
+                fetchAndRenderSiswa();
+                fetchAndRenderHasil();
+            }
+        }
+    };
+
+    const handleDeleteSelectedSoal = async () => {
+        const selectedCheckboxes = document.querySelectorAll('.soal-checkbox:checked');
+        if (selectedCheckboxes.length === 0) {
+            alert('Pilih setidaknya satu soal untuk dihapus.');
+            return;
+        }
+        const idsToDelete = Array.from(selectedCheckboxes).map(cb => cb.dataset.id);
+         if (confirm(`Apakah Anda yakin ingin menghapus ${idsToDelete.length} soal terpilih?`)) {
+            const { error } = await supabaseClient.from('soal_ujian').delete().in('id', idsToDelete);
+            if (error) {
+                alert('Gagal menghapus soal terpilih: ' + error.message);
+            } else {
+                alert(`${idsToDelete.length} soal berhasil dihapus.`);
+                fetchAndRenderSoal();
+            }
+        }
+    };
+
 
     // =================================================================
     // FUNGSI UNTUK MANAJEMEN CSV
@@ -311,7 +360,6 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadCSV([{ nis: '', nama: '', password: '' }], 'template_siswa.csv');
     });
 
-    // ** DIUBAH: Download template soal dengan 5 opsi **
     document.getElementById('download-soal-template').addEventListener('click', () => {
         downloadCSV([{ 
             pertanyaan: '', 
@@ -367,13 +415,11 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     });
 
-    // ** DIUBAH: Upload soal dengan 5 opsi **
     document.getElementById('upload-soal-csv').addEventListener('change', (e) => {
         handleFileUpload(e.target.files[0], 'soal_ujian', (data) =>
             data.map(row => {
-                // Mengambil semua opsi yang ada dan memfilternya
                 const pilihanArray = [row.opsiA, row.opsiB, row.opsiC, row.opsiD, row.opsiE]
-                    .filter(opsi => opsi && opsi.trim() !== ''); // Filter opsi yang kosong
+                    .filter(opsi => opsi && opsi.trim() !== '');
                 
                 return {
                     pertanyaan: row.pertanyaan,
@@ -393,6 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => showView(btn.dataset.target));
     });
 
+    // Event delegation untuk tombol hapus individual
     document.getElementById('siswa-table-body').addEventListener('click', (e) => {
         if (e.target && e.target.classList.contains('delete-siswa-btn')) {
             handleDeleteSiswa(e.target.dataset.nis);
@@ -404,6 +451,36 @@ document.addEventListener('DOMContentLoaded', () => {
             handleDeleteSoal(e.target.dataset.id);
         }
     });
+
+    // ** BARU: Event listener untuk hapus massal **
+    document.getElementById('delete-selected-siswa-btn').addEventListener('click', handleDeleteSelectedSiswa);
+    document.getElementById('delete-selected-soal-btn').addEventListener('click', handleDeleteSelectedSoal);
+
+    // ** BARU: Logika untuk checkbox "select all" dan menampilkan tombol hapus massal **
+    const setupCheckboxLogic = (selectAllId, checkboxClass, deleteButtonId) => {
+        const selectAllCheckbox = document.getElementById(selectAllId);
+        const deleteButton = document.getElementById(deleteButtonId);
+        const tableBody = selectAllCheckbox.closest('table').querySelector('tbody');
+
+        tableBody.addEventListener('change', (e) => {
+            if (e.target.classList.contains(checkboxClass)) {
+                const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length;
+                deleteButton.classList.toggle('hidden', selected === 0);
+            }
+        });
+        
+        selectAllCheckbox.addEventListener('change', (e) => {
+            document.querySelectorAll(`.${checkboxClass}`).forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+            const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length;
+            deleteButton.classList.toggle('hidden', selected === 0);
+        });
+    };
+
+    setupCheckboxLogic('select-all-siswa', 'siswa-checkbox', 'delete-selected-siswa-btn');
+    setupCheckboxLogic('select-all-soal', 'soal-checkbox', 'delete-selected-soal-btn');
+
 
     // =================================================================
     // INISIALISASI
