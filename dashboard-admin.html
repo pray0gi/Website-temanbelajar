@@ -146,11 +146,55 @@
         </main>
     </div>
 
+    <!-- ** BARU: Modal untuk Edit Soal ** -->
+    <div id="edit-soal-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-2xl fade-in">
+            <h2 class="text-2xl font-bold mb-6 text-cyan-300">Edit Soal</h2>
+            <form id="edit-soal-form">
+                <input type="hidden" id="edit-soal-id">
+                <div class="mb-4">
+                    <label for="edit-pertanyaan" class="block mb-2 text-sm font-medium">Pertanyaan</label>
+                    <textarea id="edit-pertanyaan" rows="3" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" required></textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="edit-opsiA" class="block mb-2 text-sm font-medium">Opsi A</label>
+                        <input type="text" id="edit-opsiA" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600">
+                    </div>
+                    <div>
+                        <label for="edit-opsiB" class="block mb-2 text-sm font-medium">Opsi B</label>
+                        <input type="text" id="edit-opsiB" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600">
+                    </div>
+                    <div>
+                        <label for="edit-opsiC" class="block mb-2 text-sm font-medium">Opsi C</label>
+                        <input type="text" id="edit-opsiC" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600">
+                    </div>
+                    <div>
+                        <label for="edit-opsiD" class="block mb-2 text-sm font-medium">Opsi D</label>
+                        <input type="text" id="edit-opsiD" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600">
+                    </div>
+                     <div>
+                        <label for="edit-opsiE" class="block mb-2 text-sm font-medium">Opsi E</label>
+                        <input type="text" id="edit-opsiE" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600">
+                    </div>
+                </div>
+                 <div class="mb-6">
+                    <label for="edit-jawaban-benar" class="block mb-2 text-sm font-medium">Jawaban Benar</label>
+                    <input type="text" id="edit-jawaban-benar" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600" required>
+                     <p class="text-xs text-slate-400 mt-1">Pastikan teks jawaban benar sama persis dengan salah satu teks di kolom opsi.</p>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" id="cancel-edit-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg">Batal</button>
+                    <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // KONEKSI KE SUPABASE
-    // Ganti dengan URL & Kunci dari proyek Supabase Anda
     // =================================================================
     const SUPABASE_URL = 'https://mtadhiyfducemvckpnkb.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10YWRoaXlmZHVjZW12Y2twbmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjAwMjcsImV4cCI6MjA3MzczNjAyN30.BbjPW_FDSVN_cpf6uf3xXfZnl0fKgYi2rs-m8ytBWkk';
@@ -256,6 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td class="p-3">${s.pertanyaan}</td>
                     <td class="p-3 text-green-400">${s.jawaban_benar}</td>
                     <td class="p-3">
+                        <button class="text-sky-400 hover:text-sky-600 font-semibold mr-4 edit-soal-btn" data-id="${s.id}">Edit</button>
                         <button class="text-red-400 hover:text-red-600 font-semibold delete-soal-btn" data-id="${s.id}">Hapus</button>
                     </td>
                 </tr>
@@ -279,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // =================================================================
-    // FUNGSI UNTUK MENGHAPUS & MERESET DATA
+    // FUNGSI MANAJEMEN DATA (DELETE, RESET, EDIT)
     // =================================================================
     const handleDeleteSiswa = async (nis) => {
         if (confirm(`Apakah Anda yakin ingin menghapus siswa dengan NIS ${nis}? Tindakan ini tidak dapat diurungkan.`)) {
@@ -305,24 +350,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
-
-    // ** BARU: Fungsi untuk mereset status siswa **
+    
     const handleResetSiswa = async (nis) => {
         if (confirm(`Apakah Anda yakin ingin mereset status ujian untuk siswa NIS ${nis}? Siswa ini akan dapat mengerjakan ujian kembali.`)) {
-            // 1. Hapus hasil ujian lama siswa tersebut
             const { error: deleteError } = await supabaseClient.from('hasil_ujian').delete().eq('nis_siswa', nis);
-
             if (deleteError) {
                 alert('Gagal menghapus hasil ujian lama: ' + deleteError.message);
-                return; // Hentikan proses jika gagal menghapus hasil lama
+                return;
             }
-
-            // 2. Update status siswa menjadi 'belum mengerjakan'
             const { error: updateError } = await supabaseClient
                 .from('siswa')
                 .update({ sudah_mengerjakan: false })
                 .eq('nis', nis);
-
             if (updateError) {
                 alert('Gagal mereset status siswa: ' + updateError.message);
             } else {
@@ -370,6 +409,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const editSoalModal = document.getElementById('edit-soal-modal');
+    const editSoalForm = document.getElementById('edit-soal-form');
+
+    const openEditSoalModal = async (id) => {
+        const { data: soal, error } = await supabaseClient.from('soal_ujian').select('*').eq('id', id).single();
+        if (error || !soal) {
+            alert('Gagal mengambil data soal: ' + (error?.message || 'Soal tidak ditemukan.'));
+            return;
+        }
+        document.getElementById('edit-soal-id').value = soal.id;
+        document.getElementById('edit-pertanyaan').value = soal.pertanyaan;
+        document.getElementById('edit-jawaban-benar').value = soal.jawaban_benar;
+        const options = soal.pilihan || [];
+        document.getElementById('edit-opsiA').value = options[0] || '';
+        document.getElementById('edit-opsiB').value = options[1] || '';
+        document.getElementById('edit-opsiC').value = options[2] || '';
+        document.getElementById('edit-opsiD').value = options[3] || '';
+        document.getElementById('edit-opsiE').value = options[4] || '';
+        editSoalModal.classList.remove('hidden');
+    };
+
+    const closeEditSoalModal = () => {
+        editSoalModal.classList.add('hidden');
+        editSoalForm.reset();
+    };
+
+    const handleUpdateSoal = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('edit-soal-id').value;
+        const pertanyaan = document.getElementById('edit-pertanyaan').value;
+        const jawaban_benar = document.getElementById('edit-jawaban-benar').value;
+        const pilihanArray = [
+            document.getElementById('edit-opsiA').value,
+            document.getElementById('edit-opsiB').value,
+            document.getElementById('edit-opsiC').value,
+            document.getElementById('edit-opsiD').value,
+            document.getElementById('edit-opsiE').value
+        ].filter(opsi => opsi && opsi.trim() !== '');
+        if (!pilihanArray.includes(jawaban_benar)) {
+            alert('Jawaban Benar harus sama persis dengan salah satu opsi yang diisi.');
+            return;
+        }
+        const { error } = await supabaseClient.from('soal_ujian').update({ pertanyaan, pilihan: pilihanArray, jawaban_benar }).eq('id', id);
+        if (error) {
+            alert('Gagal menyimpan perubahan: ' + error.message);
+        } else {
+            alert('Soal berhasil diperbarui.');
+            closeEditSoalModal();
+            fetchAndRenderSoal();
+        }
+    };
+
+
     // =================================================================
     // FUNGSI UNTUK MANAJEMEN CSV
     // =================================================================
@@ -389,15 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('download-soal-template').addEventListener('click', () => {
-        downloadCSV([{ 
-            pertanyaan: '', 
-            opsiA: '', 
-            opsiB: '', 
-            opsiC: '', 
-            opsiD: '', 
-            opsiE: '', 
-            jawaban_benar: '' 
-        }], 'template_soal.csv');
+        downloadCSV([{ pertanyaan: '', opsiA: '', opsiB: '', opsiC: '', opsiD: '', opsiE: '', jawaban_benar: '' }], 'template_soal.csv');
     });
 
     document.getElementById('download-hasil').addEventListener('click', async () => {
@@ -448,12 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
             data.map(row => {
                 const pilihanArray = [row.opsiA, row.opsiB, row.opsiC, row.opsiD, row.opsiE]
                     .filter(opsi => opsi && opsi.trim() !== '');
-                
-                return {
-                    pertanyaan: row.pertanyaan,
-                    pilihan: pilihanArray,
-                    jawaban_benar: row.jawaban_benar
-                };
+                return { pertanyaan: row.pertanyaan, pilihan: pilihanArray, jawaban_benar: row.jawaban_benar };
             })
         );
     });
@@ -471,7 +550,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.classList.contains('delete-siswa-btn')) {
             handleDeleteSiswa(e.target.dataset.nis);
         }
-        // ** BARU: Menambahkan listener untuk tombol reset **
         if (e.target.classList.contains('reset-siswa-btn')) {
             handleResetSiswa(e.target.dataset.nis);
         }
@@ -480,6 +558,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('soal-table-body').addEventListener('click', (e) => {
         if (e.target.classList.contains('delete-soal-btn')) {
             handleDeleteSoal(e.target.dataset.id);
+        }
+        if (e.target.classList.contains('edit-soal-btn')) {
+            openEditSoalModal(e.target.dataset.id);
         }
     });
 
@@ -490,18 +571,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectAllCheckbox = document.getElementById(selectAllId);
         const deleteButton = document.getElementById(deleteButtonId);
         const tableBody = selectAllCheckbox.closest('table').querySelector('tbody');
-
         tableBody.addEventListener('change', (e) => {
             if (e.target.classList.contains(checkboxClass)) {
                 const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length;
                 deleteButton.classList.toggle('hidden', selected === 0);
             }
         });
-        
         selectAllCheckbox.addEventListener('change', (e) => {
-            document.querySelectorAll(`.${checkboxClass}`).forEach(checkbox => {
-                checkbox.checked = e.target.checked;
-            });
+            document.querySelectorAll(`.${checkboxClass}`).forEach(checkbox => { checkbox.checked = e.target.checked; });
             const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length;
             deleteButton.classList.toggle('hidden', selected === 0);
         });
@@ -509,6 +586,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupCheckboxLogic('select-all-siswa', 'siswa-checkbox', 'delete-selected-siswa-btn');
     setupCheckboxLogic('select-all-soal', 'soal-checkbox', 'delete-selected-soal-btn');
+
+    editSoalForm.addEventListener('submit', handleUpdateSoal);
+    document.getElementById('cancel-edit-btn').addEventListener('click', closeEditSoalModal);
+    editSoalModal.addEventListener('click', (e) => { if (e.target === editSoalModal) { closeEditSoalModal(); } });
 
     // =================================================================
     // INISIALISASI
