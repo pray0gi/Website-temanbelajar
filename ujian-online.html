@@ -49,7 +49,7 @@
                         <label for="password" class="block mb-2 text-sm font-medium text-slate-300">Password (Nomor Absen)</label>
                         <input type="password" id="password" name="password" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" required>
                     </div>
-                    <button id="login-btn" type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg transition-transform duration-200 hover:scale-105">Masuk</button>
+                    <button id="login-btn" type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg transition-transform duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-wait">Masuk</button>
                     <p id="login-error" class="text-red-400 text-center text-sm mt-4 h-5"></p>
                 </form>
             </div>
@@ -116,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const WAKTU_UJIAN = 90;
     let isExamSubmitted = false;
     
-    // ** BARU: Variabel untuk deteksi kecurangan **
     let violationCount = 0;
     const MAX_VIOLATIONS = 3;
     const violationWarningEl = document.getElementById('violation-warning');
@@ -145,7 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const loadQuestions = async () => {
-        // ... (fungsi loadQuestions tetap sama)
         const examContent = document.getElementById('exam-content');
         const { data, error } = await supabaseClient.from('soal_ujian').select('*');
         if (error) {
@@ -181,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isExamSubmitted = true;
         
         clearInterval(timerInterval);
-        removeCheatingDetection(); // Matikan deteksi setelah ujian selesai
+        removeCheatingDetection();
         
         let correctAnswers = 0;
         soalUjian.forEach(soal => {
@@ -194,34 +192,41 @@ document.addEventListener('DOMContentLoaded', () => {
         await supabaseClient.from('siswa').update({ sudah_mengerjakan: true }).eq('nis', siswaSaatIni.nis);
 
         document.getElementById('student-name-final').textContent = siswaSaatIni.nama;
-        document.getElementById('completion-reason').textContent = reason === "Waktu Habis" ? "Waktu pengerjaan Anda telah habis." : "Ujian dihentikan karena terdeteksi pelanggaran.";
+        
+        // ** DIPERBAIKI: Logika untuk pesan selesai **
+        let completionText = "";
+        if (reason === "Waktu Habis") {
+            completionText = "Waktu pengerjaan Anda telah habis.";
+        } else if (reason === "Pelanggaran Maksimal") {
+            completionText = "Ujian dihentikan karena terdeteksi pelanggaran.";
+        }
+        document.getElementById('completion-reason').textContent = completionText;
+
         navigateTo('complete');
         
-        // Keluar dari mode layar penuh jika masih aktif
         if (document.fullscreenElement) {
             document.exitFullscreen();
         }
     };
 
     // =================================================================
-    // ** BARU: FUNGSI DETEKSI KECURANGAN **
+    // FUNGSI DETEKSI KECURANGAN
     // =================================================================
     const handleVisibilityChange = () => {
         if (document.hidden && !isExamSubmitted) {
             violationCount++;
             violationCountEl.textContent = violationCount;
-            violationWarningEl.style.display = 'flex'; // Tampilkan peringatan
+            violationWarningEl.style.display = 'flex';
             if (violationCount >= MAX_VIOLATIONS) {
                 submitExam("Pelanggaran Maksimal");
             }
         } else {
-            violationWarningEl.style.display = 'none'; // Sembunyikan peringatan
+            violationWarningEl.style.display = 'none';
         }
     };
 
     const handleFullscreenChange = () => {
         if (!document.fullscreenElement && !isExamSubmitted) {
-            // Jika keluar dari fullscreen, dianggap sebagai pelanggaran
             handleVisibilityChange();
         }
     };
@@ -236,7 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
 
-
     // =================================================================
     // EVENT LISTENERS
     // =================================================================
@@ -245,33 +249,46 @@ document.addEventListener('DOMContentLoaded', () => {
         const nis = document.getElementById('nis').value;
         const password = document.getElementById('password').value;
         const loginError = document.getElementById('login-error');
+        const loginBtn = document.getElementById('login-btn');
         loginError.textContent = '';
         
-        const { data, error } = await supabaseClient.from('siswa').select('*').eq('nis', nis).single();
+        // ** DIPERBAIKI: Menambahkan feedback visual saat login **
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Memeriksa...';
+        
+        try {
+            const { data, error } = await supabaseClient.from('siswa').select('*').eq('nis', nis).single();
 
-        if (error || !data) {
-            loginError.textContent = 'NIS tidak ditemukan.';
-        } else if (data.password !== password) {
-            loginError.textContent = 'Password salah.';
-        } else if (data.sudah_mengerjakan) {
-            loginError.textContent = 'Anda sudah pernah mengerjakan ujian ini.';
-        } else {
-            siswaSaatIni = data;
-            document.getElementById('student-name').textContent = siswaSaatIni.nama;
-            const { count } = await supabaseClient.from('soal_ujian').select('*', { count: 'exact', head: true });
-            document.getElementById('total-questions-info').textContent = count || 0;
-            document.getElementById('time-limit-info').textContent = WAKTU_UJIAN;
-            navigateTo('instructions');
+            if (error || !data) {
+                loginError.textContent = 'NIS tidak ditemukan.';
+            } else if (data.password !== password) {
+                loginError.textContent = 'Password salah.';
+            } else if (data.sudah_mengerjakan) {
+                loginError.textContent = 'Anda sudah pernah mengerjakan ujian ini.';
+            } else {
+                siswaSaatIni = data;
+                document.getElementById('student-name').textContent = siswaSaatIni.nama;
+                const { count } = await supabaseClient.from('soal_ujian').select('*', { count: 'exact', head: true });
+                document.getElementById('total-questions-info').textContent = count || 0;
+                document.getElementById('time-limit-info').textContent = WAKTU_UJIAN;
+                navigateTo('instructions');
+            }
+        } catch (err) {
+            loginError.textContent = 'Terjadi kesalahan jaringan. Coba lagi.';
+            console.error("Login error:", err);
+        } finally {
+            // ** DIPERBAIKI: Mengembalikan tombol ke keadaan normal **
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Masuk';
         }
     });
 
     document.getElementById('start-exam-btn').addEventListener('click', () => {
-        // Meminta mode layar penuh
         document.documentElement.requestFullscreen().then(() => {
             navigateTo('exam');
             loadQuestions();
             startTimer(WAKTU_UJIAN);
-            setupCheatingDetection(); // Aktifkan deteksi setelah ujian dimulai
+            setupCheatingDetection();
         }).catch(err => {
             alert(`Gagal masuk mode layar penuh. Fitur ini diperlukan untuk ujian. Error: ${err.message}`);
         });
