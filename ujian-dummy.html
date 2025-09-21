@@ -128,20 +128,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let jawabanSiswa = {};
     const WAKTU_UJIAN = 90;
     let isExamSubmitted = false;
-    
-    // ... (Elemen Modal tidak berubah) ...
-    const customModalEl = document.getElementById('custom-modal');
-    const modalTitleEl = document.getElementById('modal-title');
-    const modalMessageEl = document.getElementById('modal-message');
-    const modalButtonsEl = document.getElementById('modal-buttons');
 
+    // FUNGSI NAVIGASI
     const navigateTo = (pageName) => { document.querySelectorAll('[data-page]').forEach(p => p.classList.remove('active')); document.querySelector(`[data-page="${pageName}"]`).classList.add('active'); };
     
+    // FUNGSI UJIAN
     const startTimer = (duration) => { let timer = duration * 60; const timerElement = document.getElementById('timer'); timerInterval = setInterval(() => { if (isExamSubmitted) return; const minutes = Math.floor(timer / 60); const seconds = timer % 60; timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; if (--timer < 0) submitExam(); }, 1000); };
     
     const loadQuestions = async () => {
         const examContent = document.getElementById('exam-content');
-        const { data, error } = await supabaseClient.from('soal_ujian').select('*').eq('mapel_id', mapelSaatIni.id);
+        const { data, error } = await supabaseClient.from('soal_ujian')
+            .select('*')
+            .eq('mapel_id', mapelSaatIni.id)
+            .eq('jenis_soal', 'latihan'); // ** HANYA AMBIL SOAL LATIHAN **
+            
         if (error) { examContent.innerHTML = `<p class="text-center text-red-400">Gagal memuat soal.</p>`; return; }
         for (let i = data.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [data[i], data[j]] = [data[j], data[i]]; }
         soalUjian = data;
@@ -169,27 +169,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const skorAkhir = soalUjian.length > 0 ? parseInt(((correctAnswers / soalUjian.length) * 100).toFixed(0)) : 0;
 
         try {
-            // ** DIUBAH: Logika perekaman dengan nomor percobaan **
-            // 1. Hitung percobaan ke berapa ini
-            const { count, error: countError } = await supabaseClient.from('hasil_latihan')
-                .select('*', { count: 'exact', head: true })
-                .eq('nis_siswa', siswaSaatIni.nis)
-                .eq('mapel_id', mapelSaatIni.id);
-            
+            const { count, error: countError } = await supabaseClient.from('hasil_latihan').select('*', { count: 'exact', head: true }).eq('nis_siswa', siswaSaatIni.nis).eq('mapel_id', mapelSaatIni.id);
             if (countError) throw countError;
             const nomorPercobaanBaru = (count || 0) + 1;
-
-            // 2. Simpan hasil latihan
-            const { error: insertError } = await supabaseClient.from('hasil_latihan').insert([
-                { 
-                    nis_siswa: siswaSaatIni.nis, 
-                    mapel_id: mapelSaatIni.id, 
-                    skor: skorAkhir, 
-                    nomor_percobaan: nomorPercobaanBaru 
-                }
-            ]);
+            const { error: insertError } = await supabaseClient.from('hasil_latihan').insert([{ nis_siswa: siswaSaatIni.nis, mapel_id: mapelSaatIni.id, skor: skorAkhir, nomor_percobaan: nomorPercobaanBaru }]);
             if (insertError) throw insertError;
-
         } catch (error) {
             console.error("Gagal merekam hasil latihan:", error);
         }
@@ -199,13 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
         soalUjian.forEach((soal, index) => {
             const jawaban = jawabanSiswa[`soal-${soal.id}`];
             const isCorrect = jawaban === soal.jawaban_benar;
-            const reviewHtml = `
-                <div class="p-4 rounded-lg ${isCorrect ? 'correct-answer-review bg-green-900/20' : 'incorrect-answer-review bg-red-900/20'}">
-                    <p class="font-semibold text-slate-300">${index + 1}. ${soal.pertanyaan}</p>
-                    <p class="text-sm mt-2">Jawaban Anda: <span class="${isCorrect ? 'text-green-400' : 'text-red-400'}">${jawaban || 'Tidak dijawab'}</span></p>
-                    ${!isCorrect ? `<p class="text-sm mt-1">Jawaban Benar: <span class="text-green-400">${soal.jawaban_benar}</span></p>` : ''}
-                </div>
-            `;
+            const reviewHtml = `<div class="p-4 rounded-lg ${isCorrect ? 'correct-answer-review bg-green-900/20' : 'incorrect-answer-review bg-red-900/20'}"><p class="font-semibold text-slate-300">${index + 1}. ${soal.pertanyaan}</p><p class="text-sm mt-2">Jawaban Anda: <span class="${isCorrect ? 'text-green-400' : 'text-red-400'}">${jawaban || 'Tidak dijawab'}</span></p>${!isCorrect ? `<p class="text-sm mt-1">Jawaban Benar: <span class="text-green-400">${soal.jawaban_benar}</span></p>` : ''}</div>`;
             reviewContainer.innerHTML += reviewHtml;
         });
         
@@ -214,30 +192,20 @@ document.addEventListener('DOMContentLoaded', () => {
         navigateTo('complete');
     };
 
-    // ** DIUBAH: Fungsi untuk menampilkan jumlah percobaan **
     const showMapelSelection = async () => {
         const { data: mapelList, error: mapelError } = await supabaseClient.from('mata_pelajaran').select('*');
         const { data: results, error: resultsError } = await supabaseClient.from('hasil_latihan').select('mapel_id').eq('nis_siswa', siswaSaatIni.nis);
-        
-        if (mapelError || resultsError) {
-            document.getElementById('mapel-list').innerHTML = `<p class="text-red-400">Gagal memuat mata pelajaran.</p>`;
-            return;
-        }
-
+        if (mapelError || resultsError) { document.getElementById('mapel-list').innerHTML = `<p class="text-red-400">Gagal memuat.</p>`; return; }
         const mapelListEl = document.getElementById('mapel-list');
         mapelListEl.innerHTML = '';
         mapelList.forEach(mapel => {
             const attemptCount = results.filter(r => r.mapel_id === mapel.id).length;
-            
             const button = document.createElement('button');
-            button.innerHTML = `
-                <h3 class="text-xl font-bold">${mapel.nama_mapel}</h3>
-                <p class="text-sm mt-2">${attemptCount > 0 ? `Sudah dikerjakan ${attemptCount} kali` : 'Klik untuk memulai'}</p>
-            `;
+            button.innerHTML = `<h3 class="text-xl font-bold">${mapel.nama_mapel}</h3><p class="text-sm mt-2">${attemptCount > 0 ? `Sudah dikerjakan ${attemptCount} kali` : 'Klik untuk memulai'}</p>`;
             button.className = `p-6 rounded-lg transition-transform duration-200 w-full text-left bg-sky-700 hover:bg-sky-600 hover:scale-105`;
             button.onclick = async () => {
                 mapelSaatIni = mapel;
-                const { count } = await supabaseClient.from('soal_ujian').select('*', { count: 'exact', head: true }).eq('mapel_id', mapel.id);
+                const { count } = await supabaseClient.from('soal_ujian').select('*', { count: 'exact', head: true }).eq('mapel_id', mapel.id).eq('jenis_soal', 'latihan');
                 document.getElementById('instruction-mapel-name').textContent = mapel.nama_mapel;
                 document.getElementById('exam-mapel-name').textContent = mapel.nama_mapel;
                 document.getElementById('total-questions-info').textContent = count || 0;
@@ -268,20 +236,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) { loginError.textContent = 'Kesalahan jaringan.'; } 
         finally { loginBtn.disabled = false; loginBtn.textContent = 'Masuk'; }
     });
-
-    document.getElementById('start-exam-btn').addEventListener('click', async () => {
-        isExamSubmitted = false;
-        jawabanSiswa = {};
-        navigateTo('exam');
-        await loadQuestions();
-        startTimer(WAKTU_UJIAN);
-    });
-
+    document.getElementById('start-exam-btn').addEventListener('click', async () => { isExamSubmitted = false; jawabanSiswa = {}; navigateTo('exam'); await loadQuestions(); startTimer(WAKTU_UJIAN); });
     document.getElementById('submit-exam-btn').addEventListener('click', submitExam);
-    
     document.getElementById('finish-review-btn').addEventListener('click', showMapelSelection);
 });
 </script>
 </body>
 </html>
-
