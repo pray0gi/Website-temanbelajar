@@ -182,24 +182,39 @@
 
             <!-- Baris Kedua: Implementasi di Dunia Nyata -->
             <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                <h3 class="text-xl font-bold text-gray-800 mb-3">Implementasi di Dunia Nyata (Python)</h3>
-                <p class="text-gray-600 mb-4">Di Python, struktur data `list` adalah sebuah **Array Dinamis**. Ia menggabungkan kehebatan keduanya: akses data yang cepat seperti Array, dan ukuran yang fleksibel seperti List.</p>
-                <pre class="bg-gray-800 text-white p-4 rounded-lg text-sm"><code><span class="text-gray-400"># 1. Membuat list (kosong atau langsung diisi)</span>
-daftar_belanja = ["Gula", "Kopi"]
+                <h3 class="text-xl font-bold text-gray-800 mb-3">Implementasi di Dunia Nyata (Python & Pseudocode)</h3>
+                <p class="text-gray-600 mb-4">Di Python, `list` adalah Array Dinamis yang menggabungkan kehebatan keduanya. Mari kita lihat perbandingan kode dan pseudocode untuk setiap operasi.</p>
+                <pre class="bg-gray-800 text-white p-4 rounded-lg text-sm leading-relaxed"><code><span class="text-gray-400"># --- MEMBUAT ---</span>
+<span class="text-gray-400"># Pseudocode: DECLARE regu: LIST = ["Padi", "Jagung"]</span>
+regu_pramuka = ["Padi", "Jagung"]
 
-<span class="text-gray-400"># 2. Menambah data (fleksibel seperti List)</span>
-daftar_belanja.append("Teh")         <span class="text-green-400"># Menambah di akhir</span>
-daftar_belanja.insert(1, "Sabun")  <span class="text-green-400"># Menyisipkan di indeks 1</span>
+<span class="text-gray-400"># --- MENAMBAH DATA ---</span>
+<span class="text-gray-400"># Pseudocode: APPEND(regu, "Singkong")</span>
+regu_pramuka.append("Singkong")
 
-<span class="text-gray-400"># 3. Mengakses data (cepat seperti Array)</span>
-print(daftar_belanja[0]) <span class="text-gray-400"># Output: Gula</span>
+<span class="text-gray-400"># --- MENGAKSES DATA (Indeks ke-2) ---</span>
+<span class="text-gray-400"># Pseudocode: PRINT regu[2]</span>
+ketua_kedua = regu_pramuka[1] <span class="text-green-400"># Ingat, indeks Python mulai dari 0</span>
+print(f"Ketua regu ke-2 adalah: {ketua_kedua}")
+<span class="text-yellow-300"># Output: Ketua regu ke-2 adalah: Jagung</span>
 
-<span class="text-gray-400"># 4. Menghapus data</span>
-daftar_belanja.remove("Kopi")
+<span class="text-gray-400"># --- MENGGANTI DATA (Indeks ke-1) ---</span>
+<span class="text-gray-400"># Pseudocode: regu[1] = "Kapas"</span>
+regu_pramuka[0] = "Kapas"
+print(f"Setelah diganti: {regu_pramuka}")
+<span class="text-yellow-300"># Output: Setelah diganti: ['Kapas', 'Jagung', 'Singkong']</span>
 
-<span class="text-gray-400"># Hasil akhir</span>
-print(daftar_belanja)
-<span class="text-yellow-300"># Output: ['Gula', 'Sabun', 'Teh']</span></code></pre>
+<span class="text-gray-400"># --- MELIHAT JUMLAH DATA ---</span>
+<span class="text-gray-400"># Pseudocode: GET_LENGTH(regu)</span>
+jumlah_regu = len(regu_pramuka)
+print(f"Jumlah regu sekarang: {jumlah_regu}")
+<span class="text-yellow-300"># Output: Jumlah regu sekarang: 3</span>
+
+<span class="text-gray-400"># --- MENGHAPUS DATA ---</span>
+<span class="text-gray-400"># Pseudocode: REMOVE(regu, "Jagung")</span>
+regu_pramuka.remove("Jagung")
+print(f"Setelah dihapus: {regu_pramuka}")
+<span class="text-yellow-300"># Output: Setelah dihapus: ['Kapas', 'Singkong']</span></code></pre>
             </div>
         </div>
     </div>
