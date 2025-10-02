@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- PERBAIKAN: Mengganti ke build UMD agar kompatibel dengan pemuatan script global dan menghindari error 'export'. -->
+    <!-- Perbaikan versi UMD sudah dilakukan pada revisi sebelumnya. -->
     <script src="https://cdn.jsdelivr.net/npm/docx@8.2.1/build/index.umd.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -290,7 +290,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // KONFIGURASI SUPABASE
     const SUPABASE_URL = 'https://mtadhiyfducemvckpnkb.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10YWRoaXlmZHVjZW12Y2twbmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjAwMjcsImV4cCI6MjA3MzczNjAyN30.BbjPW_FDSVN_cpf6uf3xXfZnl0fKgYi2rs-m8ytBWkk';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10YWRoaXlmZHVjZW12Y2twbmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjAwMjcsInR5cGUiOiJ1c2VyIiwiZXhwIjoiMjA3MzczNjAyN30.BbjPW_FDSVN_cpf6uf3xXfZnl0fKgYi2rs-m8ytBWkk';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
     let currentAdmin = null;
@@ -576,104 +576,114 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // FUNGSI KHUSUS UNTUK DOCX DOWNLOAD (TAMBAHAN FITUR)
     const downloadDOCX = async (data, filename) => {
-        // Menggunakan docx library dari CDN
-        const { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel, UnderlineType } = docx;
+        // PERBAIKAN: Memastikan object docx tersedia secara global.
+        if (typeof docx === 'undefined' || !docx.Document) {
+            console.error("DOCX library is not loaded or not properly exposed globally.");
+            return showModal('Error Download', 'Library DOCX gagal dimuat. Coba refresh halaman atau periksa koneksi internet.', [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]);
+        }
 
+        const { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel, UnderlineType } = docx;
         const children = [];
 
-        data.forEach((soal, index) => {
-            const mapelInfo = `[${soal.mapel_name} | ${soal.jenis_soal === 'latihan' ? 'Latihan' : 'Ujian'}]`;
-            
-            // 1. Nomor Soal dan Pertanyaan
-            children.push(new Paragraph({
-                children: [
-                    new TextRun({ 
-                        text: `${index + 1}. `, 
-                        bold: true 
-                    }),
-                    new TextRun({ 
-                        text: mapelInfo, 
-                        bold: true, 
-                        color: "808080", // Abu-abu
-                        size: 20 // Ukuran font kecil
-                    }),
-                    new TextRun({ 
-                        text: ` ${soal.pertanyaan}`, 
-                        bold: false 
-                    }),
-                ],
-                spacing: { before: 200, after: 100 },
-            }));
-            
-            // 2. Opsi Jawaban (A, B, C, D, E)
-            if (soal.pilihan && soal.pilihan.length > 0) {
-                soal.pilihan.forEach((opsi, opsIndex) => {
-                    const prefix = String.fromCharCode(65 + opsIndex) + '. '; // A., B., C., ...
-                    children.push(new Paragraph({
-                        children: [
-                            new TextRun({ 
-                                text: prefix, 
-                                bold: (opsi === soal.jawaban_benar),
-                            }),
-                            new TextRun({ 
-                                text: opsi, 
-                                bold: (opsi === soal.jawaban_benar), 
-                                underline: (opsi === soal.jawaban_benar) ? { type: UnderlineType.SINGLE, color: "000000" } : undefined 
-                            }), // Jawaban benar di-bold dan digarisbawahi
-                        ],
-                        indent: { left: 720 }, // Indentasi 0.5 inci
-                        spacing: { after: 50 }
-                    }));
-                });
-            } else {
-                 children.push(new Paragraph({
+        try {
+            data.forEach((soal, index) => {
+                const mapelInfo = `[${soal.mapel_name} | ${soal.jenis_soal === 'latihan' ? 'Latihan' : 'Ujian'}]`;
+                
+                // 1. Nomor Soal dan Pertanyaan
+                children.push(new Paragraph({
                     children: [
-                        new TextRun({ text: `[Soal Pilihan Ganda Kosong, Jawaban Benar: ${soal.jawaban_benar}]`, color: "FF0000" }),
+                        new TextRun({ 
+                            text: `${index + 1}. `, 
+                            bold: true 
+                        }),
+                        new TextRun({ 
+                            text: mapelInfo, 
+                            bold: true, 
+                            color: "808080", // Abu-abu
+                            size: 20 // Ukuran font kecil
+                        }),
+                        new TextRun({ 
+                            text: ` ${soal.pertanyaan}`, 
+                            bold: false 
+                        }),
                     ],
-                    indent: { left: 720 },
+                    spacing: { before: 200, after: 100 },
                 }));
-            }
+                
+                // 2. Opsi Jawaban (A, B, C, D, E)
+                if (soal.pilihan && soal.pilihan.length > 0) {
+                    soal.pilihan.forEach((opsi, opsIndex) => {
+                        const prefix = String.fromCharCode(65 + opsIndex) + '. '; // A., B., C., ...
+                        children.push(new Paragraph({
+                            children: [
+                                new TextRun({ 
+                                    text: prefix, 
+                                    bold: (opsi === soal.jawaban_benar),
+                                }),
+                                new TextRun({ 
+                                    text: opsi, 
+                                    bold: (opsi === soal.jawaban_benar), 
+                                    underline: (opsi === soal.jawaban_benar) ? { type: UnderlineType.SINGLE, color: "000000" } : undefined 
+                                }), // Jawaban benar di-bold dan digarisbawahi
+                            ],
+                            indent: { left: 720 }, // Indentasi 0.5 inci
+                            spacing: { after: 50 }
+                        }));
+                    });
+                } else {
+                     children.push(new Paragraph({
+                        children: [
+                            new TextRun({ text: `[Soal Pilihan Ganda Kosong, Jawaban Benar: ${soal.jawaban_benar}]`, color: "FF0000" }),
+                        ],
+                        indent: { left: 720 },
+                    }));
+                }
 
-            // 3. Kunci Jawaban (Di bawah, tidak terlalu mencolok, untuk admin)
-            children.push(new Paragraph({
-                children: [
-                    new TextRun({ text: `Kunci: ${soal.jawaban_benar}`, bold: true, color: "009900", size: 22 }),
-                ],
-                spacing: { before: 100, after: 200 },
-            }));
-            
-            // 4. Baris Kosong untuk pemisah
-            children.push(new Paragraph({ children: [] }));
-        });
+                // 3. Kunci Jawaban (Di bawah, tidak terlalu mencolok, untuk admin)
+                children.push(new Paragraph({
+                    children: [
+                        new TextRun({ text: `Kunci: ${soal.jawaban_benar}`, bold: true, color: "009900", size: 22 }),
+                    ],
+                    spacing: { before: 100, after: 200 },
+                }));
+                
+                // 4. Baris Kosong untuk pemisah
+                children.push(new Paragraph({ children: [] }));
+            });
 
-        const doc = new Document({
-            sections: [{
-                properties: {
-                    page: { size: { width: 12240, height: 15840 } } // Ukuran A4
-                },
-                children: [
-                    new Paragraph({
-                        text: "BANK SOAL UJIAN - TEMANBELAJAR.MY.ID",
-                        heading: HeadingLevel.TITLE,
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 }
-                    }),
-                    ...children
-                ],
-            }],
-        });
+            const doc = new Document({
+                sections: [{
+                    properties: {
+                        page: { size: { width: 12240, height: 15840 } } // Ukuran A4
+                    },
+                    children: [
+                        new Paragraph({
+                            text: "BANK SOAL UJIAN - TEMANBELAJAR.MY.ID",
+                            heading: HeadingLevel.TITLE,
+                            alignment: AlignmentType.CENTER,
+                            spacing: { after: 300 }
+                        }),
+                        ...children
+                    ],
+                }],
+            });
 
-        const mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-        const buffer = await Packer.toBuffer(doc);
-        const blob = new Blob([buffer], { type: mimeType });
+            const mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            const buffer = await Packer.toBuffer(doc);
+            const blob = new Blob([buffer], { type: mimeType });
 
-        // Membuat link download
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            // Membuat link download
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+        } catch (e) {
+            console.error("DOCX generation failed:", e);
+            showModal('Error Download', `Gagal membuat file DOCX. Periksa data soal Anda atau coba filter data. Detail: ${e.message}`, [{ text: 'Mengerti', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]);
+        }
     };
     
     // FUNGSI UPLOAD CSV
@@ -728,10 +738,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event listener untuk Download DOCX
     document.getElementById('download-soal-docx').addEventListener('click', async () => {
         const filterMapelId = document.getElementById('filter-mapel').value;
-        // Mengambil semua soal
         let query = supabaseClient.from('soal_ujian').select('*').order('mapel_id').order('id');
         
-        // Filter berdasarkan mapel yang sedang dilihat
         if (filterMapelId && filterMapelId !== 'all') {
             query = query.eq('mapel_id', filterMapelId);
         }
@@ -739,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { data, error } = await query;
 
         if (error) {
-            return showModal('Error', `Gagal mengambil data soal: ${error.message}`, [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]);
+            return showModal('Error', `Gagal mengambil data soal dari database: ${error.message}`, [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]);
         }
         
         if (data && data.length > 0) {
