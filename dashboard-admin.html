@@ -290,7 +290,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     // KONFIGURASI SUPABASE
     const SUPABASE_URL = 'https://mtadhiyfducemvckpnkb.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10YWRoaXlmZHVjZW12Y2twbmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjAwMjcsInR5cGUiOiJ1c2VyIiwiZXhwIjoiMjA3MzczNjAyN30.BbjPW_FDSVN_cpf6uf3xXfZnl0fKgYi2rs-m8ytBWkk';
+    // **PENTING**: Harap ganti placeholder ini dengan kunci Anon Publik Supabase Anda yang valid.
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10YWRoaXlmZHVjZW12Y2twbmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjAwMjcsImV4cCI6MjA3MzczNjAyN30.BbjPW_FDSVN_cpf6uf3xXfZnl0fKgYi2rs-m8ytBWkk';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
     let currentAdmin = null;
@@ -576,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // FUNGSI KHUSUS UNTUK DOCX DOWNLOAD (TAMBAHAN FITUR)
     const downloadDOCX = async (data, filename) => {
-        // PERBAIKAN: Memastikan object docx tersedia secara global.
+        // PERBAIKAN 1: Memastikan object docx tersedia secara global.
         if (typeof docx === 'undefined' || !docx.Document) {
             console.error("DOCX library is not loaded or not properly exposed globally.");
             return showModal('Error Download', 'Library DOCX gagal dimuat. Coba refresh halaman atau periksa koneksi internet.', [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]);
@@ -668,9 +669,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }],
             });
 
-            const mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-            const buffer = await Packer.toBuffer(doc);
-            const blob = new Blob([buffer], { type: mimeType });
+            // PERBAIKAN 2: Menggunakan Packer.toBlob(doc) untuk lingkungan browser
+            const blob = await Packer.toBlob(doc);
 
             // Membuat link download
             const link = document.createElement('a');
@@ -682,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (e) {
             console.error("DOCX generation failed:", e);
-            showModal('Error Download', `Gagal membuat file DOCX. Periksa data soal Anda atau coba filter data. Detail: ${e.message}`, [{ text: 'Mengerti', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]);
+            showModal('Error Download', `Gagal membuat file DOCX. Detail: ${e.message}. (Solusi: Periksa data soal Anda)`, [{ text: 'Mengerti', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]);
         }
     };
     
