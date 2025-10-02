@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Admin - temanbelajar.my.id</title>
+    <title>Dashboard Guru - temanbelajar.my.id</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,6 +11,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- PERBAIKAN: Mengganti ke build UMD agar kompatibel dengan pemuatan script global dan menghindari error 'export'. -->
+    <script src="https://cdn.jsdelivr.net/npm/docx@8.2.1/build/index.umd.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         [data-page], [data-view] { display: none; }
@@ -118,7 +120,7 @@
             </div>
 
             <div data-view="soal">
-                 <div class="bg-slate-800 p-6 rounded-xl">
+                <div class="bg-slate-800 p-6 rounded-xl">
                     <div class="flex flex-col md:flex-row justify-between items-start mb-4">
                         <div>
                             <h2 class="text-2xl font-bold text-cyan-300 mb-2">Bank Soal Ujian</h2>
@@ -133,6 +135,8 @@
                     </div>
                     <div class="flex flex-wrap gap-4 mb-4">
                         <button id="download-soal-template" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">Download Template CSV</button>
+                        <!-- BARU: Tombol Download DOCX -->
+                        <button id="download-soal-docx" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg">Download DOCX Soal</button>
                         <button id="download-mapel-key" class="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded-lg">Download Kunci Mapel (ID)</button>
                         <input type="file" id="upload-soal-csv" class="hidden" accept=".csv,.txt">
                         <label for="upload-soal-csv" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg cursor-pointer">Upload CSV Soal</label>
@@ -160,59 +164,59 @@
             <div data-view="hasil">
                 <div class="bg-slate-800 p-6 rounded-xl">
                     <div class="flex flex-col md:flex-row justify-between items-start mb-4">
-                         <h2 class="text-2xl font-bold text-cyan-300 mb-2">Hasil Pengerjaan Ujian</h2>
-                         <div class="flex items-center gap-2">
-                            <label for="filter-hasil-mapel" class="text-sm">Filter:</label>
-                            <select id="filter-hasil-mapel" class="bg-slate-700 text-white p-2 rounded-md text-sm">
-                                <option value="all">Semua Mata Pelajaran</option>
-                            </select>
-                        </div>
+                           <h2 class="text-2xl font-bold text-cyan-300 mb-2">Hasil Pengerjaan Ujian</h2>
+                           <div class="flex items-center gap-2">
+                                <label for="filter-hasil-mapel" class="text-sm">Filter:</label>
+                                <select id="filter-hasil-mapel" class="bg-slate-700 text-white p-2 rounded-md text-sm">
+                                     <option value="all">Semua Mata Pelajaran</option>
+                                </select>
+                            </div>
                     </div>
                     <button id="download-hasil" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg mb-4">Download Hasil (CSV)</button>
-                     <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="bg-slate-700">
-                                <tr>
-                                    <th class="p-3">Waktu Pengerjaan</th>
-                                    <th class="p-3">NIS</th>
-                                    <th class="p-3">Nama Siswa</th>
-                                    <th class="p-3">Mata Pelajaran</th>
-                                    <th class="p-3">Skor Akhir</th>
-                                </tr>
-                            </thead>
-                            <tbody id="hasil-table-body" class="bg-slate-800"></tbody>
-                        </table>
-                    </div>
+                       <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-700">
+                                    <tr>
+                                        <th class="p-3">Waktu Pengerjaan</th>
+                                        <th class="p-3">NIS</th>
+                                        <th class="p-3">Nama Siswa</th>
+                                        <th class="p-3">Mata Pelajaran</th>
+                                        <th class="p-3">Skor Akhir</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="hasil-table-body" class="bg-slate-800"></tbody>
+                            </table>
+                       </div>
                 </div>
             </div>
 
             <div data-view="latihan">
                 <div class="bg-slate-800 p-6 rounded-xl">
                     <div class="flex flex-col md:flex-row justify-between items-start mb-4">
-                         <h2 class="text-2xl font-bold text-cyan-300 mb-2">Laporan Hasil Latihan Siswa</h2>
-                         <div class="flex items-center gap-2">
-                            <label for="filter-latihan-mapel" class="text-sm">Filter:</label>
-                            <select id="filter-latihan-mapel" class="bg-slate-700 text-white p-2 rounded-md text-sm">
-                                <option value="all">Semua Mata Pelajaran</option>
-                            </select>
-                        </div>
+                           <h2 class="text-2xl font-bold text-cyan-300 mb-2">Laporan Hasil Latihan Siswa</h2>
+                           <div class="flex items-center gap-2">
+                                <label for="filter-latihan-mapel" class="text-sm">Filter:</label>
+                                <select id="filter-latihan-mapel" class="bg-slate-700 text-white p-2 rounded-md text-sm">
+                                     <option value="all">Semua Mata Pelajaran</option>
+                                </select>
+                            </div>
                     </div>
                     <button id="download-latihan" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg mb-4">Download Hasil Latihan (CSV)</button>
-                     <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="bg-slate-700">
-                                <tr>
-                                    <th class="p-3">NIS</th>
-                                    <th class="p-3">Nama Siswa</th>
-                                    <th class="p-3">Mata Pelajaran</th>
-                                    <th class="p-3">Skor Awal</th>
-                                    <th class="p-3">Skor Akhir</th>
-                                    <th class="p-3">Rata-rata</th>
-                                </tr>
-                            </thead>
-                            <tbody id="latihan-table-body" class="bg-slate-800"></tbody>
-                        </table>
-                    </div>
+                       <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-700">
+                                    <tr>
+                                        <th class="p-3">NIS</th>
+                                        <th class="p-3">Nama Siswa</th>
+                                        <th class="p-3">Mata Pelajaran</th>
+                                        <th class="p-3">Skor Awal</th>
+                                        <th class="p-3">Skor Akhir</th>
+                                        <th class="p-3">Rata-rata</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="latihan-table-body" class="bg-slate-800"></tbody>
+                            </table>
+                       </div>
                 </div>
             </div>
         </main>
@@ -243,17 +247,17 @@
                                 <button type="button" id="remove-image-btn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg text-sm">Hapus</button>
                             </div>
                         </div>
-                         <div class="mb-4">
-                            <label for="edit-mapel" class="block mb-2 text-sm font-medium">Mata Pelajaran</label>
-                            <select id="edit-mapel" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600" required></select>
-                        </div>
-                         <div class="mb-4">
-                            <label for="edit-jenis-soal" class="block mb-2 text-sm font-medium">Jenis Soal</label>
-                            <select id="edit-jenis-soal" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600" required>
-                                <option value="ujian">Ujian (Resmi)</option>
-                                <option value="latihan">Latihan (Dummy)</option>
-                            </select>
-                        </div>
+                           <div class="mb-4">
+                                <label for="edit-mapel" class="block mb-2 text-sm font-medium">Mata Pelajaran</label>
+                                <select id="edit-mapel" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600" required></select>
+                            </div>
+                           <div class="mb-4">
+                                <label for="edit-jenis-soal" class="block mb-2 text-sm font-medium">Jenis Soal</label>
+                                <select id="edit-jenis-soal" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600" required>
+                                     <option value="ujian">Ujian (Resmi)</option>
+                                     <option value="latihan">Latihan (Dummy)</option>
+                                </select>
+                            </div>
                     </div>
                     <div class="flex-grow">
                         <div class="mb-4">
@@ -267,11 +271,11 @@
                             <div><label for="edit-opsiD" class="block mb-2 text-sm font-medium">Opsi D</label><input type="text" id="edit-opsiD" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600"></div>
                             <div><label for="edit-opsiE" class="block mb-2 text-sm font-medium">Opsi E</label><input type="text" id="edit-opsiE" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600"></div>
                         </div>
-                         <div class="mb-6">
-                            <label for="edit-jawaban-benar" class="block mb-2 text-sm font-medium">Jawaban Benar</label>
-                            <input type="text" id="edit-jawaban-benar" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600" required>
-                             <p class="text-xs text-slate-400 mt-1">Pastikan teks jawaban sama persis dengan salah satu opsi.</p>
-                        </div>
+                           <div class="mb-6">
+                                <label for="edit-jawaban-benar" class="block mb-2 text-sm font-medium">Jawaban Benar</label>
+                                <input type="text" id="edit-jawaban-benar" class="w-full bg-slate-700 p-3 rounded-lg border border-slate-600" required>
+                                 <p class="text-xs text-slate-400 mt-1">Pastikan teks jawaban sama persis dengan salah satu opsi.</p>
+                            </div>
                     </div>
                 </div>
                 <div class="flex justify-end space-x-4 mt-6 border-t border-slate-700 pt-6">
@@ -284,6 +288,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // KONFIGURASI SUPABASE
     const SUPABASE_URL = 'https://mtadhiyfducemvckpnkb.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10YWRoaXlmZHVjZW12Y2twbmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNjAwMjcsImV4cCI6MjA3MzczNjAyN30.BbjPW_FDSVN_cpf6uf3xXfZnl0fKgYi2rs-m8ytBWkk';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -298,13 +303,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalMessageEl = document.getElementById('modal-message');
     const modalButtonsEl = document.getElementById('modal-buttons');
 
+    // FUNGSI UTILITY UI
     const showPage = (pageName) => { document.querySelectorAll('[data-page]').forEach(p => p.classList.remove('active')); document.querySelector(`[data-page="${pageName}"]`).classList.add('active'); };
     const showView = (viewName) => { document.querySelectorAll('[data-view]').forEach(v => v.classList.remove('active')); document.querySelector(`[data-view="${viewName}"]`).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.querySelector(`.nav-btn[data-target="${viewName}"]`).classList.add('active'); };
     
-    const handleLogin = async (e) => { e.preventDefault(); const username = document.getElementById('username').value; const password = document.getElementById('admin-password').value; const errorEl = document.getElementById('admin-login-error'); errorEl.textContent = ''; const { data } = await supabaseClient.from('admin').select('*').eq('username', username).eq('password', password).single(); if (data) { currentAdmin = data; sessionStorage.setItem('adminUser', JSON.stringify(data)); showPage('dashboard'); loadInitialData(); } else { errorEl.textContent = 'Username atau password salah.'; } };
+    // FUNGSI AUTH
+    const handleLogin = async (e) => { e.preventDefault(); const username = document.getElementById('username').value; const password = document.getElementById('admin-password').value; const errorEl = document.getElementById('admin-login-error'); errorEl.textContent = ''; const { data, error } = await supabaseClient.from('admin').select('*').eq('username', username).eq('password', password).single(); if (data) { currentAdmin = data; sessionStorage.setItem('adminUser', JSON.stringify(data)); showPage('dashboard'); loadInitialData(); } else { console.error('Login error:', error?.message); errorEl.textContent = 'Username atau password salah.'; } };
     const handleLogout = () => { currentAdmin = null; sessionStorage.removeItem('adminUser'); showPage('login'); };
     const checkSession = () => { const adminData = sessionStorage.getItem('adminUser'); if (adminData) { currentAdmin = JSON.parse(adminData); showPage('dashboard'); loadInitialData(); } };
     
+    // FUNGSI MODAL
     const showModal = (title, message, buttons) => {
         modalTitleEl.textContent = title;
         modalMessageEl.textContent = message;
@@ -324,6 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const hideModal = () => { customModalEl.classList.add('hidden'); customModalEl.classList.remove('flex'); };
 
+    // FUNGSI UTAMA LOAD DATA
     const loadInitialData = async () => {
         const refreshBtn = document.getElementById('refresh-data-btn');
         const refreshBtnText = refreshBtn.querySelector('span');
@@ -348,24 +357,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const { data } = await supabaseClient.from('mata_pelajaran').select('id, nama_mapel');
         if (data) {
             mataPelajaranList = data;
-            const filterSoalSelect = document.getElementById('filter-mapel');
-            const filterHasilSelect = document.getElementById('filter-hasil-mapel');
-            const filterSiswaSelect = document.getElementById('filter-siswa-mapel');
-            const filterLatihanSelect = document.getElementById('filter-latihan-mapel');
+            const selectIds = ['filter-mapel', 'filter-hasil-mapel', 'filter-siswa-mapel', 'filter-latihan-mapel'];
             
-            filterSoalSelect.innerHTML = '<option value="all">Semua Mata Pelajaran</option>';
-            filterHasilSelect.innerHTML = '<option value="all">Semua Mata Pelajaran</option>';
-            filterSiswaSelect.innerHTML = '';
-            filterLatihanSelect.innerHTML = '<option value="all">Semua Mata Pelajaran</option>';
+            selectIds.forEach(id => {
+                const selectEl = document.getElementById(id);
+                const isSiswaFilter = id === 'filter-siswa-mapel';
+                
+                // Hapus opsi lama
+                if (!isSiswaFilter) selectEl.innerHTML = '<option value="all">Semua Mata Pelajaran</option>';
+                if (isSiswaFilter) selectEl.innerHTML = ''; // Siswa filter tidak punya opsi 'all' default
 
-            data.forEach(mapel => {
-                const option = document.createElement('option');
-                option.value = mapel.id;
-                option.textContent = mapel.nama_mapel;
-                filterSoalSelect.appendChild(option.cloneNode(true));
-                filterHasilSelect.appendChild(option.cloneNode(true));
-                filterSiswaSelect.appendChild(option.cloneNode(true));
-                filterLatihanSelect.appendChild(option);
+                data.forEach(mapel => {
+                    const option = document.createElement('option');
+                    option.value = mapel.id;
+                    option.textContent = mapel.nama_mapel;
+                    selectEl.appendChild(option);
+                });
             });
         }
     };
@@ -394,11 +401,56 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    const fetchAndRenderSoal = async () => { const filterMapelId = document.getElementById('filter-mapel').value; let query = supabaseClient.from('soal_ujian').select('*').order('id'); if (filterMapelId && filterMapelId !== 'all') query = query.eq('mapel_id', filterMapelId); const { data } = await query; if (data) { const tableBody = document.getElementById('soal-table-body'); tableBody.innerHTML = data.map(s => { const mapel = mataPelajaranList.find(m => m.id === s.mapel_id); const jenisSoalText = s.jenis_soal === 'latihan' ? 'Latihan' : 'Ujian'; return `<tr class="border-b border-slate-700"><td class="p-3 w-4"><input type="checkbox" class="soal-checkbox" data-id="${s.id}"></td><td class="p-3">${s.id}</td><td class="p-3">${mapel ? mapel.nama_mapel : 'N/A'}</td><td class="p-3"><span class="px-2 py-1 text-xs rounded-full ${s.jenis_soal === 'latihan' ? 'bg-green-700' : 'bg-blue-700'}">${jenisSoalText}</span></td><td class="p-3">${s.pertanyaan}</td><td class="p-3 ${s.url_gambar ? 'text-green-400' : ''}">${s.url_gambar ? 'Ya' : 'Tidak'}</td><td class="p-3 text-green-400">${s.jawaban_benar}</td><td class="p-3"><button class="text-sky-400 hover:text-sky-600 font-semibold mr-4 edit-soal-btn" data-id="${s.id}">Edit</button><button class="text-red-400 hover:text-red-600 font-semibold delete-soal-btn" data-id="${s.id}">Hapus</button></td></tr>` }).join(''); } };
+    const fetchAndRenderSoal = async () => { 
+        const filterMapelId = document.getElementById('filter-mapel').value; 
+        let query = supabaseClient.from('soal_ujian').select('*').order('id'); 
+        if (filterMapelId && filterMapelId !== 'all') query = query.eq('mapel_id', filterMapelId); 
+        const { data } = await query; 
+        if (data) { 
+            const tableBody = document.getElementById('soal-table-body'); 
+            tableBody.innerHTML = data.map(s => { 
+                const mapel = mataPelajaranList.find(m => m.id === s.mapel_id); 
+                const jenisSoalText = s.jenis_soal === 'latihan' ? 'Latihan' : 'Ujian'; 
+                return `<tr class="border-b border-slate-700"><td class="p-3 w-4"><input type="checkbox" class="soal-checkbox" data-id="${s.id}"></td><td class="p-3">${s.id}</td><td class="p-3">${mapel ? mapel.nama_mapel : 'N/A'}</td><td class="p-3"><span class="px-2 py-1 text-xs rounded-full ${s.jenis_soal === 'latihan' ? 'bg-green-700' : 'bg-blue-700'}">${jenisSoalText}</span></td><td class="p-3">${s.pertanyaan}</td><td class="p-3 ${s.url_gambar ? 'text-green-400' : ''}">${s.url_gambar ? 'Ya' : 'Tidak'}</td><td class="p-3 text-green-400">${s.jawaban_benar}</td><td class="p-3"><button class="text-sky-400 hover:text-sky-600 font-semibold mr-4 edit-soal-btn" data-id="${s.id}">Edit</button><button class="text-red-400 hover:text-red-600 font-semibold delete-soal-btn" data-id="${s.id}">Hapus</button></td></tr>` 
+            }).join(''); 
+        } 
+    };
     
-    const fetchAndRenderHasil = async () => { const filterMapelId = document.getElementById('filter-hasil-mapel').value; let query = supabaseClient.from('hasil_ujian').select('*, siswa(nama), mata_pelajaran(nama_mapel)').order('waktu_pengerjaan', { ascending: false }); if (filterMapelId && filterMapelId !== 'all') query = query.eq('mapel_id', filterMapelId); const { data } = await query; if (data) { const tableBody = document.getElementById('hasil-table-body'); tableBody.innerHTML = data.map(h => `<tr class="border-b border-slate-700"><td class="p-3">${new Date(h.waktu_pengerjaan).toLocaleString('id-ID')}</td><td class="p-3">${h.nis_siswa}</td><td class="p-3">${h.siswa ? h.siswa.nama : 'N/A'}</td><td class="p-3">${h.mata_pelajaran ? h.mata_pelajaran.nama_mapel : 'N/A'}</td><td class="p-3 font-bold ${h.skor_akhir >= 75 ? 'text-green-400' : 'text-red-400'}">${h.skor_akhir}</td></tr>`).join(''); } };
+    const fetchAndRenderHasil = async () => { 
+        const filterMapelId = document.getElementById('filter-hasil-mapel').value; 
+        let query = supabaseClient.from('hasil_ujian').select('*, siswa(nama), mata_pelajaran(nama_mapel)').order('waktu_pengerjaan', { ascending: false }); 
+        if (filterMapelId && filterMapelId !== 'all') query = query.eq('mapel_id', filterMapelId); 
+        const { data } = await query; 
+        if (data) { 
+            const tableBody = document.getElementById('hasil-table-body'); 
+            tableBody.innerHTML = data.map(h => `<tr class="border-b border-slate-700"><td class="p-3">${new Date(h.waktu_pengerjaan).toLocaleString('id-ID')}</td><td class="p-3">${h.nis_siswa}</td><td class="p-3">${h.siswa ? h.siswa.nama : 'N/A'}</td><td class="p-3">${h.mata_pelajaran ? h.mata_pelajaran.nama_mapel : 'N/A'}</td><td class="p-3 font-bold ${h.skor_akhir >= 75 ? 'text-green-400' : 'text-red-400'}">${h.skor_akhir}</td></tr>`).join(''); 
+        } 
+    };
 
-    const fetchAndRenderHasilLatihan = async () => { const filterMapelId = document.getElementById('filter-latihan-mapel').value; let query = supabaseClient.from('hasil_latihan').select('*, siswa(nama), mata_pelajaran(nama_mapel)'); if (filterMapelId && filterMapelId !== 'all') { query = query.eq('mapel_id', filterMapelId); } const { data, error } = await query; if (error) return; const processedResults = {}; data.forEach(item => { const key = `${item.nis_siswa}-${item.mapel_id}`; if (!processedResults[key]) { processedResults[key] = { nis: item.nis_siswa, nama: item.siswa ? item.siswa.nama : 'N/A', mapel: item.mata_pelajaran ? item.mata_pelajaran.nama_mapel : 'N/A', percobaan: {} }; } processedResults[key].percobaan[item.nomor_percobaan] = item.skor; }); const tableData = Object.values(processedResults).map(res => { const percobaanKeys = Object.keys(res.percobaan).map(Number).sort((a, b) => a - b); const skorAwal = res.percobaan[percobaanKeys[0]] || 0; const skorAkhir = res.percobaan[percobaanKeys[percobaanKeys.length - 1]] || 0; const rataRata = (skorAwal + skorAkhir) / 2; return { ...res, skorAwal, skorAkhir, rataRata }; }); const tableBody = document.getElementById('latihan-table-body'); tableBody.innerHTML = tableData.map(d => `<tr class="border-b border-slate-700"><td class="p-3">${d.nis}</td><td class="p-3">${d.nama}</td><td class="p-3">${d.mapel}</td><td class="p-3 font-semibold">${d.skorAwal}</td><td class="p-3 font-bold text-sky-400">${d.skorAkhir}</td><td class="p-3 font-bold ${d.rataRata >= 75 ? 'text-green-400' : 'text-yellow-400'}">${d.rataRata.toFixed(1)}</td></tr>`).join(''); };
+    const fetchAndRenderHasilLatihan = async () => { 
+        const filterMapelId = document.getElementById('filter-latihan-mapel').value; 
+        let query = supabaseClient.from('hasil_latihan').select('*, siswa(nama), mata_pelajaran(nama_mapel)'); 
+        if (filterMapelId && filterMapelId !== 'all') { query = query.eq('mapel_id', filterMapelId); } 
+        const { data, error } = await query; 
+        if (error) return; 
+        const processedResults = {}; 
+        data.forEach(item => { 
+            const key = `${item.nis_siswa}-${item.mapel_id}`; 
+            if (!processedResults[key]) { 
+                processedResults[key] = { nis: item.nis_siswa, nama: item.siswa ? item.siswa.nama : 'N/A', mapel: item.mata_pelajaran ? item.mata_pelajaran.nama_mapel : 'N/A', percobaan: {} }; 
+            } 
+            processedResults[key].percobaan[item.nomor_percobaan] = item.skor; 
+        }); 
+        const tableData = Object.values(processedResults).map(res => { 
+            const percobaanKeys = Object.keys(res.percobaan).map(Number).sort((a, b) => a - b); 
+            const skorAwal = res.percobaan[percobaanKeys[0]] || 0; 
+            const skorAkhir = res.percobaan[percobaanKeys[percobaanKeys.length - 1]] || 0; 
+            const rataRata = (skorAwal + skorAkhir) / 2; 
+            return { ...res, skorAwal, skorAkhir, rataRata }; 
+        }); 
+        const tableBody = document.getElementById('latihan-table-body'); 
+        tableBody.innerHTML = tableData.map(d => `<tr class="border-b border-slate-700"><td class="p-3">${d.nis}</td><td class="p-3">${d.nama}</td><td class="p-3">${d.mapel}</td><td class="p-3 font-semibold">${d.skorAwal}</td><td class="p-3 font-bold text-sky-400">${d.skorAkhir}</td><td class="p-3 font-bold ${d.rataRata >= 75 ? 'text-green-400' : 'text-yellow-400'}">${d.rataRata.toFixed(1)}</td></tr>`).join(''); 
+    };
 
     const fetchAndRenderAnalytics = async () => {
         const { data: hasilData } = await supabaseClient.from('hasil_ujian').select('skor_akhir, mapel_id, jawaban_siswa');
@@ -431,8 +483,33 @@ document.addEventListener('DOMContentLoaded', () => {
         const sortedQuestions = Object.entries(incorrectCounts).sort(([, a], [, b]) => b - a).slice(0, 5);
         renderDifficultQuestions(sortedQuestions, soalData);
     };
-    const renderAverageScoreChart = (labels, data) => { const ctx = document.getElementById('average-score-chart'); if (averageScoreChart) averageScoreChart.destroy(); averageScoreChart = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: 'Rata-rata Skor', data, backgroundColor: 'rgba(56, 189, 248, 0.6)', borderColor: 'rgba(56, 189, 248, 1)', borderWidth: 1 }] }, options: { scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } } }); };
-    const renderDifficultQuestions = (sortedData, soalList) => { const listEl = document.getElementById('difficult-questions-list'); if (sortedData.length === 0) { listEl.innerHTML = '<p class="text-slate-500">Belum ada data.</p>'; return; } listEl.innerHTML = sortedData.map(([qId, count]) => { const soal = soalList.find(s => s.id == qId); return `<div class="bg-slate-900 p-3 rounded-lg"><p class="text-sm text-slate-300 truncate">${soal ? soal.pertanyaan : `Soal ID: ${qId}`}</p><p class="text-xs text-red-400 font-semibold">${count} kali salah</p></div>`; }).join(''); };
+    const renderAverageScoreChart = (labels, data) => { 
+        const ctx = document.getElementById('average-score-chart'); 
+        if (averageScoreChart) averageScoreChart.destroy(); 
+        averageScoreChart = new Chart(ctx, { 
+            type: 'bar', 
+            data: { 
+                labels, 
+                datasets: [{ label: 'Rata-rata Skor', data, backgroundColor: 'rgba(56, 189, 248, 0.6)', borderColor: 'rgba(56, 189, 248, 1)', borderWidth: 1 }] 
+            }, 
+            options: { 
+                scales: { 
+                    y: { beginAtZero: true, max: 100 } 
+                }, 
+                plugins: { 
+                    legend: { display: false } 
+                } 
+            } 
+        }); 
+    };
+    const renderDifficultQuestions = (sortedData, soalList) => { 
+        const listEl = document.getElementById('difficult-questions-list'); 
+        if (sortedData.length === 0) { listEl.innerHTML = '<p class="text-slate-500">Belum ada data.</p>'; return; } 
+        listEl.innerHTML = sortedData.map(([qId, count]) => { 
+            const soal = soalList.find(s => s.id == qId); 
+            return `<div class="bg-slate-900 p-3 rounded-lg"><p class="text-sm text-slate-300 truncate">${soal ? soal.pertanyaan : `Soal ID: ${qId}`}</p><p class="text-xs text-red-400 font-semibold">${count} kali salah</p></div>`; 
+        }).join(''); 
+    };
     
     // FUNGSI MANAJEMEN DATA (CRUD)
     const handleResetUjianSpesifik = (nis, mapelId, mapelName) => { showModal('Konfirmasi Reset', `Yakin reset ujian "${mapelName}" untuk NIS ${nis}?`, [ { text: 'Batal', class: 'bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg' }, { text: 'Ya, Reset', class: 'bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg', onClick: async () => { await supabaseClient.from('hasil_ujian').delete().eq('nis_siswa', nis).eq('mapel_id', mapelId); loadInitialData(); }} ]); };
@@ -450,9 +527,156 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const openEditSoalModal = async (id) => { const { data: soal, error } = await supabaseClient.from('soal_ujian').select('*').eq('id', id).single(); if (error) return showModal('Error', 'Gagal mengambil data soal.', [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]); const mapelSelect = document.getElementById('edit-mapel'); mapelSelect.innerHTML = ''; mataPelajaranList.forEach(mapel => { const option = document.createElement('option'); option.value = mapel.id; option.textContent = mapel.nama_mapel; mapelSelect.appendChild(option); }); document.getElementById('edit-soal-id').value = soal.id; document.getElementById('edit-pertanyaan').value = soal.pertanyaan; document.getElementById('edit-jawaban-benar').value = soal.jawaban_benar; document.getElementById('edit-mapel').value = soal.mapel_id || ''; document.getElementById('edit-jenis-soal').value = soal.jenis_soal || 'ujian'; if (soal.url_gambar) { imagePreview.src = soal.url_gambar; document.getElementById('edit-soal-image-path').value = soal.url_gambar; } else { imagePreview.src = 'https://placehold.co/150x100/1e293b/94a3b8?text=Tidak+Ada'; document.getElementById('edit-soal-image-path').value = ''; } const options = soal.pilihan || []; ['A', 'B', 'C', 'D', 'E'].forEach((char, index) => { document.getElementById(`edit-opsi${char}`).value = options[index] || ''; }); editSoalModal.classList.remove('hidden'); };
     const closeEditSoalModal = () => { editSoalModal.classList.add('hidden'); editSoalForm.reset(); imageFileToUpload = null; shouldRemoveImage = false; imageUploadInput.value = ''; imagePreview.src = 'https://placehold.co/150x100/1e293b/94a3b8?text=Tidak+Ada'; };
-    const handleUpdateSoal = async (e) => { e.preventDefault(); const id = document.getElementById('edit-soal-id').value; let imageUrl = document.getElementById('edit-soal-image-path').value; if (imageFileToUpload) { const filePath = `soal-${id}-${Date.now()}-${imageFileToUpload.name}`; const { error } = await supabaseClient.storage.from('gambar_soal').upload(filePath, imageFileToUpload); if (error) return showModal('Error Upload', `Gagal mengunggah gambar: ${error.message}`, [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]); const { data } = supabaseClient.storage.from('gambar_soal').getPublicUrl(filePath); imageUrl = data.publicUrl; } else if (shouldRemoveImage) { imageUrl = null; } const updateData = { pertanyaan: document.getElementById('edit-pertanyaan').value, jawaban_benar: document.getElementById('edit-jawaban-benar').value, pilihan: ['A', 'B', 'C', 'D', 'E'].map(c => document.getElementById(`edit-opsi${c}`).value).filter(Boolean), url_gambar: imageUrl, mapel_id: document.getElementById('edit-mapel').value, jenis_soal: document.getElementById('edit-jenis-soal').value }; const { error } = await supabaseClient.from('soal_ujian').update(updateData).eq('id', id); if (error) { showModal('Error', `Gagal menyimpan: ${error.message}`, [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]); } else { showModal('Sukses', 'Soal diperbarui.', [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]); closeEditSoalModal(); fetchAndRenderSoal(); } };
+    const handleUpdateSoal = async (e) => { 
+        e.preventDefault(); 
+        const id = document.getElementById('edit-soal-id').value; 
+        let imageUrl = document.getElementById('edit-soal-image-path').value; 
+        
+        if (imageFileToUpload) { 
+            const filePath = `soal-${id}-${Date.now()}-${imageFileToUpload.name}`; 
+            const { error } = await supabaseClient.storage.from('gambar_soal').upload(filePath, imageFileToUpload); 
+            if (error) return showModal('Error Upload', `Gagal mengunggah gambar: ${error.message}`, [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]); 
+            const { data } = supabaseClient.storage.from('gambar_soal').getPublicUrl(filePath); 
+            imageUrl = data.publicUrl; 
+        } else if (shouldRemoveImage) { 
+            imageUrl = null; 
+        } 
+        
+        const updateData = { 
+            pertanyaan: document.getElementById('edit-pertanyaan').value, 
+            jawaban_benar: document.getElementById('edit-jawaban-benar').value, 
+            pilihan: ['A', 'B', 'C', 'D', 'E'].map(c => document.getElementById(`edit-opsi${c}`).value).filter(Boolean), 
+            url_gambar: imageUrl, 
+            mapel_id: document.getElementById('edit-mapel').value, 
+            jenis_soal: document.getElementById('edit-jenis-soal').value 
+        }; 
+        
+        const { error } = await supabaseClient.from('soal_ujian').update(updateData).eq('id', id); 
+        
+        if (error) { 
+            showModal('Error', `Gagal menyimpan: ${error.message}`, [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]); 
+        } else { 
+            showModal('Sukses', 'Soal diperbarui.', [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]); 
+            closeEditSoalModal(); 
+            fetchAndRenderSoal(); 
+        } 
+    };
     
-    const downloadCSV = (data, filename) => { const csv = Papa.unparse(data); const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.setAttribute('download', filename); document.body.appendChild(link); link.click(); document.body.removeChild(link); };
+    // FUNGSI DOWNLOAD
+    const downloadCSV = (data, filename) => { 
+        const csv = Papa.unparse(data); 
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); 
+        const link = document.createElement('a'); 
+        link.href = URL.createObjectURL(blob); 
+        link.setAttribute('download', filename); 
+        document.body.appendChild(link); 
+        link.click(); 
+        document.body.removeChild(link); 
+    };
+
+    // FUNGSI KHUSUS UNTUK DOCX DOWNLOAD (TAMBAHAN FITUR)
+    const downloadDOCX = async (data, filename) => {
+        // Menggunakan docx library dari CDN
+        const { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel, UnderlineType } = docx;
+
+        const children = [];
+
+        data.forEach((soal, index) => {
+            const mapelInfo = `[${soal.mapel_name} | ${soal.jenis_soal === 'latihan' ? 'Latihan' : 'Ujian'}]`;
+            
+            // 1. Nomor Soal dan Pertanyaan
+            children.push(new Paragraph({
+                children: [
+                    new TextRun({ 
+                        text: `${index + 1}. `, 
+                        bold: true 
+                    }),
+                    new TextRun({ 
+                        text: mapelInfo, 
+                        bold: true, 
+                        color: "808080", // Abu-abu
+                        size: 20 // Ukuran font kecil
+                    }),
+                    new TextRun({ 
+                        text: ` ${soal.pertanyaan}`, 
+                        bold: false 
+                    }),
+                ],
+                spacing: { before: 200, after: 100 },
+            }));
+            
+            // 2. Opsi Jawaban (A, B, C, D, E)
+            if (soal.pilihan && soal.pilihan.length > 0) {
+                soal.pilihan.forEach((opsi, opsIndex) => {
+                    const prefix = String.fromCharCode(65 + opsIndex) + '. '; // A., B., C., ...
+                    children.push(new Paragraph({
+                        children: [
+                            new TextRun({ 
+                                text: prefix, 
+                                bold: (opsi === soal.jawaban_benar),
+                            }),
+                            new TextRun({ 
+                                text: opsi, 
+                                bold: (opsi === soal.jawaban_benar), 
+                                underline: (opsi === soal.jawaban_benar) ? { type: UnderlineType.SINGLE, color: "000000" } : undefined 
+                            }), // Jawaban benar di-bold dan digarisbawahi
+                        ],
+                        indent: { left: 720 }, // Indentasi 0.5 inci
+                        spacing: { after: 50 }
+                    }));
+                });
+            } else {
+                 children.push(new Paragraph({
+                    children: [
+                        new TextRun({ text: `[Soal Pilihan Ganda Kosong, Jawaban Benar: ${soal.jawaban_benar}]`, color: "FF0000" }),
+                    ],
+                    indent: { left: 720 },
+                }));
+            }
+
+            // 3. Kunci Jawaban (Di bawah, tidak terlalu mencolok, untuk admin)
+            children.push(new Paragraph({
+                children: [
+                    new TextRun({ text: `Kunci: ${soal.jawaban_benar}`, bold: true, color: "009900", size: 22 }),
+                ],
+                spacing: { before: 100, after: 200 },
+            }));
+            
+            // 4. Baris Kosong untuk pemisah
+            children.push(new Paragraph({ children: [] }));
+        });
+
+        const doc = new Document({
+            sections: [{
+                properties: {
+                    page: { size: { width: 12240, height: 15840 } } // Ukuran A4
+                },
+                children: [
+                    new Paragraph({
+                        text: "BANK SOAL UJIAN - TEMANBELAJAR.MY.ID",
+                        heading: HeadingLevel.TITLE,
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 300 }
+                    }),
+                    ...children
+                ],
+            }],
+        });
+
+        const mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        const buffer = await Packer.toBuffer(doc);
+        const blob = new Blob([buffer], { type: mimeType });
+
+        // Membuat link download
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+    
+    // FUNGSI UPLOAD CSV
     const handleFileUpload = (file, tableName, transformFn) => {
         if (!file) return;
         Papa.parse(file, {
@@ -500,9 +724,87 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('download-siswa-template').addEventListener('click', () => { downloadCSV([{ nis: '', nama: '', password: '' }], 'template_siswa.csv'); });
     document.getElementById('download-soal-template').addEventListener('click', () => { downloadCSV([{ mapel_id: '', jenis_soal: 'ujian', pertanyaan: '', opsiA: '', opsiB: '', opsiC: '', opsiD: '', opsiE: '', jawaban_benar: '' }], 'template_soal.csv'); });
     document.getElementById('download-mapel-key').addEventListener('click', () => { const mapelData = mataPelajaranList.map(m => ({ id_mapel: m.id, nama_mapel: m.nama_mapel })); downloadCSV(mapelData, 'kunci_mapel.csv'); });
-    document.getElementById('download-hasil').addEventListener('click', async () => { const { data } = await supabaseClient.from('hasil_ujian').select('waktu_pengerjaan, nis_siswa, skor_akhir, siswa(nama)'); if (data) { const d = data.map(i => ({ waktu: new Date(i.waktu_pengerjaan).toLocaleString('id-ID'), nis: i.nis_siswa, nama: i.siswa?.nama || 'N/A', skor: i.skor_akhir })); downloadCSV(d, 'hasil_ujian.csv'); } });
-    document.getElementById('download-latihan').addEventListener('click', async () => { const { data } = await supabaseClient.from('hasil_latihan').select('*, siswa(nama), mata_pelajaran(nama_mapel)'); if (data) { const processed = {}; data.forEach(item => { const key = `${item.nis_siswa}-${item.mapel_id}`; if (!processed[key]) { processed[key] = { nis: item.nis_siswa, nama: item.siswa?.nama || 'N/A', mapel: item.mata_pelajaran?.nama_mapel || 'N/A', percobaan: {} }; } processed[key].percobaan[item.nomor_percobaan] = item.skor; }); const flattened = Object.values(processed).map(res => { const percobaanKeys = Object.keys(res.percobaan).map(Number).sort((a,b) => a-b); const skorAwal = res.percobaan[percobaanKeys[0]] || 0; const skorAkhir = res.percobaan[percobaanKeys[percobaanKeys.length - 1]] || 0; return { nis: res.nis, nama: res.nama, mata_pelajaran: res.mapel, skor_awal: skorAwal, skor_akhir: skorAkhir, rata_rata: (skorAwal + skorAkhir) / 2 }; }); downloadCSV(flattened, 'hasil_latihan.csv'); } });
+
+    // Event listener untuk Download DOCX
+    document.getElementById('download-soal-docx').addEventListener('click', async () => {
+        const filterMapelId = document.getElementById('filter-mapel').value;
+        // Mengambil semua soal
+        let query = supabaseClient.from('soal_ujian').select('*').order('mapel_id').order('id');
+        
+        // Filter berdasarkan mapel yang sedang dilihat
+        if (filterMapelId && filterMapelId !== 'all') {
+            query = query.eq('mapel_id', filterMapelId);
+        }
+        
+        const { data, error } = await query;
+
+        if (error) {
+            return showModal('Error', `Gagal mengambil data soal: ${error.message}`, [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]);
+        }
+        
+        if (data && data.length > 0) {
+            const soalDataFormatted = data.map(s => ({
+                pertanyaan: s.pertanyaan,
+                pilihan: s.pilihan || [],
+                jawaban_benar: s.jawaban_benar,
+                mapel_name: mataPelajaranList.find(m => m.id === s.mapel_id)?.nama_mapel || 'N/A',
+                jenis_soal: s.jenis_soal || 'ujian'
+            }));
+            
+            let filename = filterMapelId === 'all' 
+                ? 'bank_soal_semua_mapel.docx' 
+                : `bank_soal_${soalDataFormatted[0].mapel_name.toLowerCase().replace(/ /g, '_')}_${new Date().getFullYear()}.docx`;
+                
+            downloadDOCX(soalDataFormatted, filename);
+        } else {
+            showModal('Info', 'Tidak ada data soal untuk diunduh.', [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]);
+        }
+    });
+
+    // Download Hasil Ujian CSV
+    document.getElementById('download-hasil').addEventListener('click', async () => { 
+        const { data } = await supabaseClient.from('hasil_ujian').select('waktu_pengerjaan, nis_siswa, skor_akhir, siswa(nama), mata_pelajaran(nama_mapel)'); 
+        if (data) { 
+            const d = data.map(i => ({ 
+                waktu: new Date(i.waktu_pengerjaan).toLocaleString('id-ID'), 
+                nis: i.nis_siswa, 
+                nama: i.siswa?.nama || 'N/A', 
+                mapel: i.mata_pelajaran?.nama_mapel || 'N/A', 
+                skor: i.skor_akhir 
+            })); 
+            downloadCSV(d, 'hasil_ujian_lengkap.csv'); 
+        } 
+    });
     
+    // Download Hasil Latihan CSV
+    document.getElementById('download-latihan').addEventListener('click', async () => { 
+        const { data } = await supabaseClient.from('hasil_latihan').select('*, siswa(nama), mata_pelajaran(nama_mapel)'); 
+        if (data) { 
+            const processed = {}; 
+            data.forEach(item => { 
+                const key = `${item.nis_siswa}-${item.mapel_id}`; 
+                if (!processed[key]) { 
+                    processed[key] = { nis: item.nis_siswa, nama: item.siswa?.nama || 'N/A', mapel: item.mata_pelajaran?.nama_mapel || 'N/A', percobaan: {} }; 
+                } 
+                processed[key].percobaan[item.nomor_percobaan] = item.skor; 
+            }); 
+            const flattened = Object.values(processed).map(res => { 
+                const percobaanKeys = Object.keys(res.percobaan).map(Number).sort((a,b) => a-b); 
+                const skorAwal = res.percobaan[percobaanKeys[0]] || 0; 
+                const skorAkhir = res.percobaan[percobaanKeys[percobaanKeys.length - 1]] || 0; 
+                return { 
+                    nis: res.nis, 
+                    nama: res.nama, 
+                    mata_pelajaran: res.mapel, 
+                    skor_awal: skorAwal, 
+                    skor_akhir: skorAkhir, 
+                    rata_rata: (skorAwal + skorAkhir) / 2 
+                }; 
+            }); 
+            downloadCSV(flattened, 'hasil_latihan_lengkap.csv'); 
+        } 
+    });
+
     document.getElementById('upload-soal-csv').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -531,11 +833,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    const setupCheckboxLogic = (selectAllId, checkboxClass, deleteButtonId) => { const selectAllCheckbox = document.getElementById(selectAllId); const deleteButton = document.getElementById(deleteButtonId); const tableBody = selectAllCheckbox.closest('table').querySelector('tbody'); tableBody.addEventListener('change', () => { const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length; deleteButton.classList.toggle('hidden', selected === 0); }); selectAllCheckbox.addEventListener('change', (e) => { document.querySelectorAll(`.${checkboxClass}`).forEach(checkbox => { checkbox.checked = e.target.checked; }); const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length; deleteButton.classList.toggle('hidden', selected === 0); }); };
+    const setupCheckboxLogic = (selectAllId, checkboxClass, deleteButtonId) => { 
+        const selectAllCheckbox = document.getElementById(selectAllId); 
+        const deleteButton = document.getElementById(deleteButtonId); 
+        const tableBody = selectAllCheckbox.closest('table').querySelector('tbody'); 
+        
+        // Listener untuk checkbox individu
+        tableBody.addEventListener('change', (e) => { 
+            if (e.target.classList.contains(checkboxClass)) {
+                 const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length; 
+                 deleteButton.classList.toggle('hidden', selected === 0);
+                 selectAllCheckbox.checked = selected === document.querySelectorAll(`.${checkboxClass}`).length;
+            }
+        }); 
+        
+        // Listener untuk Select All
+        selectAllCheckbox.addEventListener('change', (e) => { 
+            document.querySelectorAll(`.${checkboxClass}`).forEach(checkbox => { 
+                checkbox.checked = e.target.checked; 
+            }); 
+            const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length; 
+            deleteButton.classList.toggle('hidden', selected === 0); 
+        }); 
+    };
     setupCheckboxLogic('select-all-siswa', 'siswa-checkbox', 'delete-selected-siswa-btn');
     setupCheckboxLogic('select-all-soal', 'soal-checkbox', 'delete-selected-soal-btn');
     
-    imageUploadInput.addEventListener('change', (e) => { const file = e.target.files[0]; if (file) { if (file.size > 1024 * 1024) { showModal('Error', 'Ukuran file gambar tidak boleh melebihi 1MB.', [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]); e.target.value = null; return; } imageFileToUpload = file; shouldRemoveImage = false; imagePreview.src = URL.createObjectURL(file); } });
+    imageUploadInput.addEventListener('change', (e) => { 
+        const file = e.target.files[0]; 
+        if (file) { 
+            if (file.size > 1024 * 1024) { 
+                showModal('Error', 'Ukuran file gambar tidak boleh melebihi 1MB.', [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]); 
+                e.target.value = null; 
+                return; 
+            } 
+            imageFileToUpload = file; 
+            shouldRemoveImage = false; 
+            imagePreview.src = URL.createObjectURL(file); 
+        } 
+    });
     document.getElementById('remove-image-btn').addEventListener('click', () => { imageFileToUpload = null; shouldRemoveImage = true; imageUploadInput.value = ''; imagePreview.src = 'https://placehold.co/150x100/1e293b/94a3b8?text=Tidak+Ada'; });
     editSoalForm.addEventListener('submit', handleUpdateSoal);
     document.getElementById('cancel-edit-btn').addEventListener('click', closeEditSoalModal);
