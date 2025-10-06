@@ -112,12 +112,16 @@
                                 </ul>
                             </div>
                              <div class="bg-slate-900 p-4 rounded-lg">
-                                <div class="flex flex-col sm:flex-row items-center gap-4 mb-4">
-                                    <button id="bubble-sort-play" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg w-full sm:w-auto">Jalankan Otomatis</button>
-                                    <button id="bubble-sort-step" class="bg-sky-800 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg w-full sm:w-auto">Langkah Berikutnya</button>
-                                    <button id="bubble-sort-reset" class="bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg w-full sm:w-auto">Reset</button>
+                                <div class="flex flex-col sm:flex-row items-center gap-4 mb-4 flex-wrap">
+                                    <button id="bubble-sort-play" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg">Otomatis</button>
+                                    <button id="bubble-sort-step" class="bg-sky-800 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg">Per Langkah</button>
+                                    <button id="bubble-sort-reset" class="bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg">Reset Acak</button>
                                     <label for="speed-slider-bubble-sort" class="text-sm">Kecepatan:</label>
-                                    <input type="range" id="speed-slider-bubble-sort" min="50" max="500" value="200" class="w-full sm:w-auto">
+                                    <input type="range" id="speed-slider-bubble-sort" min="50" max="500" value="200" class="flex-grow">
+                                </div>
+                                <div class="flex flex-col sm:flex-row items-center gap-4 mb-4">
+                                    <input type="text" id="bubble-sort-custom-data" class="bg-slate-700 p-2 rounded-md border border-slate-600 flex-grow" placeholder="Contoh: 5, 1, 9, 3, 7">
+                                    <button id="bubble-sort-use-custom" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg whitespace-nowrap">Gunakan Data Sendiri</button>
                                 </div>
                                 <div id="bubble-sort-container" class="flex justify-center items-end gap-1 h-64 bg-slate-950 p-2 rounded-md"></div>
                                 <div id="bubble-sort-log" class="mt-4 text-sm text-slate-300 h-6 text-center font-mono"></div>
@@ -140,12 +144,16 @@
                                 </ul>
                             </div>
                             <div class="bg-slate-900 p-4 rounded-lg">
-                                <div class="flex flex-col sm:flex-row items-center gap-4 mb-4">
-                                    <button id="selection-sort-play" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg w-full sm:w-auto">Jalankan Otomatis</button>
-                                    <button id="selection-sort-step" class="bg-sky-800 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg w-full sm:w-auto">Langkah Berikutnya</button>
-                                    <button id="selection-sort-reset" class="bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg w-full sm:w-auto">Reset</button>
+                                <div class="flex flex-col sm:flex-row items-center gap-4 mb-4 flex-wrap">
+                                    <button id="selection-sort-play" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg">Otomatis</button>
+                                    <button id="selection-sort-step" class="bg-sky-800 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg">Per Langkah</button>
+                                    <button id="selection-sort-reset" class="bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg">Reset Acak</button>
                                     <label for="speed-slider-selection-sort" class="text-sm">Kecepatan:</label>
-                                    <input type="range" id="speed-slider-selection-sort" min="50" max="500" value="200" class="w-full sm:w-auto">
+                                    <input type="range" id="speed-slider-selection-sort" min="50" max="500" value="200" class="flex-grow">
+                                </div>
+                                <div class="flex flex-col sm:flex-row items-center gap-4 mb-4">
+                                    <input type="text" id="selection-sort-custom-data" class="bg-slate-700 p-2 rounded-md border border-slate-600 flex-grow" placeholder="Contoh: 25, 8, 45, 12">
+                                    <button id="selection-sort-use-custom" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg whitespace-nowrap">Gunakan Data Sendiri</button>
                                 </div>
                                 <div id="selection-sort-container" class="flex justify-center items-end gap-1 h-64 bg-slate-950 p-2 rounded-md"></div>
                                 <div id="selection-sort-log" class="mt-4 text-sm text-slate-300 h-6 text-center font-mono"></div>
@@ -236,6 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderArray = (container, arr, highlights = {}) => {
+        if (!container) return;
         container.innerHTML = arr.map((value, index) => {
             let bgColor = 'bg-slate-600';
             if (highlights.found === index) bgColor = 'bg-green-500';
@@ -246,98 +255,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return `<div class="array-bar flex-1 ${bgColor} text-center font-semibold pt-1 rounded-t-md" style="height: ${height};">${value}</div>`;
         }).join('');
     };
-
-    function setupSimulator(config) {
-        const { id, generatorFn, createArrayFn, getParamsFn } = config;
-        const container = document.getElementById(`${id}-container`);
-        const log = document.getElementById(`${id}-log`);
-        const playBtn = document.getElementById(`${id}-play`);
-        const stepBtn = document.getElementById(`${id}-step`);
-        const resetBtn = document.getElementById(`${id}-reset`);
-        const speedSlider = document.getElementById(`speed-slider-${id}`);
-
-        let array = [];
-        let generator = null;
-        let isPlaying = false;
-        let simSpeed = speedSlider ? parseInt(speedSlider.value) : 200;
-
-        const setControlsDisabled = (disabled, keepPlayDisabled = false) => {
-            if (playBtn) playBtn.disabled = keepPlayDisabled || disabled;
-            if (stepBtn) stepBtn.disabled = disabled;
-        };
-
-        const reset = () => {
-            isPlaying = false;
-            array = createArrayFn();
-            if (!getParamsFn) {
-                generator = generatorFn(array.slice());
-            } else {
-                 generator = null;
-            }
-            renderArray(container, array);
-            log.textContent = "Siap untuk memulai.";
-            setControlsDisabled(false);
-        };
-        
-        const step = () => {
-            if (getParamsFn && (!generator || !isPlaying)) {
-                generator = generatorFn(array.slice(), getParamsFn());
-                isPlaying = true;
-            }
-            if (!generator) return;
-
-            const result = generator.next();
-            if (result.value) {
-                const { arr, highlights, message } = result.value;
-                if(arr) array = arr;
-                renderArray(container, array, highlights);
-                log.textContent = message;
-            }
-            if (result.done) {
-                isPlaying = false;
-                setControlsDisabled(true);
-            } else {
-                setControlsDisabled(true, true);
-                stepBtn.disabled = false;
-            }
-        };
-
-        const play = async () => {
-            if (isPlaying) return;
-            if (getParamsFn) {
-                generator = generatorFn(array.slice(), getParamsFn());
-            }
-            if (!generator) return;
-
-            isPlaying = true;
-            setControlsDisabled(true);
-
-            let result = {};
-            while (!result.done) {
-                result = generator.next();
-                if (result.value) {
-                    const { arr, highlights, message } = result.value;
-                    if(arr) array = arr;
-                    renderArray(container, array, highlights);
-                    log.textContent = message;
-                }
-                if (result.done) break;
-                await new Promise(resolve => setTimeout(resolve, simSpeed));
-            }
-            isPlaying = false;
-        };
-
-        if (playBtn) playBtn.addEventListener('click', play);
-        if (stepBtn) stepBtn.addEventListener('click', step);
-        resetBtn.addEventListener('click', reset);
-        if (speedSlider) {
-            speedSlider.addEventListener('input', (e) => {
-                simSpeed = 600 - parseInt(e.target.value);
-            });
-        }
-        
-        reset();
-    }
 
     function* linearSearchGenerator(arr, { value }) {
         if (isNaN(value)) {
@@ -409,6 +326,118 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         yield { arr, highlights: { sorted: Array.from(Array(n).keys()) }, message: `Pengurutan Selesai!` };
     }
+    
+    function setupSimulator(config) {
+        const { id, generatorFn, createArrayFn, getParamsFn } = config;
+        const container = document.getElementById(`${id}-container`);
+        const log = document.getElementById(`${id}-log`);
+        const playBtn = document.getElementById(`${id}-play`);
+        const stepBtn = document.getElementById(`${id}-step`);
+        const resetBtn = document.getElementById(`${id}-reset`);
+        const speedSlider = document.getElementById(`speed-slider-${id}`);
+        const customDataInput = document.getElementById(`${id}-custom-data`);
+        const useCustomDataBtn = document.getElementById(`${id}-use-custom`);
+
+        let array = [];
+        let generator = null;
+        let isPlaying = false;
+        let simSpeed = speedSlider ? 600 - parseInt(speedSlider.value) : 200;
+
+        const setControlsDisabled = (disabled, keepPlayDisabled = false) => {
+            if (playBtn) playBtn.disabled = keepPlayDisabled || disabled;
+            if (stepBtn) stepBtn.disabled = disabled;
+        };
+        
+        const reset = (customArray = null) => {
+            isPlaying = false;
+            array = customArray || createArrayFn();
+             if (array.length > 50) array = array.slice(0, 50);
+            
+            if (!getParamsFn) {
+                generator = generatorFn(array.slice());
+            } else {
+                 generator = null;
+            }
+            renderArray(container, array);
+            log.textContent = "Siap untuk memulai.";
+            setControlsDisabled(false);
+        };
+        
+        const step = () => {
+            if (getParamsFn && (!generator || !isPlaying)) {
+                generator = generatorFn(array.slice(), getParamsFn());
+                isPlaying = true;
+            }
+            if (!generator) return;
+
+            const result = generator.next();
+            if (result.value) {
+                const { arr, highlights, message } = result.value;
+                if(arr) array = arr;
+                renderArray(container, array, highlights);
+                log.textContent = message;
+            }
+            if (result.done) {
+                isPlaying = false;
+                setControlsDisabled(true);
+            } else {
+                setControlsDisabled(true, true);
+                stepBtn.disabled = false;
+            }
+        };
+
+        const play = async () => {
+            if (isPlaying) return;
+            if (getParamsFn) {
+                generator = generatorFn(array.slice(), getParamsFn());
+            }
+            if (!generator) return;
+
+            isPlaying = true;
+            setControlsDisabled(true);
+
+            let result = {};
+            while (!result.done) {
+                result = generator.next();
+                if (result.value) {
+                    const { arr, highlights, message } = result.value;
+                    if(arr) array = arr;
+                    renderArray(container, array, highlights);
+                    log.textContent = message;
+                }
+                if (result.done) break;
+                await new Promise(resolve => setTimeout(resolve, simSpeed));
+            }
+            isPlaying = false;
+        };
+
+        if (playBtn) playBtn.addEventListener('click', play);
+        if (stepBtn) stepBtn.addEventListener('click', step);
+        if (resetBtn) resetBtn.addEventListener('click', () => reset());
+        
+        if (useCustomDataBtn) {
+            useCustomDataBtn.addEventListener('click', () => {
+                const text = customDataInput.value;
+                const customArray = text.split(',')
+                    .map(s => parseInt(s.trim()))
+                    .filter(n => !isNaN(n) && n > 0 && n <= 100);
+                
+                if (customArray.length > 0) {
+                    reset(customArray);
+                } else {
+                    log.textContent = "Masukkan data angka yang valid (1-100), pisahkan dengan koma.";
+                }
+            });
+        }
+        
+        if (speedSlider) {
+            speedSlider.addEventListener('input', (e) => {
+                simSpeed = 600 - parseInt(e.target.value);
+            });
+        }
+        
+        reset();
+    }
 
     setupSimulator({
         id: 'linear-search',
@@ -462,8 +491,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const droppedItems = Array.from(dropZone.children);
                 const currentOrder = droppedItems.map(item => item.dataset.step).join('');
                 isCorrect = currentOrder === '1234';
-
-                // ** DIPERBAIKI: Kembalikan item jika salah **
                 if (!isCorrect) {
                     const dragItemsContainer = document.getElementById('drag-items-container');
                     droppedItems.forEach(item => dragItemsContainer.appendChild(item));
@@ -523,4 +550,3 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
-
