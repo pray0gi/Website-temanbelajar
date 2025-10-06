@@ -14,10 +14,36 @@
         .tab-content.active { display: block; }
         .tab-btn.active { background-color: #0ea5e9; color: white; }
         .array-bar { transition: all 0.3s ease-in-out; }
-        .feedback-correct { color: #4ade80; }
-        .feedback-incorrect { color: #f87171; }
-        .drag-item { cursor: grab; }
-        .drop-zone.drag-over { background-color: #334155; border-style: dashed; }
+        /* Style untuk Lembar Kerja Kuis */
+        .quiz-feedback {
+            font-weight: 600;
+            margin-left: 1rem;
+        }
+        .quiz-feedback.correct {
+            color: #4ade80;
+        }
+        .quiz-feedback.incorrect {
+            color: #f87171;
+        }
+        .quiz-input {
+            background-color: #334155;
+            border-bottom: 2px solid #64748b;
+        }
+        .quiz-input:focus {
+            outline: none;
+            border-bottom-color: #38bdf8;
+        }
+        .quiz-input.correct {
+            border-bottom-color: #22c55e;
+        }
+        .quiz-input.incorrect {
+            border-bottom-color: #ef4444;
+        }
+        .correct-answer-text {
+            color: #4ade80;
+            font-size: 0.9em;
+            font-style: italic;
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-white">
@@ -165,59 +191,85 @@
 
             <div id="worksheet" class="tab-content">
                 <div class="bg-slate-800 p-6 rounded-xl">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-cyan-300">Uji Pemahaman Anda</h2>
-                        <div class="text-lg font-bold">Skor: <span id="worksheet-score" class="text-sky-400">0 / 3</span></div>
+                    <div class="text-center border-b border-slate-700 pb-6 mb-6">
+                        <h2 class="text-2xl font-bold text-cyan-300">Kuis Pasca-Kegiatan: Memahami Algoritma Pengurutan</h2>
+                        <p class="text-slate-400 mt-1">Jawablah berdasarkan simulasi "Bermain Kartu" yang telah dilakukan.</p>
                     </div>
 
-                    <div class="space-y-8">
-                        <!-- Soal 1: Pilihan Ganda -->
-                        <div class="bg-slate-900 p-4 rounded-lg" data-question="1">
-                            <p class="font-semibold mb-3">1. Algoritma mana yang wajib menggunakan array yang sudah terurut?</p>
-                            <div class="space-y-2">
-                                <label class="flex items-center"><input type="radio" name="q1" value="linear" class="mr-2"> Linear Search</label>
-                                <label class="flex items-center"><input type="radio" name="q1" value="binary" class="mr-2"> Binary Search</label>
-                                <label class="flex items-center"><input type="radio" name="q1" value="bubble" class="mr-2"> Bubble Sort</label>
-                            </div>
-                            <div class="mt-4">
-                                <button class="check-answer-btn bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg text-sm" data-question="1" data-correct="binary">Periksa Jawaban</button>
-                                <span class="feedback-text ml-4 font-semibold"></span>
+                    <div id="quiz-container" class="space-y-8">
+                        <div class="bg-slate-900 p-4 rounded-lg">
+                            <div class="flex flex-col sm:flex-row gap-4 sm:items-center">
+                                <div><label for="quiz-student-name" class="block text-sm font-medium mb-1">Nama Siswa:</label><input type="text" id="quiz-student-name" class="quiz-input px-2 py-1 w-64"></div>
+                                <div><label for="quiz-student-class" class="block text-sm font-medium mb-1">Kelas:</label><input type="text" id="quiz-student-class" class="quiz-input px-2 py-1 w-32"></div>
                             </div>
                         </div>
 
-                        <!-- Soal 2: Urutkan Langkah (Drag & Drop) -->
-                        <div class="bg-slate-900 p-4 rounded-lg" data-question="2">
-                            <p class="font-semibold mb-3">2. Urutkan langkah-langkah dasar dari algoritma Selection Sort berikut ini:</p>
-                            <div id="drop-zone-selection-sort" class="drop-zone border-2 border-slate-700 rounded-lg p-4 min-h-[200px] space-y-2">
-                                <!-- Drop items here -->
+                        <!-- Bagian A -->
+                        <div class="bg-slate-900 p-6 rounded-lg">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-bold text-lg text-sky-400">Bagian A: Identifikasi Konsep</h3>
+                                <span class="text-sm text-slate-400">(Total Poin: 20)</span>
                             </div>
-                            <p class="text-xs text-slate-400 mt-2 mb-4">Seret langkah-langkah di bawah ini ke dalam kotak di atas.</p>
-                            <div id="drag-items-container" class="flex flex-wrap gap-2">
-                                <div class="drag-item bg-slate-700 p-2 rounded-md" draggable="true" data-step="3">Tukar elemen terkecil dengan elemen pertama di bagian yang belum terurut.</div>
-                                <div class="drag-item bg-slate-700 p-2 rounded-md" draggable="true" data-step="1">Anggap elemen pertama sebagai yang terkecil.</div>
-                                <div class="drag-item bg-slate-700 p-2 rounded-md" draggable="true" data-step="4">Ulangi proses untuk sisa array yang belum terurut.</div>
-                                <div class="drag-item bg-slate-700 p-2 rounded-md" draggable="true" data-step="2">Bandingkan dengan sisa elemen untuk menemukan yang benar-benar terkecil.</div>
-                            </div>
-                            <div class="mt-4">
-                                <button class="check-answer-btn bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg text-sm" data-question="2">Periksa Urutan</button>
-                                <span class="feedback-text ml-4 font-semibold"></span>
+                            <hr class="border-slate-700 my-4">
+                            <div class="space-y-6">
+                                <div data-quiz-question="A1">
+                                    <p class="mb-2">1. Algoritma yang cara kerjanya membandingkan dan menukar sebuah elemen data dengan elemen tepat di sebelahnya secara berulang-ulang hingga seluruh data terurut disebut... <span class="quiz-feedback"></span></p>
+                                    <div class="space-y-2 text-slate-300">
+                                        <label class="flex items-center"><input type="radio" name="qA1" value="a" class="mr-3"> a. Selection Sort</label>
+                                        <label class="flex items-center"><input type="radio" name="qA1" value="b" class="mr-3" data-correct> b. Bubble Sort</label>
+                                        <label class="flex items-center"><input type="radio" name="qA1" value="c" class="mr-3"> c. Random Sort</label>
+                                        <label class="flex items-center"><input type="radio" name="qA1" value="d" class="mr-3"> d. Quick Sort</label>
+                                    </div>
+                                </div>
+                                <div data-quiz-question="A2">
+                                    <p class="mb-2">2. Algoritma yang cara kerjanya mencari elemen terkecil dari sisa data yang belum terurut, lalu menukarkannya ke posisi paling awal (yang belum terisi) disebut... <span class="quiz-feedback"></span></p>
+                                    <div class="space-y-2 text-slate-300">
+                                        <label class="flex items-center"><input type="radio" name="qA2" value="a" class="mr-3" data-correct> a. Selection Sort</label>
+                                        <label class="flex items-center"><input type="radio" name="qA2" value="b" class="mr-3"> b. Bubble Sort</label>
+                                        <label class="flex items-center"><input type="radio" name="qA2" value="c" class="mr-3"> c. Neighbor Sort</label>
+                                        <label class="flex items-center"><input type="radio" name="qA2" value="d" class="mr-3"> d. Search Sort</label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Soal 3: Lengkapi Kode -->
-                        <div class="bg-slate-900 p-4 rounded-lg" data-question="3">
-                            <p class="font-semibold mb-3">3. Lengkapi potongan kode Bubble Sort di bawah ini. Apa kata kunci yang tepat untuk menukar dua nilai?</p>
-                            <pre class="bg-slate-950 p-4 rounded-md text-sm"><code>
-if (arr[j] > arr[j + 1]) {
-  // Kata kunci untuk menukar nilai
-  [arr[j], arr[j + 1]] = <input type="text" id="q3-input" class="bg-slate-700 border border-slate-600 rounded w-48 mx-2 px-1 text-center" placeholder="Lengkapi di sini...">;
-}
-                            </code></pre>
-                            <div class="mt-4">
-                                <button class="check-answer-btn bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg text-sm" data-question="3" data-correct="[arr[j+1],arr[j]]">Periksa Jawaban</button>
-                                <span class="feedback-text ml-4 font-semibold"></span>
+                        <!-- Bagian B -->
+                        <div class="bg-slate-900 p-6 rounded-lg">
+                            <h3 class="font-bold text-lg text-sky-400">Bagian B: Analisis Proses</h3>
+                            <div class="space-y-6 mt-4">
+                                <div>
+                                    <p class="mb-2">3. Jelaskan dengan bahasamu sendiri, apa perbedaan utama cara kerja antara Bubble Sort dan Selection Sort?</p>
+                                    <textarea class="w-full bg-slate-700 p-2 rounded-md border border-slate-600 min-h-[80px]"></textarea>
+                                </div>
+                                <div>
+                                    <p class="mb-2">4. Mengapa jumlah "langkah" atau "pertukaran posisi" antara kedua metode tersebut bisa berbeda? Metode mana yang cenderung melakukan lebih banyak pertukaran?</p>
+                                    <textarea class="w-full bg-slate-700 p-2 rounded-md border border-slate-600 min-h-[80px]"></textarea>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Bagian C -->
+                        <div class="bg-slate-900 p-6 rounded-lg">
+                            <h3 class="font-bold text-lg text-sky-400">Bagian C: Studi Kasus Sederhana</h3>
+                             <p class="text-sm text-slate-400 mt-1 mb-4">Bayangkan ada 5 siswa yang memegang kartu angka sebagai berikut: `[ 8, 5, 9, 2, 6 ]`</p>
+                            <div class="space-y-6">
+                                <div data-quiz-question="C1">
+                                    <p class="mb-2">5. Jika kita menggunakan metode **Bubble Sort**, bagaimana susunan angka tersebut setelah **satu putaran/iterasi pertama** selesai? <span class="quiz-feedback"></span></p>
+                                    <p>Jawaban: [ <input type="text" id="qC1" data-correct="5,8,2,6,9" class="quiz-input w-48 px-2 py-1"> ] <span class="correct-answer-text"></span></p>
+                                </div>
+                                <div data-quiz-question="C2">
+                                    <p class="mb-2">6. Jika kita menggunakan metode **Selection Sort** pada deret angka yang sama, bagaimana susunan angka tersebut setelah **satu putaran/iterasi pertama** selesai? <span class="quiz-feedback"></span></p>
+                                    <p>Jawaban: [ <input type="text" id="qC2" data-correct="2,5,9,8,6" class="quiz-input w-48 px-2 py-1"> ] <span class="correct-answer-text"></span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-slate-700 flex justify-center items-center gap-6">
+                        <button id="check-quiz-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg">Periksa Jawaban Saya</button>
+                        <button id="reset-quiz-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-semibold py-3 px-6 rounded-lg">Ulangi</button>
+                        <div class="text-lg font-bold">Total Skor Otomatis: <span id="quiz-score" class="text-sky-400">0 / 60</span></div>
                     </div>
                 </div>
             </div>
@@ -465,87 +517,93 @@ document.addEventListener('DOMContentLoaded', () => {
         createArrayFn: () => createRandomArray(20, 100)
     });
 
-    const worksheetScoreEl = document.getElementById('worksheet-score');
-    const checkAnswerBtns = document.querySelectorAll('.check-answer-btn');
-    const answeredQuestions = new Set();
-    let score = 0;
+    const checkQuizBtn = document.getElementById('check-quiz-btn');
+    const resetQuizBtn = document.getElementById('reset-quiz-btn');
+    const quizContainer = document.getElementById('quiz-container');
+    const scoreEl = document.getElementById('quiz-score');
 
-    const updateScore = () => {
-        score = answeredQuestions.size;
-        worksheetScoreEl.textContent = `${score} / 3`;
+    const checkQuizAnswers = () => {
+        let currentScore = 0;
+        const totalPoints = 60;
+
+        // Cek Bagian A
+        const qA1 = quizContainer.querySelector('input[name="qA1"]:checked');
+        const feedbackA1 = quizContainer.querySelector('[data-quiz-question="A1"] .quiz-feedback');
+        if (qA1 && qA1.hasAttribute('data-correct')) {
+            currentScore += 10;
+            feedbackA1.textContent = "Benar (+10)";
+            feedbackA1.className = 'quiz-feedback correct';
+        } else {
+            feedbackA1.textContent = "Salah";
+            feedbackA1.className = 'quiz-feedback incorrect';
+        }
+
+        const qA2 = quizContainer.querySelector('input[name="qA2"]:checked');
+        const feedbackA2 = quizContainer.querySelector('[data-quiz-question="A2"] .quiz-feedback');
+        if (qA2 && qA2.hasAttribute('data-correct')) {
+            currentScore += 10;
+            feedbackA2.textContent = "Benar (+10)";
+            feedbackA2.className = 'quiz-feedback correct';
+        } else {
+            feedbackA2.textContent = "Salah";
+            feedbackA2.className = 'quiz-feedback incorrect';
+        }
+
+        // Cek Bagian C
+        const qC1Input = document.getElementById('qC1');
+        const feedbackC1 = quizContainer.querySelector('[data-quiz-question="C1"] .quiz-feedback');
+        const correctAnsC1Text = quizContainer.querySelector('[data-quiz-question="C1"] .correct-answer-text');
+        const userAnswerC1 = qC1Input.value.replace(/\s/g, '');
+        const correctAnswerC1 = qC1Input.dataset.correct.replace(/\s/g, '');
+        if (userAnswerC1 === correctAnswerC1) {
+            currentScore += 20;
+            qC1Input.className = 'quiz-input w-48 px-2 py-1 correct';
+            feedbackC1.textContent = "Benar (+20)";
+            feedbackC1.className = 'quiz-feedback correct';
+            correctAnsC1Text.textContent = '';
+        } else {
+            qC1Input.className = 'quiz-input w-48 px-2 py-1 incorrect';
+            feedbackC1.textContent = "Salah";
+            feedbackC1.className = 'quiz-feedback incorrect';
+            correctAnsC1Text.textContent = `Jawaban: [ ${qC1Input.dataset.correct} ]`;
+        }
+        
+        const qC2Input = document.getElementById('qC2');
+        const feedbackC2 = quizContainer.querySelector('[data-quiz-question="C2"] .quiz-feedback');
+        const correctAnsC2Text = quizContainer.querySelector('[data-quiz-question="C2"] .correct-answer-text');
+        const userAnswerC2 = qC2Input.value.replace(/\s/g, '');
+        const correctAnswerC2 = qC2Input.dataset.correct.replace(/\s/g, '');
+        if (userAnswerC2 === correctAnswerC2) {
+            currentScore += 20;
+            qC2Input.className = 'quiz-input w-48 px-2 py-1 correct';
+            feedbackC2.textContent = "Benar (+20)";
+            feedbackC2.className = 'quiz-feedback correct';
+            correctAnsC2Text.textContent = '';
+        } else {
+            qC2Input.className = 'quiz-input w-48 px-2 py-1 incorrect';
+            feedbackC2.textContent = "Salah";
+            feedbackC2.className = 'quiz-feedback incorrect';
+            correctAnsC2Text.textContent = `Jawaban: [ ${qC2Input.dataset.correct} ]`;
+        }
+
+        scoreEl.textContent = `${currentScore} / ${totalPoints}`;
     };
 
-    checkAnswerBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const questionId = btn.dataset.question;
-            const questionDiv = document.querySelector(`[data-question="${questionId}"]`);
-            const feedbackEl = questionDiv.querySelector('.feedback-text');
-            let isCorrect = false;
-
-            if (questionId === '1') {
-                const selected = questionDiv.querySelector('input[name="q1"]:checked');
-                isCorrect = selected && selected.value === btn.dataset.correct;
-            } 
-            else if (questionId === '2') {
-                const dropZone = document.getElementById('drop-zone-selection-sort');
-                const droppedItems = Array.from(dropZone.children);
-                const currentOrder = droppedItems.map(item => item.dataset.step).join('');
-                isCorrect = currentOrder === '1234';
-                if (!isCorrect) {
-                    const dragItemsContainer = document.getElementById('drag-items-container');
-                    droppedItems.forEach(item => dragItemsContainer.appendChild(item));
-                }
-            }
-            else if (questionId === '3') {
-                const input = document.getElementById('q3-input').value.replace(/\s/g, '');
-                isCorrect = input === btn.dataset.correct;
-            }
-
-            if (isCorrect) {
-                feedbackEl.textContent = "Benar!";
-                feedbackEl.className = 'feedback-text ml-4 font-semibold feedback-correct';
-                if (!answeredQuestions.has(questionId)) {
-                    answeredQuestions.add(questionId);
-                    updateScore();
-                }
-            } else {
-                feedbackEl.textContent = "Salah, coba lagi.";
-                feedbackEl.className = 'feedback-text ml-4 font-semibold feedback-incorrect';
-            }
+    const resetQuiz = () => {
+        quizContainer.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
+        quizContainer.querySelectorAll('input[type="text"], textarea').forEach(input => input.value = '');
+        quizContainer.querySelectorAll('.quiz-feedback, .correct-answer-text').forEach(el => el.textContent = '');
+        quizContainer.querySelectorAll('.quiz-input').forEach(el => {
+             el.className = 'quiz-input px-2 py-1';
+             if (el.id === 'qC1' || el.id === 'qC2') el.classList.add('w-48');
+             else if (el.id === 'quiz-student-name') el.classList.add('w-64');
+             else if (el.id === 'quiz-student-class') el.classList.add('w-32');
         });
-    });
+        scoreEl.textContent = `0 / 60`;
+    };
 
-    const dragItems = document.querySelectorAll('.drag-item');
-    const dropZone = document.getElementById('drop-zone-selection-sort');
-
-    dragItems.forEach(item => {
-        item.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', e.target.dataset.step);
-            e.target.style.opacity = '0.5';
-        });
-        item.addEventListener('dragend', (e) => {
-            e.target.style.opacity = '1';
-        });
-    });
-
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('drag-over');
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('drag-over');
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('drag-over');
-        const step = e.dataTransfer.getData('text/plain');
-        const draggedItem = document.querySelector(`.drag-item[data-step="${step}"]`);
-        if (draggedItem && !dropZone.contains(draggedItem)) {
-            dropZone.appendChild(draggedItem);
-        }
-    });
+    checkQuizBtn.addEventListener('click', checkQuizAnswers);
+    resetQuizBtn.addEventListener('click', resetQuiz);
 });
 </script>
 </body>
