@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { data, error } = await supabaseClient.from('soal_ujian')
             .select('id, pertanyaan, pilihan, jawaban_benar, url_gambar')
             .eq('mapel_id', mapelSaatIni.id)
-            .eq('jenis_soal', 'ujian'); // ** HANYA AMBIL SOAL UJIAN **
+            .eq('jenis_soal', 'ujian');
 
         if (error) { examContent.innerHTML = `<p class="text-center text-red-400">Gagal memuat soal.</p>`; return; }
         
@@ -165,20 +165,58 @@ document.addEventListener('DOMContentLoaded', () => {
     const setupCheatingDetection = () => { isCheatingDetectionActive = true; document.addEventListener('visibilitychange', handleVisibilityChange); document.addEventListener('fullscreenchange', handleFullscreenChange); };
     const removeCheatingDetection = () => { isCheatingDetectionActive = false; document.removeEventListener('visibilitychange', handleVisibilityChange); document.removeEventListener('fullscreenchange', handleFullscreenChange); };
     
+    // ** DIUBAH: Logika pemilihan mapel dengan fitur remedial **
     const showMapelSelection = async () => {
         const { data: mapelList, error: mapelError } = await supabaseClient.from('mata_pelajaran').select('*');
-        const { data: results, error: resultsError } = await supabaseClient.from('hasil_ujian').select('mapel_id').eq('nis_siswa', siswaSaatIni.nis);
+        // Ambil skor juga, bukan hanya mapel_id
+        const { data: results, error: resultsError } = await supabaseClient.from('hasil_ujian')
+            .select('mapel_id, skor_akhir')
+            .eq('nis_siswa', siswaSaatIni.nis);
+            
         if (mapelError || resultsError) { document.getElementById('mapel-list').innerHTML = `<p class="text-red-400">Gagal memuat mata pelajaran.</p>`; return; }
-        const completedMapelIds = results.map(r => r.mapel_id);
+        
         const mapelListEl = document.getElementById('mapel-list');
         mapelListEl.innerHTML = '';
         mapelList.forEach(mapel => {
-            const hasTaken = completedMapelIds.includes(mapel.id);
+            // 1. Temukan semua percobaan untuk mapel ini
+            const attemptsForThisMapel = results.filter(r => r.mapel_id === mapel.id);
+            const attemptCount = attemptsForThisMapel.length;
+            
+            let isAllowed = false;
+            let buttonText = "Klik untuk memulai";
+            let buttonClass = "bg-sky-700 hover:bg-sky-600 hover:scale-105"; // Default (boleh)
+
+            if (attemptCount === 0) {
+                // Kasus 1: Belum pernah mencoba
+                isAllowed = true;
+            } else if (attemptCount === 1) {
+                // Kasus 2: Sudah 1 kali mencoba
+                const firstAttemptScore = attemptsForThisMapel[0].skor_akhir;
+                if (firstAttemptScore < 75) {
+                    // Boleh remedial
+                    isAllowed = true;
+                    buttonText = `Kesempatan Remedial (Skor: ${firstAttemptScore})`;
+                    buttonClass = "bg-yellow-700 hover:bg-yellow-600 hover:scale-105"; // Remedial
+                } else {
+                    // Tuntas, tidak boleh lagi
+                    isAllowed = false;
+                    buttonText = `Selesai (Skor: ${firstAttemptScore})`;
+                    buttonClass = "bg-slate-700 opacity-50 cursor-not-allowed"; // Selesai
+                }
+            } else {
+                // Kasus 3: Sudah 2 kali atau lebih (sudah remedial)
+                isAllowed = false;
+                const lastAttemptScore = attemptsForThisMapel[attemptsForThisMapel.length - 1].skor_akhir;
+                buttonText = `Selesai (Remedial diambil, Skor: ${lastAttemptScore})`;
+                buttonClass = "bg-slate-700 opacity-50 cursor-not-allowed"; // Selesai
+            }
+
             const button = document.createElement('button');
-            button.innerHTML = `<h3 class="text-xl font-bold">${mapel.nama_mapel}</h3><p class="text-sm mt-2">${hasTaken ? 'Sudah Dikerjakan' : 'Klik untuk memulai'}</p>`;
-            button.className = `p-6 rounded-lg transition-transform duration-200 w-full text-left ${hasTaken ? 'bg-slate-700 opacity-50 cursor-not-allowed' : 'bg-sky-700 hover:bg-sky-600 hover:scale-105'}`;
-            button.disabled = hasTaken;
-            if (!hasTaken) {
+            button.innerHTML = `<h3 class="text-xl font-bold">${mapel.nama_mapel}</h3><p class="text-sm mt-2">${buttonText}</p>`;
+            button.className = `p-6 rounded-lg transition-transform duration-200 w-full text-left ${buttonClass}`;
+            button.disabled = !isAllowed;
+            
+            if (isAllowed) {
                 button.onclick = async () => {
                     mapelSaatIni = mapel;
                     const { count } = await supabaseClient.from('soal_ujian').select('*', { count: 'exact', head: true }).eq('mapel_id', mapel.id).eq('jenis_soal', 'ujian');
@@ -195,7 +233,39 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     document.getElementById('login-form').addEventListener('submit', async (e) => { e.preventDefault(); const nis = document.getElementById('nis').value; const password = document.getElementById('password').value; const loginError = document.getElementById('login-error'); const loginBtn = document.getElementById('login-btn'); loginError.textContent = ''; loginBtn.disabled = true; loginBtn.textContent = 'Memeriksa...'; try { const { data, error } = await supabaseClient.from('siswa').select('*').eq('nis', nis).single(); if (error || !data) { loginError.textContent = 'NIS tidak ditemukan.'; } else if (data.password !== password) { loginError.textContent = 'Password salah.'; } else { siswaSaatIni = data; document.getElementById('student-name-select').textContent = siswaSaatIni.nama; showMapelSelection(); } } catch (err) { loginError.textContent = 'Kesalahan jaringan.'; } finally { loginBtn.disabled = false; loginBtn.textContent = 'Masuk'; } });
-    document.getElementById('start-exam-btn').addEventListener('click', () => { const savedAnswers = sessionStorage.getItem(`savedAnswers_${mapelSaatIni.id}`); if (savedAnswers) { jawabanSiswa = JSON.parse(savedAnswers); } else { jawabanSiswa = {}; } document.documentElement.requestFullscreen().then(async () => { navigateTo('exam'); await loadQuestions(); renderSavedAnswers(); startTimer(WAKTU_UJIAN); setupCheatingDetection(); }).catch(err => { showModal('Peringatan', `Gagal masuk mode layar penuh: ${err.message}`, [{ text: 'OK', class: 'bg-sky-600 text-white font-bold py-2 px-6 rounded-lg', onClick: hideModal }]); }); });
+    
+    document.getElementById('start-exam-btn').addEventListener('click', () => {
+        const savedAnswers = sessionStorage.getItem(`savedAnswers_${mapelSaatIni.id}`);
+        if (savedAnswers) {
+            jawabanSiswa = JSON.parse(savedAnswers);
+        } else {
+            jawabanSiswa = {};
+        }
+
+        const startExamFlow = async () => {
+            navigateTo('exam');
+            await loadQuestions();
+            renderSavedAnswers();
+            startTimer(WAKTU_UJIAN);
+            setupCheatingDetection();
+        };
+
+        const fsElement = document.documentElement;
+        const requestFs = fsElement.requestFullscreen || fsElement.webkitRequestFullscreen;
+
+        if (typeof requestFs === 'function') {
+            requestFs.call(fsElement).then(() => {
+                startExamFlow();
+            }).catch(err => {
+                console.warn(`Gagal masuk mode layar penuh: ${err.message}. Ujian tetap dilanjutkan.`);
+                startExamFlow();
+            });
+        } else {
+            console.log("Mode layar penuh tidak didukung, memulai ujian...");
+            startExamFlow();
+        }
+    });
+
     document.getElementById('submit-exam-btn').addEventListener('click', () => { if (Object.keys(jawabanSiswa).length < soalUjian.length) { showModal('Peringatan', 'Anda harus menjawab semua soal.', [{ text: 'OK', class: 'bg-sky-600 text-white font-bold py-2 px-6 rounded-lg', onClick: hideModal }]); return; } showModal('Konfirmasi', 'Yakin ingin mengirim jawaban?', [{ text: 'Batal', class: 'bg-slate-600 text-white font-semibold py-2 px-6 rounded-lg', onClick: hideModal }, { text: 'Ya, Kirim', class: 'bg-green-600 text-white font-bold py-2 px-6 rounded-lg', onClick: () => { hideModal(); submitExam(); }}]); });
     document.getElementById('close-warning-btn').addEventListener('click', () => { violationWarningEl.style.display = 'none'; if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(err => console.warn(err.message)); });
 });
