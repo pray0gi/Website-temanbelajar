@@ -12,103 +12,45 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .sim-content {
-            display: none;
-        }
-        .sim-content.active {
-            display: block;
-        }
-        .queue-person, .stack-item, .contact-item {
-            transition: all 0.3s ease-out;
-        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .sim-content { display: none; }
+        .sim-content.active { display: block; }
+        .queue-person, .stack-item, .contact-item { transition: all 0.3s ease-out; }
         .quiz-option:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
-        .correct-answer {
-            background-color: #22c55e !important;
-            border-color: #16a34a !important;
-        }
-        .wrong-answer {
-            background-color: #ef4444 !important;
-            border-color: #dc2626 !important;
-        }
-        .fade-in {
-            animation: fadeIn 0.5s ease-in-out;
-        }
+        .correct-answer { background-color: #22c55e !important; border-color: #16a34a !important; }
+        .wrong-answer { background-color: #ef4444 !important; border-color: #dc2626 !important; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
         /* Styles for Tree Simulation */
         .tree-node {
-            cursor: pointer;
-            transition: all 0.2s;
-            border: 2px solid transparent;
+            cursor: pointer; transition: all 0.2s; border: 2px solid transparent;
         }
         .tree-node.selected {
-            border-color: #38bdf8; /* sky-400 */
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+            border-color: #38bdf8; box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
         }
-        .tree-container ul {
-            position: relative;
-            padding-top: 20px;
-            transition: all 0.5s;
-        }
+        .tree-container ul { position: relative; padding-top: 20px; transition: all 0.5s; }
         .tree-container li {
-            text-align: center;
-            list-style-type: none;
-            position: relative;
-            padding: 20px 5px 0 5px;
-            transition: all 0.5s;
+            text-align: center; list-style-type: none; position: relative; padding: 20px 5px 0 5px; transition: all 0.5s;
         }
-        /* Garis penghubung */
         .tree-container li::before, .tree-container li::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 50%;
-            border-top: 2px solid #475569; /* slate-600 */
-            width: 50%;
-            height: 20px;
+            content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid #475569; width: 50%; height: 20px;
         }
-        .tree-container li::after {
-            right: auto;
-            left: 50%;
-            border-left: 2px solid #475569;
-        }
-        .tree-container li:only-child::after, .tree-container li:only-child::before {
-            display: none;
-        }
-        .tree-container li:only-child {
-            padding-top: 0;
-        }
-        .tree-container li:first-child::before, .tree-container li:last-child::after {
-            border: 0 none;
-        }
-        .tree-container li:last-child::before {
-            border-right: 2px solid #475569;
-            border-radius: 0 5px 0 0;
-        }
-        .tree-container li:first-child::after {
-            border-radius: 5px 0 0 0;
-        }
+        .tree-container li::after { right: auto; left: 50%; border-left: 2px solid #475569; }
+        .tree-container li:only-child::after, .tree-container li:only-child::before { display: none; }
+        .tree-container li:only-child { padding-top: 0; }
+        .tree-container li:first-child::before, .tree-container li:last-child::after { border: 0 none; }
+        .tree-container li:last-child::before { border-right: 2px solid #475569; border-radius: 0 5px 0 0; }
+        .tree-container li:first-child::after { border-radius: 5px 0 0 0; }
         .tree-container ul ul::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            border-left: 2px solid #475569;
-            width: 0;
-            height: 20px;
+            content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid #475569; width: 0; height: 20px;
         }
-
     </style>
 </head>
 <body class="bg-slate-900 text-white">
@@ -120,24 +62,48 @@
         </header>
 
         <!-- Navigasi Utama pusat-->
-        <nav class="bg-slate-800 p-4 mb-8 rounded-lg">
-        <ul class="flex justify-center space-x-4 md:space-x-8 text-slate-300">
-        <li>
-            <a href="/index.html" class="hover:text-sky-400 font-semibold">Beranda</a>
-        </li>
-        <li>
-            <a href="/ujian-online.html" class="hover:text-sky-400 font-semibold">UJIAN</a>
-        </li>
-        <li>
-            <a href="/array.html" class="hover:text-sky-400 font-semibold">MATERI</a>
-        </li>
-            <li>
-            <a href="/pencarian-dan-pengurutan.html" class="hover:text-sky-400 font-semibold">PENCARIAN</a>
-        </li>
-    </ul>
-    </nav>
+        <nav class="bg-slate-800 p-4 mb-8 rounded-lg relative z-50">
+            <ul class="flex justify-center items-center space-x-4 md:space-x-8 text-slate-300">
+                <li>
+                    <a href="/index.html" class="hover:text-sky-400 font-semibold">Beranda</a>
+                </li>
+                <li>
+                    <a href="/ujian-online.html" class="hover:text-sky-400 font-semibold">UJIAN</a>
+                </li>
+                
+                <!-- DROPDOWN MATERI DIPERBAIKI -->
+                <li class="relative group">
+                    <button class="hover:text-sky-400 font-semibold flex items-center focus:outline-none h-full">
+                        MATERI
+                        <!-- Ikon Panah -->
+                        <svg class="w-4 h-4 ml-1 transform group-hover:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    
+                    <!-- 
+                        PERBAIKAN: 
+                        1. Menggunakan 'top-full' agar menempel di bawah tombol.
+                        2. Menggunakan 'pt-2' (padding-top) sebagai jembatan invisibel untuk kursor, menggantikan margin.
+                        3. Konten visual (background, border) dipindah ke div bagian dalam.
+                    -->
+                    <div class="absolute left-1/2 transform -translate-x-1/2 top-full w-48 pt-2 hidden group-hover:block z-50">
+                        <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden">
+                            <!-- LINK DIPERBARUI KE FOLDER /materi/ -->
+                            <a href="materi/array.html" class="block px-4 py-3 text-sm hover:bg-slate-700 hover:text-sky-400 border-b border-slate-700 last:border-0">Array</a>
+                            <a href="materi/pencarian.html" class="block px-4 py-3 text-sm hover:bg-slate-700 hover:text-sky-400 border-b border-slate-700 last:border-0">Pencarian</a>
+                            <a href="materi/pengurutan.html" class="block px-4 py-3 text-sm hover:bg-slate-700 hover:text-sky-400 border-b border-slate-700 last:border-0">Pengurutan</a>
+                            <a href="materi/sistem-operasi.html" class="block px-4 py-3 text-sm hover:bg-slate-700 hover:text-sky-400">Sistem Operasi</a>
+                        </div>
+                    </div>
+                </li>
+                <!-- DROPDOWN MATERI SELESAI -->
 
-        <!-- Navigasi Utama -->
+                <li>
+                    <a href="/pencarian-dan-pengurutan.html" class="hover:text-sky-400 font-semibold">PENCARIAN</a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Navigasi Tab Halaman -->
         <nav class="flex justify-center bg-slate-800 rounded-lg p-2 mb-8">
             <button data-tab="materi" class="tab-btn bg-sky-500 text-white px-4 py-2 rounded-md font-semibold w-1/3 mx-1">Materi</button>
             <button data-tab="simulasi" class="tab-btn bg-slate-700 text-slate-300 px-4 py-2 rounded-md font-semibold w-1/3 mx-1">Simulasi</button>
@@ -794,10 +760,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
