@@ -1,487 +1,712 @@
 <!-- Chosen Palette: Warm Neutrals (Stone) with Indigo accent -->
-<!-- Application Structure Plan: Sebuah modul interaktif satu halaman yang dapat digulir secara vertikal. Navigasi atas yang lekat memungkinkan pengguna melompat ke bagian-bagian (Beranda, Anatomi, Fungsi, dll.). Struktur non-linear ini lebih baik daripada teks biasa, memungkinkan pengguna menjelajahi konsep sesuai kecepatan mereka. Interaksi utama mencakup "Diagram Bawang" CSS yang dapat diklik untuk anatomi, antarmuka tab untuk fungsi OS, simulator mini untuk multitasking "Round Robin", dan panduan langkah demi langkah untuk studi kasus "Save". Desain ini menerjemahkan modul statis menjadi alat belajar yang menarik dan dapat dijelajahi. -->
-<!-- Visualization & Content Choices: Info Laporan: Arsitektur Lapisan Bawang -> Tujuan: Mengatur/Menjelajah -> Viz: Lingkaran CSS konsentris yang dapat diklik -> Interaksi: Klik lapisan, lihat deskripsi -> Justifikasi: Diagram interaktif lebih menarik daripada teks statis. | Info Laporan: Multitasking/Round Robin -> Tujuan: Perubahan/Proses -> Viz: Kotak sorot beranimasi JS -> Interaksi: Tombol 'Mulai' memicu animasi yang menyimulasikan pergantian konteks CPU -> Justifikasi: Mendemonstrasikan proses abstrak yang kompleks secara visual. | Info Laporan: Studi Kasus "Save" -> Tujuan: Proses -> Viz: Stepper/timeline vertikal -> Interaksi: Tombol "Lanjut" memajukan pengguna melalui 7 langkah -> Justifikasi: Memecah alur yang kompleks menjadi langkah-langkah berurutan yang mudah dicerna. -->
+<!-- Application Structure Plan: Aplikasi ini dirancang sebagai "Learning Journey" satu halaman. Struktur dimulai dengan Navigasi Sticky untuk akses cepat.
+     1. Bagian 'Beranda': Pengantar konseptual tentang Booting dan BIOS.
+     2. Bagian 'Anatomi': Visualisasi interaktif "Lapisan Bawang" (Onion Layer) di mana pengguna mengklik lapisan untuk melihat detail hardware/kernel/shell/aplikasi.
+     3. Bagian 'Fungsi Utama': Tab interaktif untuk memecah topik berat (Manajemen Proses, Memori, File) menjadi potongan yang mudah dicerna tanpa scroll berlebihan.
+     4. Bagian 'Lab Multitasking': Simulator visual "Round Robin" menggunakan animasi JS untuk mendemonstrasikan konsep abstrak multitasking dan context switching.
+     5. Bagian 'Studi Kasus': Timeline vertikal interaktif untuk menjelaskan alur data "Save" dokumen.
+     6. Bagian 'Kuis': Kuis pilihan ganda interaktif dengan umpan balik instan (Benar/Salah) untuk asesmen formatif.
+     Struktur ini dipilih untuk mengubah teks statis menjadi pengalaman eksploratif aktif. -->
+<!-- Visualization & Content Choices:
+     - Lapisan Bawang -> Goal: Organize -> Viz: Lingkaran konsentris CSS -> Interaction: Click-to-reveal -> Justification: Memvisualisasikan hierarki OS jauh lebih baik daripada daftar teks.
+     - Simulator Round Robin -> Goal: Change/Process -> Viz: Animasi sorotan bergilir -> Interaction: Tombol Start/Stop -> Justification: Menunjukkan konsep "waktu bergilir" secara nyata.
+     - Alur Save -> Goal: Process -> Viz: Stepper vertikal -> Interaction: Tombol Next -> Justification: Memecah proses teknis menjadi langkah logis.
+     - Kuis -> Goal: Assess -> Viz: Form interaktif -> Interaction: Validasi instan -> Justification: Memberikan umpan balik langsung kepada siswa. -->
 <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interaktif: Membedah Otak Komputer</title>
+    <title>Sistem Operasi: Otak Komputer</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        html {
-            scroll-behavior: smooth;
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom Styles for Onion Diagram */
         .onion-layer {
-            transition: all 0.3s ease-in-out;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
         }
-        .onion-layer:hover, .onion-layer.active {
-            transform: scale(1.05);
-            border-width: 4px;
+        .onion-layer:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 10;
         }
-        .tab-btn.active {
-            border-bottom-width: 2px;
+        .onion-layer.active {
+            transform: scale(1.03);
             border-color: #4f46e5; /* indigo-600 */
-            color: #4f46e5;
+            background-color: #eef2ff; /* indigo-50 */
+            z-index: 20;
         }
-        .step.active .step-circle {
-            background-color: #4f46e5; /* indigo-600 */
-            color: white;
-        }
-        .step.active .step-content {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .step .step-content {
-            opacity: 0.5;
+
+        /* Simulator Styles */
+        .proc-box {
             transition: all 0.3s ease;
         }
         .proc-box.active {
-            animation: pulse 1s infinite;
+            transform: scale(1.1);
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.2);
         }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1.05); }
-            50% { opacity: 0.7; transform: scale(1); }
+
+        /* Quiz Styles */
+        .option-btn {
+            transition: all 0.2s;
+        }
+        .option-btn:hover:not(:disabled) {
+            background-color: #f5f5f4;
+        }
+        .option-btn.correct {
+            background-color: #dcfce7 !important; /* green-100 */
+            border-color: #16a34a !important; /* green-600 */
+            color: #14532d;
+        }
+        .option-btn.wrong {
+            background-color: #fee2e2 !important; /* red-100 */
+            border-color: #dc2626 !important; /* red-600 */
+            color: #7f1d1d;
         }
     </style>
 </head>
-<body class="bg-stone-100 text-stone-800 leading-relaxed">
+<body class="bg-stone-50 text-stone-800 antialiased">
 
-    <!-- Navigasi Atas -->
-    <nav class="sticky top-0 z-50 bg-white shadow-md w-full">
-        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
-            <h1 class="text-xl font-bold text-indigo-600">Membedah Otak Komputer</h1>
-            <div class="hidden md:flex space-x-6">
-                <a href="#beranda" class="text-stone-600 hover:text-indigo-600">Beranda</a>
-                <a href="#anatomi" class="text-stone-600 hover:text-indigo-600">Anatomi</a>
-                <a href="#fungsi" class="text-stone-600 hover:text-indigo-600">Fungsi Utama</a>
-                <a href="#multitasking" class="text-stone-600 hover:text-indigo-600">Multitasking</a>
-                <a href="#studi-kasus" class="text-stone-600 hover:text-indigo-600">Studi Kasus</a>
-                <a href="#glosarium" class="text-stone-600 hover:text-indigo-600">Glosarium</a>
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-stone-200 shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">💻</span>
+                    <h1 class="text-xl font-bold text-indigo-700 tracking-tight">Sistem Operasi</h1>
+                </div>
+                <div class="hidden md:flex space-x-1">
+                    <a href="#intro" class="px-3 py-2 rounded-md text-sm font-medium text-stone-600 hover:text-indigo-600 hover:bg-stone-100 transition-colors">Pengantar</a>
+                    <a href="#anatomi" class="px-3 py-2 rounded-md text-sm font-medium text-stone-600 hover:text-indigo-600 hover:bg-stone-100 transition-colors">Anatomi</a>
+                    <a href="#fungsi" class="px-3 py-2 rounded-md text-sm font-medium text-stone-600 hover:text-indigo-600 hover:bg-stone-100 transition-colors">Fungsi</a>
+                    <a href="#lab" class="px-3 py-2 rounded-md text-sm font-medium text-stone-600 hover:text-indigo-600 hover:bg-stone-100 transition-colors">Lab Simulasi</a>
+                    <a href="#kuis" class="px-3 py-2 rounded-md text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm">Kuis</a>
+                </div>
+                <!-- Mobile menu button -->
+                <button id="mobile-menu-btn" class="md:hidden p-2 rounded-md text-stone-500 hover:bg-stone-100">
+                    <span class="text-2xl">☰</span>
+                </button>
             </div>
-            <button id="mobile-menu-btn" class="md:hidden text-stone-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-                </svg>
-            </button>
         </div>
-        <!-- Menu Mobile -->
-        <div id="mobile-menu" class="hidden md:hidden bg-white shadow-lg">
-            <a href="#beranda" class="block px-6 py-3 text-stone-600 hover:bg-stone-100">Beranda</a>
-            <a href="#anatomi" class="block px-6 py-3 text-stone-600 hover:bg-stone-100">Anatomi</a>
-            <a href="#fungsi" class="block px-6 py-3 text-stone-600 hover:bg-stone-100">Fungsi Utama</a>
-            <a href="#multitasking" class="block px-6 py-3 text-stone-600 hover:bg-stone-100">Multitasking</a>
-            <a href="#studi-kasus" class="block px-6 py-3 text-stone-600 hover:bg-stone-100">Studi Kasus</a>
-            <a href="#glosarium" class="block px-6 py-3 text-stone-600 hover:bg-stone-100">Glosarium</a>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-stone-200">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="#intro" class="block px-3 py-2 rounded-md text-base font-medium text-stone-600 hover:bg-stone-100">Pengantar</a>
+                <a href="#anatomi" class="block px-3 py-2 rounded-md text-base font-medium text-stone-600 hover:bg-stone-100">Anatomi</a>
+                <a href="#fungsi" class="block px-3 py-2 rounded-md text-base font-medium text-stone-600 hover:bg-stone-100">Fungsi</a>
+                <a href="#lab" class="block px-3 py-2 rounded-md text-base font-medium text-stone-600 hover:bg-stone-100">Lab Simulasi</a>
+                <a href="#kuis" class="block px-3 py-2 rounded-md text-base font-medium text-indigo-600 bg-indigo-50">Kuis</a>
+            </div>
         </div>
     </nav>
 
-    <!-- Konten Utama -->
-    <main class="container mx-auto p-4 md:p-8">
+    <!-- Hero / Intro Section -->
+    <section id="intro" class="pt-10 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="text-center mb-12">
+            <h2 class="text-4xl font-extrabold text-stone-900 sm:text-5xl mb-4">
+                Siapa Bos di Dalam Komputer?
+            </h2>
+            <p class="text-xl text-stone-600 max-w-3xl mx-auto">
+                Bukan CPU, bukan RAM. Ada satu manajer tak terlihat yang mengatur segalanya. Mari kita bedah bagaimana komputer "berpikir" dan bekerja.
+            </p>
+        </div>
 
-        <!-- Bagian 1: Beranda / Pengantar -->
-        <section id="beranda" class="pt-16 -mt-16">
-            <div class="bg-white p-8 rounded-lg shadow-lg">
-                <h2 class="text-3xl font-bold text-indigo-600 mb-4">Siapa Bos di Dalam Komputer?</h2>
-                <p class="text-lg text-stone-700 mb-4">
-                    Pernahkah kamu bertanya-tanya, siapa yang menyalakan layar saat kamu menyalakan HP? Siapa yang membuat suara keluar dari speaker saat kamu memutar Spotify?
-                </p>
-                <p class="mb-4">
-                    Banyak orang mengira "Prosesor" (CPU) adalah jawabannya. CPU memang otak yang pintar, tapi dia hanyalah <strong class="font-semibold text-indigo-700">pekerja</strong>. Dia butuh seorang <strong class="font-semibold text-indigo-700">manajer</strong> untuk memberitahu apa yang harus dikerjakan.
-                </p>
-                <p class="p-4 bg-indigo-50 border border-indigo-200 rounded-lg text-indigo-800">
-                    Manajer itu bernama **Sistem Operasi (Operating System/OS)**. Tanpa OS, HP canggihmu hanyalah tumpukan logam, kaca, dan plastik yang mahal. Layarnya akan gelap gulita.
-                </p>
+        <!-- Concept Cards -->
+        <div class="grid md:grid-cols-2 gap-8 mb-12">
+            <!-- Booting Concept -->
+            <div class="bg-white rounded-xl shadow-lg border border-stone-100 overflow-hidden hover:shadow-xl transition-shadow">
+                <div class="p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-3 bg-amber-100 rounded-lg text-amber-600 text-2xl">⚡</div>
+                        <h3 class="text-xl font-bold text-stone-900">Bagaimana Komputer Bangun?</h3>
+                    </div>
+                    <p class="text-stone-600 mb-4">Sebelum OS berjalan, ada proses <strong>Booting</strong>:</p>
+                    <ol class="space-y-3">
+                        <li class="flex items-start gap-3">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-stone-200 text-stone-600 flex items-center justify-center text-sm font-bold">1</span>
+                            <span><strong>BIOS/UEFI:</strong> Program kecil di motherboard bangun duluan.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-stone-200 text-stone-600 flex items-center justify-center text-sm font-bold">2</span>
+                            <span><strong>POST:</strong> Cek kesehatan hardware (RAM, Keyboard).</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-stone-200 text-stone-600 flex items-center justify-center text-sm font-bold">3</span>
+                            <span><strong>Load OS:</strong> Memanggil OS dari Harddisk ke RAM.</span>
+                        </li>
+                    </ol>
+                </div>
             </div>
-        </section>
 
-        <!-- Bagian 2: Arsitektur Lapisan Bawang -->
-        <section id="anatomi" class="pt-20 -mt-16">
-            <div class="bg-white p-8 rounded-lg shadow-lg">
-                <h2 class="text-3xl font-bold text-indigo-600 mb-4">Arsitektur Lapisan Bawang</h2>
-                <p class="text-stone-600 mb-8">Untuk memahami cara kerja komputer, bayangkan komputer itu seperti bawang yang berlapis-lapis. Klik pada setiap lapisan untuk melihat penjelasannya.</p>
-                
-                <div class="md:grid md:grid-cols-2 md:gap-8 items-center">
-                    <!-- Diagram Bawang Interaktif -->
-                    <div class="relative flex items-center justify-center h-96 w-full mb-8 md:mb-0">
-                        <!-- Lapisan 4: Aplikasi -->
-                        <div data-layer="applications" class="onion-layer cursor-pointer w-full h-96 max-w-96 max-h-96 rounded-full border-4 border-indigo-200 bg-indigo-50 flex items-center justify-center text-center p-4">
-                            <!-- Lapisan 3: Shell -->
-                            <div data-layer="shell" class="onion-layer cursor-pointer w-3/4 h-3/4 rounded-full border-4 border-indigo-300 bg-indigo-100 flex items-center justify-center">
-                                <!-- Lapisan 2: Kernel -->
-                                <div data-layer="kernel" class="onion-layer cursor-pointer w-1/2 h-1/2 rounded-full border-4 border-indigo-400 bg-indigo-200 flex items-center justify-center">
-                                    <!-- Lapisan 1: Hardware -->
-                                    <div data-layer="hardware" class="onion-layer cursor-pointer w-1/2 h-1/2 rounded-full border-4 border-indigo-500 bg-indigo-300 flex items-center justify-center">
-                                        <span class="font-bold text-indigo-800">Hardware</span>
-                                    </div>
-                                    <span class="absolute font-bold text-indigo-800" style="transform: translate(0, -40px);">Kernel</span>
+            <!-- Analogi Restoran -->
+            <div class="bg-white rounded-xl shadow-lg border border-stone-100 overflow-hidden hover:shadow-xl transition-shadow">
+                <div class="p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-3 bg-rose-100 rounded-lg text-rose-600 text-2xl">🍽️</div>
+                        <h3 class="text-xl font-bold text-stone-900">Analogi Restoran</h3>
+                    </div>
+                    <p class="text-stone-600 mb-4">Bayangkan komputer adalah restoran sibuk:</p>
+                    <div class="space-y-3">
+                        <div class="flex items-center p-2 bg-stone-50 rounded border border-stone-200">
+                            <span class="w-24 font-bold text-stone-700">Hardware</span>
+                            <span class="text-stone-500 mx-2">→</span>
+                            <span>Dapur & Kompor (Benda Mati)</span>
+                        </div>
+                        <div class="flex items-center p-2 bg-indigo-50 rounded border border-indigo-200">
+                            <span class="w-24 font-bold text-indigo-700">OS</span>
+                            <span class="text-indigo-400 mx-2">→</span>
+                            <span class="font-medium text-indigo-900">Manajer & Koki (Pengatur)</span>
+                        </div>
+                        <div class="flex items-center p-2 bg-stone-50 rounded border border-stone-200">
+                            <span class="w-24 font-bold text-stone-700">Aplikasi</span>
+                            <span class="text-stone-500 mx-2">→</span>
+                            <span>Pelayan (Pencatat Pesanan)</span>
+                        </div>
+                        <div class="flex items-center p-2 bg-stone-50 rounded border border-stone-200">
+                            <span class="w-24 font-bold text-stone-700">User</span>
+                            <span class="text-stone-500 mx-2">→</span>
+                            <span>Pelanggan (Pemberi Perintah)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Anatomy Section (Onion Model) -->
+    <section id="anatomi" class="bg-stone-100 py-16 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="mb-10">
+                <h2 class="text-3xl font-bold text-stone-900 mb-4">Arsitektur Lapisan Bawang</h2>
+                <p class="text-lg text-stone-600">Klik setiap lapisan di bawah ini untuk memahami bagaimana software dan hardware berkomunikasi.</p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <!-- Interactive Diagram -->
+                <div class="relative flex justify-center items-center h-[400px]">
+                    <!-- Layer 4: Application -->
+                    <div class="onion-layer absolute w-[380px] h-[380px] rounded-full border-4 border-indigo-200 bg-white flex justify-center items-start pt-4 cursor-pointer hover:bg-indigo-50" onclick="showLayerInfo('app')">
+                        <span class="font-bold text-indigo-900 text-sm bg-white px-2 rounded">4. Aplikasi (User Space)</span>
+                        <!-- Layer 3: Shell -->
+                        <div class="onion-layer absolute top-[50px] w-[280px] h-[280px] rounded-full border-4 border-indigo-300 bg-indigo-50 flex justify-center items-start pt-4 cursor-pointer hover:bg-indigo-100" onclick="showLayerInfo('shell', event)">
+                            <span class="font-bold text-indigo-900 text-sm bg-indigo-50 px-2 rounded">3. Shell / Interface</span>
+                            <!-- Layer 2: Kernel -->
+                            <div class="onion-layer absolute top-[40px] w-[180px] h-[180px] rounded-full border-4 border-indigo-500 bg-indigo-100 flex justify-center items-start pt-4 cursor-pointer hover:bg-indigo-200" onclick="showLayerInfo('kernel', event)">
+                                <span class="font-bold text-indigo-900 text-sm bg-indigo-100 px-2 rounded">2. Kernel</span>
+                                <!-- Layer 1: Hardware -->
+                                <div class="onion-layer absolute top-[40px] w-[80px] h-[80px] rounded-full border-4 border-indigo-700 bg-indigo-600 flex justify-center items-center cursor-pointer hover:bg-indigo-700 text-white text-xs text-center font-bold" onclick="showLayerInfo('hardware', event)">
+                                    1. Hardware
                                 </div>
-                                <span class="absolute font-bold text-indigo-800" style="transform: translate(0, -80px);">Shell / Interface</span>
                             </div>
-                            <span class="absolute font-bold text-indigo-800" style="transform: translate(0, -120px);">Applications</span>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Panel Konten -->
-                    <div id="onion-content" class_="h-96 overflow-y-auto p-4 bg-stone-50 rounded-lg border">
-                        <h3 id="onion-title" class="text-2xl font-semibold text-indigo-700 mb-3">Pilih lapisan</h3>
-                        <p id="onion-text" class="text-stone-700">Klik pada salah satu lapisan diagram di sebelah kiri untuk mempelajari lebih lanjut tentang perannya.</p>
+                <!-- Detail Panel -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-indigo-500 h-full flex flex-col justify-center transition-all" id="layer-info-panel">
+                    <h3 class="text-2xl font-bold text-indigo-700 mb-4" id="layer-title">Klik Lapisan Diagram</h3>
+                    <p class="text-stone-600 text-lg leading-relaxed" id="layer-desc">
+                        Diagram di samping merepresentasikan lapisan abstraksi sistem komputer.
+                        <br><br>
+                        Klik pada lingkaran (mulai dari luar atau dalam) untuk melihat detail fungsi setiap lapisan.
+                    </p>
+                    <div id="layer-extra" class="mt-6 p-4 bg-stone-50 rounded-lg hidden">
+                        <span class="text-sm font-bold text-stone-500 uppercase tracking-wide">Contoh:</span>
+                        <p class="font-medium text-stone-800 mt-1" id="layer-example">...</p>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Bagian 3: Fungsi Utama -->
-        <section id="fungsi" class="pt-20 -mt-16">
-            <div class="bg-white p-8 rounded-lg shadow-lg">
-                <h2 class="text-3xl font-bold text-indigo-600 mb-4">Fungsi Utama Sang Manajer</h2>
-                <p class="text-stone-600 mb-8">Sistem Operasi memiliki tugas yang sangat berat, mirip seperti manajer restoran yang sibuk. Ini adalah 3 tugas utamanya:</p>
+    <!-- Core Functions Section -->
+    <section id="fungsi" class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <h2 class="text-3xl font-bold text-stone-900 mb-8">3 Fungsi Vital Sistem Operasi</h2>
+        
+        <!-- Tabs -->
+        <div class="flex flex-wrap gap-2 mb-6">
+            <button onclick="switchTab('proses')" id="tab-proses" class="tab-btn active px-6 py-3 rounded-full text-sm font-bold transition-all bg-indigo-600 text-white shadow-md">Manajemen Proses</button>
+            <button onclick="switchTab('memori')" id="tab-memori" class="tab-btn px-6 py-3 rounded-full text-sm font-bold transition-all bg-white text-stone-600 border border-stone-200 hover:bg-stone-50">Manajemen Memori</button>
+            <button onclick="switchTab('file')" id="tab-file" class="tab-btn px-6 py-3 rounded-full text-sm font-bold transition-all bg-white text-stone-600 border border-stone-200 hover:bg-stone-50">Manajemen File</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="bg-white rounded-2xl shadow-xl border border-stone-100 p-8 min-h-[300px]">
+            
+            <!-- Content: Proses -->
+            <div id="content-proses" class="tab-content block">
+                <div class="flex flex-col md:flex-row gap-8">
+                    <div class="flex-1">
+                        <h3 class="text-2xl font-bold text-stone-800 mb-4">Pengatur Lalu Lintas CPU</h3>
+                        <p class="text-stone-600 mb-4">CPU hanya bisa mengerjakan <strong>satu hal</strong> dalam satu waktu (pada single core). OS bertindak sebagai <strong>Scheduler</strong>.</p>
+                        <ul class="space-y-3 text-stone-700">
+                            <li class="flex gap-3">
+                                <span class="text-indigo-500">▶</span>
+                                <span><strong>Multitasking:</strong> Berpindah tugas sangat cepat (ribuan kali/detik).</span>
+                            </li>
+                            <li class="flex gap-3">
+                                <span class="text-indigo-500">▶</span>
+                                <span><strong>Context Switching:</strong> Proses menyimpan status aplikasi A sebelum pindah ke aplikasi B.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="flex-1 bg-indigo-50 rounded-xl p-6 flex flex-col justify-center items-center text-center">
+                        <div class="text-4xl mb-2">🚦</div>
+                        <p class="font-bold text-indigo-900">Metode Round Robin</p>
+                        <p class="text-sm text-indigo-700 mt-2">Seperti permainan bergilir: "Kamu 2 detik, dia 2 detik, saya 2 detik." Adil dan merata.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content: Memori -->
+            <div id="content-memori" class="tab-content hidden">
+                <div class="flex flex-col md:flex-row gap-8">
+                    <div class="flex-1">
+                        <h3 class="text-2xl font-bold text-stone-800 mb-4">Manajer Meja Kerja (RAM)</h3>
+                        <p class="text-stone-600 mb-4">OS membagi kapling memori untuk setiap aplikasi agar tidak saling tabrakan.</p>
+                        <ul class="space-y-3 text-stone-700">
+                            <li class="flex gap-3">
+                                <span class="text-rose-500">⚠</span>
+                                <span><strong>Sifat Volatile:</strong> Data di RAM hilang jika listrik mati. Itu sebabnya kita perlu "Save".</span>
+                            </li>
+                            <li class="flex gap-3">
+                                <span class="text-indigo-500">▶</span>
+                                <span><strong>Virtual Memory:</strong> Saat RAM penuh, OS meminjam Harddisk (lambat) sebagai bantuan. Ini penyebab komputer <em>ngelag</em>.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="flex-1 flex justify-center items-center">
+                        <!-- Simple RAM viz -->
+                        <div class="w-full max-w-sm border-2 border-stone-300 rounded-lg p-2 bg-stone-100">
+                            <div class="text-center text-xs font-bold text-stone-500 mb-1">RAM (8GB)</div>
+                            <div class="flex gap-1 h-20">
+                                <div class="w-[30%] bg-indigo-500 rounded flex items-center justify-center text-white text-xs font-bold">OS</div>
+                                <div class="w-[40%] bg-blue-400 rounded flex items-center justify-center text-white text-xs font-bold">Chrome</div>
+                                <div class="w-[20%] bg-emerald-400 rounded flex items-center justify-center text-white text-xs font-bold">Spotify</div>
+                                <div class="w-[10%] bg-stone-200 rounded flex items-center justify-center text-stone-400 text-xs">Free</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content: File -->
+            <div id="content-file" class="tab-content hidden">
+                <div class="flex flex-col md:flex-row gap-8">
+                    <div class="flex-1">
+                        <h3 class="text-2xl font-bold text-stone-800 mb-4">Pustakawan Harddisk</h3>
+                        <p class="text-stone-600 mb-4">OS mengatur penyimpanan data fisik di piringan magnetik atau chip SSD menjadi struktur yang bisa dimengerti manusia.</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-stone-50 p-4 rounded-lg">
+                                <h4 class="font-bold text-stone-800">Folder / Direktori</h4>
+                                <p class="text-sm text-stone-600 mt-1">Pengelompokan hierarkis (seperti pohon).</p>
+                            </div>
+                            <div class="bg-stone-50 p-4 rounded-lg">
+                                <h4 class="font-bold text-stone-800">Ekstensi File</h4>
+                                <p class="text-sm text-stone-600 mt-1">Penanda jenis file (misal: .docx, .mp3) agar OS tahu aplikasi pembukanya.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-1 bg-amber-50 rounded-xl p-6 flex flex-col justify-center">
+                        <h4 class="font-bold text-amber-800 mb-2">Jenis File System Umum:</h4>
+                        <ul class="text-sm text-amber-900 space-y-2">
+                            <li>• <strong>NTFS:</strong> Standar Windows modern.</li>
+                            <li>• <strong>FAT32:</strong> Kompatibel luas (Flashdisk), tapi max file 4GB.</li>
+                            <li>• <strong>APFS:</strong> Standar Apple (macOS/iOS).</li>
+                            <li>• <strong>EXT4:</strong> Standar Linux/Android.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Lab Simulation Section -->
+    <section id="lab" class="bg-stone-900 text-white py-16 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-10">
+                <span class="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Interactive Lab</span>
+                <h2 class="text-3xl font-bold mt-4">Simulator Multitasking (Round Robin)</h2>
+                <p class="text-stone-400 mt-2">Lihat bagaimana CPU melompat antar aplikasi untuk menciptakan ilusi kecepatan.</p>
+            </div>
+
+            <!-- Simulator UI -->
+            <div class="bg-stone-800 rounded-2xl p-8 border border-stone-700">
                 
-                <!-- Navigasi Tab -->
-                <div class="border-b border-stone-300 mb-6">
-                    <nav class="flex space-x-4" id="tabs-nav">
-                        <button data-tab="proses" class="tab-btn active py-2 px-4 font-semibold text-stone-600 hover:text-indigo-600 border-b-2 border-transparent">Manajemen Proses</button>
-                        <button data-tab="memori" class="tab-btn py-2 px-4 font-semibold text-stone-600 hover:text-indigo-600 border-b-2 border-transparent">Manajemen Memori</button>
-                        <button data-tab="file" class="tab-btn py-2 px-4 font-semibold text-stone-600 hover:text-indigo-600 border-b-2 border-transparent">Manajemen File & I/O</button>
-                    </nav>
-                </div>
-
-                <!-- Konten Tab -->
-                <div id="tabs-content">
-                    <!-- Tab 1: Manajemen Proses -->
-                    <div id="tab-proses" class="tab-content">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-3">A. Manajemen Proses (Koki)</h3>
-                        <p class="mb-2"><strong class="text-stone-800">Masalah:</strong> CPU (Koki) jumlahnya terbatas, tapi Aplikasi (Pelanggan) yang antri minta dilayani ada ratusan (Game, WA, Sistem, Jam, Notifikasi, dll).</p>
-                        <p class="p-4 bg-indigo-50 rounded-lg"><strong class="text-indigo-700">Solusi OS:</strong> OS bertindak sebagai **Scheduler** (Pengatur Jadwal). OS menentukan aplikasi mana yang boleh memakai CPU sekarang, dan berapa lama.</p>
-                    </div>
-                    <!-- Tab 2: Manajemen Memori -->
-                    <div id="tab-memori" class="tab-content hidden">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-3">B. Manajemen Memori (Meja Kerja)</h3>
-                        <p class="mb-2"><strong class="text-stone-800">Masalah:</strong> RAM (Meja Kerja) kapasitasnya terbatas (misal 4GB atau 8GB).</p>
-                        <p class="p-4 bg-indigo-50 rounded-lg"><strong class="text-indigo-700">Solusi OS:</strong> OS mengatur pembagian "kaveling" di RAM. OS juga menjaga agar data satu aplikasi tidak bercampur dengan aplikasi lain. Jangan sampai pesan rahasia di WA bocor ke aplikasi Game!</p>
-                    </div>
-                    <!-- Tab 3: Manajemen File -->
-                    <div id="tab-file" class="tab-content hidden">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-3">C. Manajemen File & I/O</h3>
-                        <p class="mb-2"><strong class="text-stone-800">Masalah:</strong> Bagaimana data disimpan di Harddisk agar rapi? Bagaimana Mouse, Keyboard, dan Printer bisa berkomunikasi?</p>
-                        <p class="p-4 bg-indigo-50 rounded-lg"><strong class="text-indigo-700">Solusi OS:</strong> OS mengatur cara data disimpan di Harddisk (Folder/Direktori) dan menjadi penerjemah untuk semua perangkat Input/Output (I/O).</p>
+                <!-- CPU Status -->
+                <div class="flex justify-center mb-8">
+                    <div id="cpu-core" class="w-32 h-32 rounded-full border-4 border-stone-600 flex flex-col items-center justify-center bg-stone-900 transition-colors">
+                        <span class="text-xs text-stone-500 font-bold uppercase">CPU Core</span>
+                        <span id="cpu-status" class="text-xl font-bold mt-1 text-stone-300">IDLE</span>
                     </div>
                 </div>
-            </div>
-        </section>
 
-        <!-- Bagian 4: Multitasking & Ngelag -->
-        <section id="multitasking" class="pt-20 -mt-16">
-            <div class="bg-white p-8 rounded-lg shadow-lg">
-                <h2 class="text-3xl font-bold text-indigo-600 mb-4">Rahasia Multitasking: Ilusi Kecepatan</h2>
-                <p class="text-lg text-stone-700 mb-6">Bagaimana bisa kamu mengetik di Word sambil mendengarkan lagu di Spotify? Apakah CPU-nya membelah diri? **TIDAK.**</p>
-                <p class="mb-6">CPU sebenarnya hanya mengerjakan **satu tugas dalam satu waktu**. Rahasianya adalah **Kecepatan Perpindahan (Context Switching)**. OS menggunakan metode "Round Robin" (Giliran) ribuan kali per detik.</p>
-
-                <!-- Simulator Round Robin -->
-                <div class="bg-stone-200 p-6 rounded-lg mb-8">
-                    <h4 class="text-xl font-semibold text-center mb-4 text-stone-800">Simulator Round Robin</h4>
-                    <div class="flex flex-col md:flex-row justify-around items-center space-y-4 md:space-y-0 md:space-x-4">
-                        <div id="proc-spotify" class="proc-box p-4 bg-white rounded-lg shadow w-full md:w-1/4 text-center">
-                            <span class="text-2xl">🎵</span>
-                            <p class="font-semibold">Spotify</p>
-                        </div>
-                        <div id="proc-word" class="proc-box p-4 bg-white rounded-lg shadow w-full md:w-1/4 text-center">
-                            <span class="text-2xl">📄</span>
-                            <p class="font-semibold">Word</p>
-                        </div>
-                        <div id="proc-download" class="proc-box p-4 bg-white rounded-lg shadow w-full md:w-1/4 text-center">
-                            <span class="text-2xl">⬇️</span>
-                            <p class="font-semibold">Download</p>
+                <!-- Process Queue -->
+                <div class="grid grid-cols-3 gap-4 mb-8">
+                    <!-- App 1 -->
+                    <div id="proc-1" class="proc-box bg-stone-700 p-4 rounded-xl text-center border-2 border-transparent">
+                        <div class="text-2xl mb-2">🎵</div>
+                        <div class="font-bold text-sm">Spotify</div>
+                        <div class="h-2 bg-stone-600 rounded-full mt-2 overflow-hidden">
+                            <div id="prog-1" class="h-full bg-green-500 w-0 transition-all duration-300"></div>
                         </div>
                     </div>
-                    <div class="text-center mt-6">
-                        <button id="start-sim" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">Mulai Simulasi</button>
-                        <p id="sim-log" class="mt-4 text-stone-700 h-6 font-semibold"></p>
+                    <!-- App 2 -->
+                    <div id="proc-2" class="proc-box bg-stone-700 p-4 rounded-xl text-center border-2 border-transparent">
+                        <div class="text-2xl mb-2">📝</div>
+                        <div class="font-bold text-sm">Word</div>
+                        <div class="h-2 bg-stone-600 rounded-full mt-2 overflow-hidden">
+                            <div id="prog-2" class="h-full bg-blue-500 w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+                    <!-- App 3 -->
+                    <div id="proc-3" class="proc-box bg-stone-700 p-4 rounded-xl text-center border-2 border-transparent">
+                        <div class="text-2xl mb-2">⬇️</div>
+                        <div class="font-bold text-sm">Download</div>
+                        <div class="h-2 bg-stone-600 rounded-full mt-2 overflow-hidden">
+                            <div id="prog-3" class="h-full bg-amber-500 w-0 transition-all duration-300"></div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Kenapa Ngelag? -->
-                <h3 class="text-2xl font-bold text-stone-800 mb-4">Kenapa Komputer/HP Bisa "Ngelag"?</h3>
-                <div class="space-y-4">
-                    <details class="bg-stone-50 p-4 rounded-lg border">
-                        <summary class="font-semibold text-lg cursor-pointer text-indigo-700">1. Terlalu Banyak Proses (Multitasking Berlebihan)</summary>
-                        <p class="mt-2 text-stone-600">Jika kamu membuka 50 aplikasi sekaligus, waktu CPU habis hanya untuk "berpindah-pindah" (*context switching*) dan mengatur antrian, bukan untuk bekerja. Akibatnya, semua aplikasi terasa lambat.</p>
-                    </details>
-                    <details class="bg-stone-50 p-4 rounded-lg border">
-                        <summary class="font-semibold text-lg cursor-pointer text-indigo-700">2. RAM Penuh (Memory Leak)</summary>
-                        <p class="mt-2 text-stone-600">Jika "Meja Kerja" (RAM) penuh, OS terpaksa meminjam ruang di Harddisk (disebut *Virtual Memory*). Masalahnya, Harddisk jauh lebih lambat daripada RAM. Saat ini terjadi, HP/Laptop akan terasa sangat lambat.</p>
-                    </details>
-                    <details class="bg-stone-50 p-4 rounded-lg border">
-                        <summary class="font-semibold text-lg cursor-pointer text-indigo-700">3. Deadlock (Macet Total)</summary>
-                        <p class="mt-2 text-stone-600">Aplikasi A menunggu data dari Aplikasi B, tapi Aplikasi B sedang menunggu data dari Aplikasi A. Keduanya saling tunggu selamanya. OS bingung, layar pun menjadi *freeze* (beku).</p>
-                    </details>
+                <!-- Controls -->
+                <div class="flex justify-center gap-4">
+                    <button onclick="startSimulation()" id="btn-start" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-6 rounded-lg transition-colors">Mulai Simulasi</button>
+                    <button onclick="stopSimulation()" id="btn-stop" class="bg-stone-600 hover:bg-stone-500 text-white font-bold py-2 px-6 rounded-lg transition-colors" disabled>Stop</button>
                 </div>
-            </div>
-        </section>
-
-        <!-- Bagian 5: Studi Kasus: "Save" Dokumen -->
-        <section id="studi-kasus" class="pt-20 -mt-16">
-            <div class="bg-white p-8 rounded-lg shadow-lg">
-                <h2 class="text-3xl font-bold text-indigo-600 mb-4">Studi Kasus Nyata: Alur "Save" Dokumen</h2>
-                <p class="text-stone-600 mb-8">Mari kita lihat apa yang terjadi saat kamu menekan tombol **Save (Simpan)**. Klik "Lanjut" untuk melihat alurnya langkah demi langkah.</p>
                 
-                <div class="relative pl-10 border-l-2 border-indigo-300">
-                    <!-- Step 1 -->
-                    <div id="step-1" class="step active mb-6">
-                        <div class="step-circle absolute -left-4 top-1 w-8 h-8 rounded-full bg-white border-2 border-indigo-300 flex items-center justify-center font-bold text-indigo-600">1</div>
-                        <div class="step-content ml-4">
-                            <h4 class="font-semibold text-lg">Input</h4>
-                            <p>Jari kamu menekan tombol Mouse. Sinyal listrik dikirim ke Driver Mouse.</p>
-                        </div>
+                <div class="mt-6 text-center text-sm text-stone-500 font-mono">
+                    System Log: <span id="sim-log">Menunggu instruksi...</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Case Study Section -->
+    <section id="studi-kasus" class="py-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+        <h2 class="text-3xl font-bold text-stone-900 mb-8">Studi Kasus: Perjalanan Tombol "Save"</h2>
+        <p class="text-stone-600 mb-8">Apa yang terjadi di balik layar saat Anda mengklik tombol Simpan? Klik "Lanjut" untuk menelusuri alurnya.</p>
+
+        <div class="bg-white rounded-xl shadow-lg border border-stone-200 p-8">
+            <div class="flex gap-6">
+                <!-- Visual Stepper -->
+                <div class="flex flex-col items-center">
+                    <div class="w-1 bg-stone-200 h-full relative">
+                        <!-- Progress bar -->
+                        <div id="step-bar" class="absolute top-0 w-full bg-indigo-500 transition-all duration-500" style="height: 0%"></div>
                     </div>
-                    <!-- Step 2 -->
-                    <div id="step-2" class="step mb-6">
-                        <div class="step-circle absolute -left-4 top-1 w-8 h-8 rounded-full bg-white border-2 border-indigo-300 flex items-center justify-center font-bold text-indigo-600">2</div>
-                        <div class="step-content ml-4">
-                            <h4 class="font-semibold text-lg">Interrupt</h4>
-                            <p>Driver Mouse melapor ke OS: "Bos! Ada klik di koordinat X:100 Y:200!"</p>
-                        </div>
+                </div>
+
+                <!-- Content Area -->
+                <div class="flex-1">
+                    <div id="step-content" class="min-h-[150px]">
+                        <h3 class="text-xl font-bold text-indigo-700 mb-2">0. Ready</h3>
+                        <p class="text-stone-600">Tekan tombol di bawah untuk memulai pelacakan data.</p>
                     </div>
-                    <!-- Step 3 -->
-                    <div id="step-3" class="step mb-6">
-                        <div class="step-circle absolute -left-4 top-1 w-8 h-8 rounded-full bg-white border-2 border-indigo-300 flex items-center justify-center font-bold text-indigo-600">3</div>
-                        <div class="step-content ml-4">
-                            <h4 class="font-semibold text-lg">Processing</h4>
-                            <p>OS mengecek, "Di koordinat itu ada tombol 'Save' milik aplikasi Microsoft Word."</p>
-                        </div>
-                    </div>
-                    <!-- Step 4 -->
-                    <div id="step-4" class="step mb-6">
-                        <div class="step-circle absolute -left-4 top-1 w-8 h-8 rounded-full bg-white border-2 border-indigo-300 flex items-center justify-center font-bold text-indigo-600">4</div>
-                        <div class="step-content ml-4">
-                            <h4 class="font-semibold text-lg">Application</h4>
-                            <p>OS memberitahu Word: "Hei Word, tombol Save-mu ditekan."</p>
-                        </div>
-                    </div>
-                    <!-- Step 5 -->
-                    <div id="step-5" class="step mb-6">
-                        <div class="step-circle absolute -left-4 top-1 w-8 h-8 rounded-full bg-white border-2 border-indigo-300 flex items-center justify-center font-bold text-indigo-600">5</div>
-                        <div class="step-content ml-4">
-                            <h4 class="font-semibold text-lg">System Call</h4>
-                            <p>Word merespons: "Oke OS, tolong ambil tulisan di RAM ini, lalu tuliskan ke Harddisk dengan nama file 'Tugas.docx'."</p>
-                        </div>
-                    </div>
-                    <!-- Step 6 -->
-                    <div id="step-6" class="step mb-6">
-                        <div class="step-circle absolute -left-4 top-1 w-8 h-8 rounded-full bg-white border-2 border-indigo-300 flex items-center justify-center font-bold text-indigo-600">6</div>
-                        <div class="step-content ml-4">
-                            <h4 class="font-semibold text-lg">Kernel Action</h4>
-                            <p>Kernel OS memerintahkan piringan Harddisk berputar ke sektor kosong, lalu menuliskan data magnetik di sana.</p>
-                        </div>
-                    </div>
-                    <!-- Step 7 -->
-                    <div id="step-7" class="step mb-6">
-                        <div class="step-circle absolute -left-4 top-1 w-8 h-8 rounded-full bg-white border-2 border-indigo-300 flex items-center justify-center font-bold text-indigo-600">7</div>
-                        <div class="step-content ml-4">
-                            <h4 class="font-semibold text-lg">Output</h4>
-                            <p>Setelah selesai, Harddisk lapor ke OS. OS lapor ke Word. Word menampilkan tulisan "Document Saved" di layarmu.</p>
+
+                    <div class="mt-8 flex justify-between items-center">
+                        <span class="text-sm text-stone-400 font-mono" id="step-counter">Langkah 0/5</span>
+                        <div>
+                            <button onclick="resetSteps()" class="text-stone-500 hover:text-stone-800 px-4 py-2 text-sm font-medium">Reset</button>
+                            <button onclick="nextStep()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors shadow-lg">Lanjut →</button>
                         </div>
                     </div>
                 </div>
-                <div class="mt-8 space-x-4">
-                    <button id="next-step" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">Lanjut</button>
-                    <button id="reset-step" class="bg-stone-200 text-stone-700 px-6 py-2 rounded-lg font-semibold hover:bg-stone-300 transition-colors">Ulangi</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quiz Section -->
+    <section id="kuis" class="bg-stone-100 py-16 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl mx-auto">
+            <div class="text-center mb-10">
+                <span class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Asesmen Formatif</span>
+                <h2 class="text-3xl font-bold text-stone-900 mt-4">Uji Pemahaman</h2>
+                <p class="text-stone-600">Jawab 5 pertanyaan kunci untuk menguji pengetahuan Anda.</p>
+            </div>
+
+            <div class="space-y-6">
+                
+                <!-- Question 1 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <h3 class="font-bold text-stone-800 mb-4">1. Lapisan mana yang berfungsi sebagai penerjemah langsung ke hardware?</h3>
+                    <div class="grid gap-3" id="q1-options">
+                        <button onclick="checkAnswer(1, 'a', this)" class="option-btn w-full text-left p-3 rounded-lg border border-stone-200 text-stone-600 font-medium">A. Aplikasi</button>
+                        <button onclick="checkAnswer(1, 'b', this)" class="option-btn w-full text-left p-3 rounded-lg border border-stone-200 text-stone-600 font-medium">B. Shell</button>
+                        <button onclick="checkAnswer(1, 'c', this)" class="option-btn w-full text-left p-3 rounded-lg border border-stone-200 text-stone-600 font-medium">C. Kernel</button>
+                    </div>
+                    <div id="q1-feedback" class="hidden mt-3 p-3 rounded-lg text-sm"></div>
                 </div>
+
+                <!-- Question 2 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <h3 class="font-bold text-stone-800 mb-4">2. Metode multitasking di mana CPU bergilir waktu secara adil disebut...</h3>
+                    <div class="grid gap-3" id="q2-options">
+                        <button onclick="checkAnswer(2, 'a', this)" class="option-btn w-full text-left p-3 rounded-lg border border-stone-200 text-stone-600 font-medium">A. Round Robin</button>
+                        <button onclick="checkAnswer(2, 'b', this)" class="option-btn w-full text-left p-3 rounded-lg border border-stone-200 text-stone-600 font-medium">B. First Come First Served</button>
+                        <button onclick="checkAnswer(2, 'c', this)" class="option-btn w-full text-left p-3 rounded-lg border border-stone-200 text-stone-600 font-medium">C. Deadlock</button>
+                    </div>
+                    <div id="q2-feedback" class="hidden mt-3 p-3 rounded-lg text-sm"></div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <h3 class="font-bold text-stone-800 mb-4">3. Mengapa komputer menjadi lambat saat RAM penuh?</h3>
+                    <div class="grid gap-3" id="q3-options">
+                        <button onclick="checkAnswer(3, 'a', this)" class="option-btn w-full text-left p-3 rounded-lg border border-stone-200 text-stone-600 font-medium">A. CPU berhenti bekerja</button>
+                        <button onclick="checkAnswer(3, 'b', this)" class="option-btn w-full text-left p-3 rounded-lg border border-stone-200 text-stone-600 font-medium">B. Listrik berkurang</button>
+                        <button onclick="checkAnswer(3, 'c', this)" class="option-btn w-full text-left p-3 rounded-lg border border-stone-200 text-stone-600 font-medium">C. Menggunakan Harddisk sebagai Virtual Memory</button>
+                    </div>
+                    <div id="q3-feedback" class="hidden mt-3 p-3 rounded-lg text-sm"></div>
+                </div>
+
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Bagian 6: Glosarium -->
-        <section id="glosarium" class="pt-20 -mt-16">
-            <div class="bg-white p-8 rounded-lg shadow-lg">
-                <h2 class="text-3xl font-bold text-indigo-600 mb-6">Glosarium (Kamus Kecil)</h2>
-                <dl class="divide-y divide-stone-200">
-                    <div class="py-3">
-                        <dt class="font-semibold text-indigo-700">CPU (Central Processing Unit)</dt>
-                        <dd class="text-stone-600">Otak utama pemroses data.</dd>
-                    </div>
-                    <div class="py-3">
-                        <dt class="font-semibold text-indigo-700">OS (Operating System)</dt>
-                        <dd class="text-stone-600">Perangkat lunak sistem yang mengelola hardware dan software (Contoh: Windows, Android, macOS, Linux).</dd>
-                    </div>
-                    <div class="py-3">
-                        <dt class="font-semibold text-indigo-700">Kernel</dt>
-                        <dd class="text-stone-600">Jantung/Inti dari OS yang berhubungan langsung dengan hardware.</dd>
-                    </div>
-                    <div class="py-3">
-                        <dt class="font-semibold text-indigo-700">Multitasking</dt>
-                        <dd class="text-stone-600">Kemampuan menjalankan banyak tugas seolah-olah bersamaan.</dd>
-                    </div>
-                    <div class="py-3">
-                        <dt class="font-semibold text-indigo-700">Scheduler</dt>
-                        <dd class="text-stone-600">Bagian dari OS yang mengatur antrian siapa yang boleh pakai CPU.</dd>
-                    </div>
-                    <div class="py-3">
-                        <dt class="font-semibold text-indigo-700">RAM (Random Access Memory)</dt>
-                        <dd class="text-stone-600">Memori sementara/jangka pendek. Data hilang jika listrik mati.</dd>
-                    </div>
-                </dl>
-            </div>
-        </section>
-
-    </main>
-
-    <footer class="text-center py-6 text-stone-500 text-sm">
-        Modul Interaktif dikonversi dari bahan bacaan Fase E.
+    <!-- Footer -->
+    <footer class="bg-stone-900 text-stone-400 py-8 text-center">
+        <p class="text-sm">Aplikasi Pembelajaran Interaktif © Fase E Informatika</p>
     </footer>
 
+    <!-- JavaScript Logic -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        // --- Mobile Menu Logic ---
+        const btn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
 
-            // Logika Menu Mobile
-            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-            const mobileMenu = document.getElementById('mobile-menu');
-            mobileMenuBtn.addEventListener('click', () => {
-                mobileMenu.classList.toggle('hidden');
-            });
-            // Tutup menu jika link diklik
-            mobileMenu.addEventListener('click', (e) => {
-                if(e.target.tagName === 'A') {
-                    mobileMenu.classList.add('hidden');
-                }
-            });
-
-            // Logika Diagram Bawang
-            const onionLayers = document.querySelectorAll('.onion-layer');
-            const onionTitle = document.getElementById('onion-title');
-            const onionText = document.getElementById('onion-text');
-            const onionData = {
-                hardware: {
-                    title: "Lapisan 1: Hardware (Perangkat Keras)",
-                    text: "Ini adalah benda fisiknya. Prosesor, RAM, Harddisk, Layar. Sifatnya 'kaku' dan hanya mengerti sinyal listrik. Hardware tidak tahu bahasa manusia."
-                },
-                kernel: {
-                    title: "Lapisan 2: Kernel (Inti OS)",
-                    text: "Ini adalah penerjemah utama. Kernel berbicara langsung dengan hardware. Dia yang memerintahkan kipas berputar atau layar menyala."
-                },
-                shell: {
-                    title: "Lapisan 3: Shell / Interface",
-                    text: "Ini adalah 'kulit' OS yang kita lihat, baik berupa teks (CLI) atau grafis (GUI). Lapisan ini menerima perintah dari kita dan meneruskannya ke Kernel."
-                },
-                applications: {
-                    title: "Lapisan 4: Applications (Aplikasi)",
-                    text: "Ini adalah program yang kita gunakan: Browser, Game, Pemutar Musik. Aplikasi harus 'minta tolong' kepada OS untuk menggunakan hardware."
-                }
-            };
-
-            onionLayers.forEach(layer => {
-                layer.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Mencegah klik 'bubble' ke lapisan luar
-                    const layerName = layer.dataset.layer;
-                    
-                    // Update styling
-                    onionLayers.forEach(l => l.classList.remove('active', 'border-indigo-600'));
-                    layer.classList.add('active', 'border-indigo-600');
-
-                    // Update konten
-                    if (onionData[layerName]) {
-                        onionTitle.textContent = onionData[layerName].title;
-                        onionText.textContent = onionData[layerName].text;
-                    }
-                });
-            });
-
-            // Logika Tabs
-            const tabButtons = document.querySelectorAll('.tab-btn');
-            const tabContents = document.querySelectorAll('.tab-content');
-            
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const tabName = button.dataset.tab;
-
-                    // Update styling tombol
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    button.classList.add('active');
-
-                    // Tampilkan konten
-                    tabContents.forEach(content => {
-                        if (content.id === `tab-${tabName}`) {
-                            content.classList.remove('hidden');
-                        } else {
-                            content.classList.add('hidden');
-                        }
-                    });
-                });
-            });
-
-            // Logika Simulator Round Robin
-            const startSimBtn = document.getElementById('start-sim');
-            const simLog = document.getElementById('sim-log');
-            const procs = ['spotify', 'word', 'download'];
-            const procBoxes = {
-                spotify: document.getElementById('proc-spotify'),
-                word: document.getElementById('proc-word'),
-                download: document.getElementById('proc-download'),
-            };
-            let simInterval;
-            let currentProc = 0;
-
-            startSimBtn.addEventListener('click', () => {
-                clearInterval(simInterval);
-                startSimBtn.textContent = "Mensimulasikan...";
-                
-                simInterval = setInterval(() => {
-                    // Hapus highlight dari semua
-                    Object.values(procBoxes).forEach(box => box.classList.remove('active', 'border-indigo-600', 'border-4'));
-
-                    // Tentukan proses saat ini
-                    const procName = procs[currentProc];
-                    const procBox = procBoxes[procName];
-
-                    // Tambah highlight
-                    procBox.classList.add('active', 'border-indigo-600', 'border-4');
-                    simLog.textContent = `CPU sedang memproses ${procName}...`;
-
-                    // Pindah ke proses berikutnya
-                    currentProc = (currentProc + 1) % procs.length;
-                }, 800); // Ganti setiap 0.8 detik
-            });
-
-            // Logika Stepper Studi Kasus
-            const nextStepBtn = document.getElementById('next-step');
-            const resetStepBtn = document.getElementById('reset-step');
-            const steps = document.querySelectorAll('.step');
-            let currentStep = 1;
-
-            function updateSteps() {
-                steps.forEach((step, index) => {
-                    const stepNumber = index + 1;
-                    if (stepNumber === currentStep) {
-                        step.classList.add('active');
-                    } else {
-                        step.classList.remove('active');
-                    }
-                });
-                nextStepBtn.textContent = currentStep === 7 ? "Selesai" : "Lanjut";
-            }
-
-            nextStepBtn.addEventListener('click', () => {
-                if (currentStep < 7) {
-                    currentStep++;
-                } else {
-                    currentStep = 7;
-                }
-                updateSteps();
-            });
-
-            resetStepBtn.addEventListener('click', () => {
-                currentStep = 1;
-                updateSteps();
-            });
-
-            // Inisialisasi state awal
-            updateSteps();
-
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
         });
+
+        // --- Onion Diagram Logic ---
+        const layerInfo = {
+            'app': {
+                title: 'Lapisan 4: Aplikasi',
+                desc: 'Lapisan terluar yang berinteraksi dengan kita (User). Aplikasi (seperti Browser, Game, Word) tidak bisa menyentuh hardware langsung. Mereka harus "meminta izin" ke OS melalui System Call.',
+                example: 'Microsoft Word, Chrome, Spotify'
+            },
+            'shell': {
+                title: 'Lapisan 3: Shell / Interface',
+                desc: 'Penerjemah perintah user. Bisa berupa GUI (Grafis/Klik) yang mudah, atau CLI (Teks) yang powerful. Shell meneruskan perintah kita ke Kernel.',
+                example: 'Windows Explorer (GUI), Command Prompt (CLI)'
+            },
+            'kernel': {
+                title: 'Lapisan 2: Kernel (Inti)',
+                desc: 'Jantungnya OS. Kernel memiliki kendali penuh atas sistem. Ia mengelola memori, proses CPU, dan berbicara langsung dengan driver hardware.',
+                example: 'Linux Kernel, Windows NT Kernel'
+            },
+            'hardware': {
+                title: 'Lapisan 1: Hardware',
+                desc: 'Komponen fisik (elektronik) yang melakukan kerja nyata. Hardware bersifat "bodo" dan hanya mengerti sinyal listrik (biner 0 & 1).',
+                example: 'Prosesor (CPU), RAM, Harddisk, Printer'
+            }
+        };
+
+        function showLayerInfo(layerKey, event) {
+            if(event) event.stopPropagation(); // Prevent bubbling
+            
+            const info = layerInfo[layerKey];
+            const titleEl = document.getElementById('layer-title');
+            const descEl = document.getElementById('layer-desc');
+            const exEl = document.getElementById('layer-example');
+            const extraBox = document.getElementById('layer-extra');
+            const panel = document.getElementById('layer-info-panel');
+
+            // Animation Reset
+            panel.classList.remove('border-indigo-500', 'border-rose-500', 'border-amber-500', 'border-emerald-500');
+            void panel.offsetWidth; // Trigger reflow
+
+            // Set Content
+            titleEl.textContent = info.title;
+            descEl.textContent = info.desc;
+            exEl.textContent = info.example;
+            extraBox.classList.remove('hidden');
+
+            // Color Coding based on layer
+            if(layerKey === 'app') panel.classList.add('border-indigo-500');
+            if(layerKey === 'shell') panel.classList.add('border-rose-500');
+            if(layerKey === 'kernel') panel.classList.add('border-amber-500');
+            if(layerKey === 'hardware') panel.classList.add('border-emerald-500');
+        }
+
+        // --- Tabs Logic ---
+        function switchTab(tabName) {
+            // Hide all content
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('block'));
+            
+            // Deactivate buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'active');
+                btn.classList.add('bg-white', 'text-stone-600', 'hover:bg-stone-50');
+            });
+
+            // Activate Selected
+            document.getElementById('content-' + tabName).classList.remove('hidden');
+            document.getElementById('content-' + tabName).classList.add('block');
+            
+            const activeBtn = document.getElementById('tab-' + tabName);
+            activeBtn.classList.remove('bg-white', 'text-stone-600', 'hover:bg-stone-50');
+            activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'active');
+        }
+
+        // --- Simulator Logic ---
+        let simInterval;
+        let isSimRunning = false;
+        let currentProc = 0;
+        const procs = [
+            { id: 'proc-1', name: 'Spotify', bar: 'prog-1', color: 'bg-green-500' },
+            { id: 'proc-2', name: 'Word', bar: 'prog-2', color: 'bg-blue-500' },
+            { id: 'proc-3', name: 'Download', bar: 'prog-3', color: 'bg-amber-500' }
+        ];
+
+        function startSimulation() {
+            if(isSimRunning) return;
+            isSimRunning = true;
+            document.getElementById('btn-start').disabled = true;
+            document.getElementById('btn-start').classList.add('opacity-50');
+            document.getElementById('btn-stop').disabled = false;
+            document.getElementById('btn-stop').classList.remove('opacity-50');
+            
+            const cpuStatus = document.getElementById('cpu-status');
+            const cpuCore = document.getElementById('cpu-core');
+            const log = document.getElementById('sim-log');
+
+            simInterval = setInterval(() => {
+                // Reset Previous
+                procs.forEach(p => {
+                    document.getElementById(p.id).classList.remove('active', 'border-indigo-500');
+                    document.getElementById(p.id).classList.add('border-transparent');
+                });
+
+                // Select Current
+                const p = procs[currentProc];
+                const el = document.getElementById(p.id);
+                
+                // Animate UI
+                el.classList.remove('border-transparent');
+                el.classList.add('active', 'border-indigo-500');
+                
+                cpuStatus.textContent = p.name;
+                cpuStatus.className = "text-xl font-bold mt-1 text-white";
+                cpuCore.classList.add('border-indigo-500');
+                cpuCore.classList.remove('border-stone-600');
+                
+                log.textContent = `Processing ${p.name} for 10ms...`;
+                
+                // Increment Progress Bar (Fake)
+                const bar = document.getElementById(p.bar);
+                let w = parseInt(bar.style.width || 0);
+                w = (w + 10) % 100;
+                bar.style.width = w + '%';
+
+                // Next
+                currentProc = (currentProc + 1) % procs.length;
+
+            }, 800); // Speed of switching
+        }
+
+        function stopSimulation() {
+            isSimRunning = false;
+            clearInterval(simInterval);
+            document.getElementById('btn-start').disabled = false;
+            document.getElementById('btn-start').classList.remove('opacity-50');
+            document.getElementById('btn-stop').disabled = true;
+            document.getElementById('btn-stop').classList.add('opacity-50');
+            
+            document.getElementById('cpu-status').textContent = "IDLE";
+            document.getElementById('cpu-status').className = "text-xl font-bold mt-1 text-stone-300";
+            document.getElementById('cpu-core').classList.remove('border-indigo-500');
+            document.getElementById('cpu-core').classList.add('border-stone-600');
+            document.getElementById('sim-log').textContent = "Simulasi Berhenti.";
+            
+            procs.forEach(p => {
+                document.getElementById(p.id).classList.remove('active', 'border-indigo-500');
+                document.getElementById(p.id).classList.add('border-transparent');
+            });
+        }
+
+        // --- Case Study Stepper Logic ---
+        const steps = [
+            { title: "1. Input", desc: "Jari menekan tombol Mouse. Sinyal listrik dikirim ke Driver." },
+            { title: "2. Interrupt", desc: "Driver melapor ke OS: 'Bos! Ada klik di koordinat X,Y!'" },
+            { title: "3. Processing", desc: "OS mengecek koordinat. Oh, itu tombol 'Save' milik Microsoft Word." },
+            { title: "4. System Call", desc: "Word minta tolong OS: 'Tulis data RAM ini ke Harddisk dong.'" },
+            { title: "5. Output", desc: "Kernel memerintahkan Harddisk menulis data. Selesai!" }
+        ];
+        let currStepIdx = -1;
+
+        function nextStep() {
+            if(currStepIdx < steps.length - 1) {
+                currStepIdx++;
+                updateStepperUI();
+            }
+        }
+
+        function resetSteps() {
+            currStepIdx = -1;
+            document.getElementById('step-content').innerHTML = `<h3 class="text-xl font-bold text-indigo-700 mb-2">0. Ready</h3><p class="text-stone-600">Tekan tombol di bawah untuk memulai pelacakan data.</p>`;
+            document.getElementById('step-bar').style.height = '0%';
+            document.getElementById('step-counter').textContent = 'Langkah 0/5';
+        }
+
+        function updateStepperUI() {
+            const s = steps[currStepIdx];
+            const contentDiv = document.getElementById('step-content');
+            
+            // Fade out
+            contentDiv.style.opacity = 0;
+            
+            setTimeout(() => {
+                contentDiv.innerHTML = `<h3 class="text-xl font-bold text-indigo-700 mb-2">${s.title}</h3><p class="text-stone-600 text-lg">${s.desc}</p>`;
+                contentDiv.style.opacity = 1;
+            }, 200);
+
+            // Progress Bar
+            const pct = ((currStepIdx + 1) / steps.length) * 100;
+            document.getElementById('step-bar').style.height = pct + '%';
+            document.getElementById('step-counter').textContent = `Langkah ${currStepIdx + 1}/5`;
+        }
+
+        // --- Quiz Logic ---
+        const answers = { 1: 'c', 2: 'a', 3: 'c' };
+
+        function checkAnswer(qId, choice, btnEl) {
+            const feedbackEl = document.getElementById(`q${qId}-feedback`);
+            const parent = document.getElementById(`q${qId}-options`);
+            
+            // Disable all buttons in this question
+            const btns = parent.querySelectorAll('button');
+            btns.forEach(b => b.disabled = true);
+
+            if(choice === answers[qId]) {
+                // Correct
+                btnEl.classList.add('correct');
+                feedbackEl.textContent = "✅ Benar! Penjelasan tepat.";
+                feedbackEl.classList.remove('hidden');
+                feedbackEl.classList.add('bg-green-50', 'text-green-800', 'border', 'border-green-200');
+            } else {
+                // Wrong
+                btnEl.classList.add('wrong');
+                feedbackEl.textContent = "❌ Kurang tepat. Coba pelajari lagi materi di atas.";
+                feedbackEl.classList.remove('hidden');
+                feedbackEl.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+                
+                // Highlight correct answer
+                const correctBtn = parent.querySelector(`button[onclick*="'${answers[qId]}'"]`);
+                correctBtn.classList.add('bg-green-50', 'border-green-200');
+            }
+        }
+
     </script>
 </body>
 </html>
