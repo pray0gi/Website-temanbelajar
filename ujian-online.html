@@ -312,13 +312,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const qStageMap = {};
             allQuestions?.forEach(q => qStageMap[q.id] = q.jenis_soal || 'ujian');
 
-            const historyMap = {};
+            // LOGIKA BARU: Menghitung percobaan & skor terbaik
+            // Format: "mapelID_tahap" -> { count: 0, maxScore: 0 }
+            const historyStats = {}; 
+            
             history?.forEach(h => {
                 const firstQKey = Object.keys(h.jawaban_siswa)[0]; 
                 if(firstQKey) {
                     const qId = parseInt(firstQKey.split('-')[1]);
                     const stage = qStageMap[qId] || 'ujian';
-                    historyMap[`${h.mapel_id}_${stage}`] = h.skor_akhir;
+                    const key = `${h.mapel_id}_${stage}`;
+                    
+                    if(!historyStats[key]) historyStats[key] = { count: 0, maxScore: 0 };
+                    
+                    historyStats[key].count++;
+                    if(h.skor_akhir > historyStats[key].maxScore) {
+                        historyStats[key].maxScore = h.skor_akhir;
+                    }
                 }
             });
 
@@ -351,21 +361,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     validConfigs.forEach(cfg => {
                         const key = `${mapel.id}_${cfg.jenis_soal}`;
-                        const score = historyMap[key];
-                        const isDone = score !== undefined;
+                        const stats = historyStats[key] || { count: 0, maxScore: 0 };
                         const displayName = getStageDisplayName(cfg.jenis_soal);
+                        
+                        // LOGIKA REMEDIAL
+                        // 1. Belum pernah -> Tombol Mulai
+                        // 2. Sudah 1x & Skor < 75 -> Tombol Remedial (Warna Kuning)
+                        // 3. Sudah 2x ATAU Skor >= 75 -> Selesai (Hijau/Merah)
 
-                        if (isDone) {
-                            let scoreColor = score >= 75 ? 'text-green-400 border-green-800 bg-green-900/30' : 'text-yellow-400 border-yellow-800 bg-yellow-900/30';
-                            html += `
-                            <div class="flex justify-between items-center p-3 rounded border ${scoreColor}">
-                                <div>
-                                    <div class="text-xs font-bold uppercase opacity-80">${displayName}</div>
-                                    <div class="text-sm">Selesai</div>
-                                </div>
-                                <div class="text-xl font-bold">${score}</div>
-                            </div>`;
-                        } else {
+                        if (stats.count === 0) {
+                            // BELUM PERNAH
                             const configStr = encodeURIComponent(JSON.stringify(cfg));
                             html += `
                             <button onclick="prepareExam('${configStr}', '${mapel.nama_mapel}')" 
@@ -376,6 +381,39 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform group-hover:translate-x-1 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
                             </button>`;
+                        } 
+                        else if (stats.count === 1 && stats.maxScore < 75) {
+                            // REMEDIAL (1 Kali Kesempatan)
+                            const configStr = encodeURIComponent(JSON.stringify(cfg));
+                            html += `
+                            <button onclick="prepareExam('${configStr}', '${mapel.nama_mapel}')" 
+                                class="flex justify-between items-center bg-yellow-600 hover:bg-yellow-500 text-white p-3 rounded font-semibold transition shadow-lg group text-left border border-yellow-400">
+                                <div>
+                                    <span class="block text-sm font-bold">Remedial ${displayName}</span>
+                                    <span class="text-xs font-normal">Skor Awal: ${stats.maxScore} (Belum Tuntas)</span>
+                                </div>
+                                <span class="bg-white text-yellow-700 text-xs font-bold px-2 py-1 rounded">Coba Lagi</span>
+                            </button>`;
+                        }
+                        else {
+                            // SELESAI (Sudah Lulus atau Kesempatan Habis)
+                            let scoreColor, statusText;
+                            if (stats.maxScore >= 75) {
+                                scoreColor = 'text-green-400 border-green-800 bg-green-900/30';
+                                statusText = "Tuntas";
+                            } else {
+                                scoreColor = 'text-red-400 border-red-800 bg-red-900/30';
+                                statusText = "Kesempatan Habis";
+                            }
+                            
+                            html += `
+                            <div class="flex justify-between items-center p-3 rounded border ${scoreColor}">
+                                <div>
+                                    <div class="text-xs font-bold uppercase opacity-80">${displayName}</div>
+                                    <div class="text-sm">${statusText}</div>
+                                </div>
+                                <div class="text-xl font-bold">${stats.maxScore}</div>
+                            </div>`;
                         }
                     });
 
