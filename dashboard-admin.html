@@ -98,7 +98,7 @@
                 </div>
             </div>
 
-            <!-- VIEW PUBLIKASI (BARU) -->
+            <!-- VIEW PUBLIKASI -->
             <div data-view="publikasi">
                 <div class="bg-slate-800 p-6 rounded-xl border border-purple-500/30 shadow-lg">
                     <div class="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
@@ -132,7 +132,7 @@
                 </div>
             </div>
 
-            <!-- VIEW SISWA -->
+            <!-- VIEW SISWA (DIPERBARUI: FITUR EDIT KELAS) -->
             <div data-view="siswa">
                 <div class="bg-slate-800 p-6 rounded-xl">
                     <div class="flex flex-col md:flex-row justify-between items-start mb-4">
@@ -157,8 +157,9 @@
                                     <th class="p-3 w-4"><input type="checkbox" id="select-all-siswa"></th>
                                     <th class="p-3">NIS</th>
                                     <th class="p-3">Nama</th>
-                                    <th class="p-3">Status Mapel Terpilih</th>
-                                    <th class="p-3">Aksi</th>
+                                    <th class="p-3">Kelas</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 text-right">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="siswa-table-body" class="bg-slate-800"></tbody>
@@ -416,6 +417,36 @@
         </div>
     </div>
 
+    <!-- MODAL EDIT SISWA (BARU) -->
+    <div id="edit-siswa-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md fade-in border border-slate-600">
+            <h2 class="text-2xl font-bold mb-6 text-cyan-300">Edit Siswa</h2>
+            <form id="edit-siswa-form" class="space-y-4">
+                <input type="hidden" id="edit-siswa-old-nis">
+                <div>
+                    <label class="block text-sm mb-1 text-slate-300">NIS</label>
+                    <input type="text" id="edit-siswa-nis" class="w-full bg-slate-700 p-2 rounded border border-slate-600" required>
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-slate-300">Nama Lengkap</label>
+                    <input type="text" id="edit-siswa-nama" class="w-full bg-slate-700 p-2 rounded border border-slate-600" required>
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-slate-300">Kelas</label>
+                    <input type="text" id="edit-siswa-kelas" class="w-full bg-slate-700 p-2 rounded border border-slate-600" placeholder="10A, 11 IPA 1, dll" required>
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-slate-300">Password (Absen)</label>
+                    <input type="text" id="edit-siswa-password" class="w-full bg-slate-700 p-2 rounded border border-slate-600" required>
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="document.getElementById('edit-siswa-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-600 rounded text-white">Batal</button>
+                    <button type="submit" class="px-6 py-2 bg-sky-600 rounded text-white font-bold">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal Import Soal -->
     <div id="import-soal-modal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-slate-800 p-6 rounded-xl w-full max-w-4xl h-[85vh] flex flex-col border border-slate-600 shadow-2xl fade-in">
@@ -623,7 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <tr class="border-b border-slate-700 hover:bg-slate-750">
                 <td class="p-4 font-medium">${c.mata_pelajaran?.nama_mapel}</td>
                 <td class="p-4"><span class="bg-slate-700 px-2 py-1 rounded text-xs border border-slate-600">${stageLabel}</span></td>
-                <td class="p-4 font-mono text-sm text-yellow-400">${c.kelas_target}</td>
+                <td class="p-4 font-mono text-sm text-yellow-400">${c.kelas_target || 'Semua'}</td>
                 <td class="p-4 text-sm">${c.durasi_menit} Menit</td>
                 <td class="p-4"><span class="px-3 py-1 rounded text-xs font-bold ${statusClass}">${statusText}</span></td>
                 <td class="p-4 text-right">
@@ -648,7 +679,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         stageSel.value = config.jenis_soal;
         
-        document.getElementById('config-kelas').value = config.kelas_target;
+        document.getElementById('config-kelas').value = config.kelas_target || '';
         document.getElementById('config-durasi').value = config.durasi_menit;
         document.getElementById('config-active').checked = config.is_active;
         
@@ -731,23 +762,61 @@ document.addEventListener('DOMContentLoaded', () => {
             const tbody = document.getElementById('siswa-table-body');
             tbody.innerHTML = siswaList.map(siswa => {
                 const done = (hasilData || []).some(h => h.nis_siswa === siswa.nis && h.mapel_id === filterMapelId);
+                const kelasText = siswa.kelas ? `<span class="bg-purple-900 text-purple-200 px-2 py-1 rounded text-xs border border-purple-700">${siswa.kelas}</span>` : '<span class="text-slate-500 italic">-</span>';
                 return `
                 <tr class="border-b border-slate-700 hover:bg-slate-800">
                     <td class="p-3 w-4"><input type="checkbox" class="chk-siswa" data-nis="${siswa.nis}"></td>
                     <td class="p-3 font-mono text-slate-300">${siswa.nis}</td>
                     <td class="p-3 font-medium">${siswa.nama}</td>
+                    <td class="p-3">${kelasText}</td>
                     <td class="p-3"><span class="px-2 py-1 rounded text-xs ${done ? 'bg-green-900 text-green-300' : 'bg-yellow-900 text-yellow-300'}">${done ? 'Selesai' : 'Belum'}</span></td>
-                    <td class="p-3 flex gap-2">
-                        ${done ? `<button class="text-xs bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded reset-siswa-btn" data-nis="${siswa.nis}" data-mapel="${filterMapelId}">Reset</button>` : ''}
-                        <button class="text-xs bg-red-900 hover:bg-red-800 text-red-200 px-2 py-1 rounded delete-siswa-btn" data-nis="${siswa.nis}">Hapus</button>
+                    <td class="p-3 flex gap-2 text-right">
+                        <button onclick="editSiswa('${siswa.nis}')" class="text-sky-400 hover:text-white text-sm font-medium mr-2">Edit</button>
+                        ${done ? `<button class="text-green-400 hover:text-white text-sm font-medium mr-2 reset-siswa-btn" data-nis="${siswa.nis}" data-mapel="${filterMapelId}">Reset</button>` : ''}
+                        <button class="text-red-400 hover:text-white text-sm font-medium delete-siswa-btn" data-nis="${siswa.nis}">Hapus</button>
                     </td>
                 </tr>`;
             }).join('');
         }
     }
+    
     window.hapusSiswa = (nis) => {
         showModal('Hapus Siswa?', `NIS: ${nis}`, [{text:'Ya', class:'bg-red-600 text-white px-4 py-2 rounded', onClick: async () => { await supabaseClient.from('siswa').delete().eq('nis', nis); fetchAndRenderSiswa(); }}]);
     };
+
+    window.editSiswa = async (nis) => {
+        const { data } = await supabaseClient.from('siswa').select('*').eq('nis', nis).limit(1);
+        if (!data || data.length === 0) return;
+        const s = data[0];
+        
+        document.getElementById('edit-siswa-old-nis').value = s.nis; // Key for update
+        document.getElementById('edit-siswa-nis').value = s.nis;
+        document.getElementById('edit-siswa-nama').value = s.nama;
+        document.getElementById('edit-siswa-kelas').value = s.kelas || '';
+        document.getElementById('edit-siswa-password').value = s.password;
+        
+        document.getElementById('edit-siswa-modal').classList.remove('hidden');
+        document.getElementById('edit-siswa-modal').classList.add('flex');
+    };
+
+    document.getElementById('edit-siswa-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const oldNis = document.getElementById('edit-siswa-old-nis').value;
+        const newNis = document.getElementById('edit-siswa-nis').value;
+        const nama = document.getElementById('edit-siswa-nama').value;
+        const kelas = document.getElementById('edit-siswa-kelas').value;
+        const password = document.getElementById('edit-siswa-password').value;
+
+        const { error } = await supabaseClient.from('siswa').update({ nis: newNis, nama, kelas, password }).eq('nis', oldNis);
+
+        if(error) {
+            alert('Gagal update siswa: ' + error.message);
+        } else {
+            document.getElementById('edit-siswa-modal').classList.add('hidden');
+            document.getElementById('edit-siswa-modal').classList.remove('flex');
+            fetchAndRenderSiswa();
+        }
+    });
 
     // --- SOAL ---
     async function fetchAndRenderSoal() {
@@ -1132,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = e.target.files[0];
         if (file) {
             handleFileUpload(file, 'siswa', (data) => data.map(row => ({
-                nis: row.nis, nama: row.nama, password: row.password
+                nis: row.nis, nama: row.nama, kelas: row.kelas || 'Umum', password: row.password
             })));
         }
     });
@@ -1162,7 +1231,7 @@ document.addEventListener('DOMContentLoaded', () => {
             downloadCSV(flattened, 'hasil_latihan_lengkap.csv'); 
         } 
     });
-    document.getElementById('download-siswa-template').addEventListener('click', () => downloadCSV([{ nis: '', nama: '', password: '' }], 'template_siswa.csv'));
+    document.getElementById('download-siswa-template').addEventListener('click', () => downloadCSV([{ nis: '', nama: '', kelas: '', password: '' }], 'template_siswa.csv'));
     
     // DOCX Download
     document.getElementById('download-soal-docx').addEventListener('click', async () => {
