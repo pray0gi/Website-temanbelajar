@@ -501,14 +501,15 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.textContent = 'Memproses...';
 
         try {
-            // PERBAIKAN: Gunakan .limit(1) daripada .single()
-            const { data, error } = await supabaseClient.from('admin').select('*').eq('username', username).eq('password', password).limit(1); 
+            const { data, error } = await supabaseClient.from('admin').select('*').eq('username', username).eq('password', password).single(); 
             
-            if (error) { throw error; }
+            if (error && error.code !== 'PGRST116') { // PGRST116 adalah kode error untuk "data not found" (row 0)
+                throw error; // Lempar error teknis (koneksi, dll) ke catch
+            }
 
-            if (data && data.length > 0) { 
-                currentAdmin = data[0]; 
-                sessionStorage.setItem('adminUser', JSON.stringify(currentAdmin)); 
+            if (data) { 
+                currentAdmin = data; 
+                sessionStorage.setItem('adminUser', JSON.stringify(data)); 
                 showPage('dashboard'); 
                 loadInitialData(); 
             } else { 
@@ -642,24 +643,21 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.editConfig = async (id) => {
-        // PERBAIKAN: Gunakan .limit(1)
-        const { data } = await supabaseClient.from('pengaturan_ujian').select('*').eq('id', id).limit(1);
-        if(!data || data.length === 0) return;
-        
-        const config = data[0];
-        document.getElementById('config-id').value = config.id;
-        document.getElementById('config-mapel').value = config.mapel_id;
+        const { data } = await supabaseClient.from('pengaturan_ujian').select('*').eq('id', id).single();
+        if(!data) return;
+        document.getElementById('config-id').value = data.id;
+        document.getElementById('config-mapel').value = data.mapel_id;
         
         // Ensure stage exists in dropdown
         const stageSel = document.getElementById('config-stage');
-        if (!Array.from(stageSel.options).some(o=>o.value === config.jenis_soal)) {
-            availableStages.add(config.jenis_soal); updateStageDropdowns();
+        if (!Array.from(stageSel.options).some(o=>o.value === data.jenis_soal)) {
+            availableStages.add(data.jenis_soal); updateStageDropdowns();
         }
-        stageSel.value = config.jenis_soal;
+        stageSel.value = data.jenis_soal;
         
-        document.getElementById('config-kelas').value = config.kelas_target;
-        document.getElementById('config-durasi').value = config.durasi_menit;
-        document.getElementById('config-active').checked = config.is_active;
+        document.getElementById('config-kelas').value = data.kelas_target;
+        document.getElementById('config-durasi').value = data.durasi_menit;
+        document.getElementById('config-active').checked = data.is_active;
         
         document.getElementById('config-modal').classList.remove('hidden');
         document.getElementById('config-modal').classList.add('flex');
@@ -808,23 +806,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     window.editSoal = async (id) => {
-        // PERBAIKAN: Gunakan .limit(1)
-        const { data } = await supabaseClient.from('soal_ujian').select('*').eq('id', id).limit(1);
-        if(!data || data.length === 0) return;
-        const soalData = data[0];
-
-        document.getElementById('edit-soal-id').value = soalData.id;
-        document.getElementById('edit-soal-image-path').value = soalData.url_gambar || '';
-        document.getElementById('edit-mapel').value = soalData.mapel_id;
+        const { data } = await supabaseClient.from('soal_ujian').select('*').eq('id', id).single();
+        if(!data) return;
+        document.getElementById('edit-soal-id').value = data.id;
+        document.getElementById('edit-soal-image-path').value = data.url_gambar || '';
+        document.getElementById('edit-mapel').value = data.mapel_id;
         
         const stageSel = document.getElementById('edit-jenis-soal');
-        if(!Array.from(stageSel.options).some(o=>o.value === soalData.jenis_soal)) { availableStages.add(soalData.jenis_soal); updateStageDropdowns(); }
-        stageSel.value = soalData.jenis_soal;
+        if(!Array.from(stageSel.options).some(o=>o.value === data.jenis_soal)) { availableStages.add(data.jenis_soal); updateStageDropdowns(); }
+        stageSel.value = data.jenis_soal;
 
-        document.getElementById('edit-pertanyaan').value = soalData.pertanyaan;
-        ['A','B','C','D','E'].forEach((c, i) => document.getElementById(`edit-opsi${c}`).value = soalData.pilihan[i] || '');
-        document.getElementById('edit-jawaban-benar').value = soalData.jawaban_benar;
-        document.getElementById('image-preview').src = soalData.url_gambar || '';
+        document.getElementById('edit-pertanyaan').value = data.pertanyaan;
+        ['A','B','C','D','E'].forEach((c, i) => document.getElementById(`edit-opsi${c}`).value = data.pilihan[i] || '');
+        document.getElementById('edit-jawaban-benar').value = data.jawaban_benar;
+        document.getElementById('image-preview').src = data.url_gambar || '';
         
         document.getElementById('form-title').textContent = "Edit Soal";
         document.getElementById('edit-soal-modal').classList.remove('hidden');
