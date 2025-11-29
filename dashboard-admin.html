@@ -132,7 +132,7 @@
                 </div>
             </div>
 
-            <!-- VIEW SISWA (DIPERBARUI: FITUR EDIT KELAS) -->
+            <!-- VIEW SISWA -->
             <div data-view="siswa">
                 <div class="bg-slate-800 p-6 rounded-xl">
                     <div class="flex flex-col md:flex-row justify-between items-start mb-4">
@@ -213,7 +213,8 @@
                         <table class="w-full text-left">
                             <thead class="bg-slate-700 text-slate-300 text-sm uppercase">
                                 <tr>
-                                    <th class="p-3 w-4"><input type="checkbox" id="select-all-soal"></th>
+                                    <!-- PERBAIKAN ID SELECT ALL -->
+                                    <th class="p-3 w-4"><input type="checkbox" id="select-all-soal" class="cursor-pointer rounded bg-slate-700 border-slate-600 text-purple-600 focus:ring-purple-500"></th>
                                     <th class="p-3 w-16">ID</th>
                                     <th class="p-3">Mapel</th>
                                     <th class="p-3 w-32">Tahap</th>
@@ -417,36 +418,6 @@
         </div>
     </div>
 
-    <!-- MODAL EDIT SISWA (BARU) -->
-    <div id="edit-siswa-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
-        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md fade-in border border-slate-600">
-            <h2 class="text-2xl font-bold mb-6 text-cyan-300">Edit Siswa</h2>
-            <form id="edit-siswa-form" class="space-y-4">
-                <input type="hidden" id="edit-siswa-old-nis">
-                <div>
-                    <label class="block text-sm mb-1 text-slate-300">NIS</label>
-                    <input type="text" id="edit-siswa-nis" class="w-full bg-slate-700 p-2 rounded border border-slate-600" required>
-                </div>
-                <div>
-                    <label class="block text-sm mb-1 text-slate-300">Nama Lengkap</label>
-                    <input type="text" id="edit-siswa-nama" class="w-full bg-slate-700 p-2 rounded border border-slate-600" required>
-                </div>
-                <div>
-                    <label class="block text-sm mb-1 text-slate-300">Kelas</label>
-                    <input type="text" id="edit-siswa-kelas" class="w-full bg-slate-700 p-2 rounded border border-slate-600" placeholder="10A, 11 IPA 1, dll" required>
-                </div>
-                <div>
-                    <label class="block text-sm mb-1 text-slate-300">Password (Absen)</label>
-                    <input type="text" id="edit-siswa-password" class="w-full bg-slate-700 p-2 rounded border border-slate-600" required>
-                </div>
-                <div class="flex justify-end gap-3 pt-4">
-                    <button type="button" onclick="document.getElementById('edit-siswa-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-600 rounded text-white">Batal</button>
-                    <button type="submit" class="px-6 py-2 bg-sky-600 rounded text-white font-bold">Simpan</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Modal Import Soal -->
     <div id="import-soal-modal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-slate-800 p-6 rounded-xl w-full max-w-4xl h-[85vh] flex flex-col border border-slate-600 shadow-2xl fade-in">
@@ -477,6 +448,36 @@
                     <button id="btn-execute-import" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded text-white font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed">Salin Soal</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Siswa -->
+    <div id="edit-siswa-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md fade-in border border-slate-600">
+            <h2 class="text-2xl font-bold mb-6 text-cyan-300">Edit Siswa</h2>
+            <form id="edit-siswa-form" class="space-y-4">
+                <input type="hidden" id="edit-siswa-old-nis">
+                <div>
+                    <label class="block text-sm mb-1 text-slate-300">NIS</label>
+                    <input type="text" id="edit-siswa-nis" class="w-full bg-slate-700 p-2 rounded border border-slate-600" required>
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-slate-300">Nama Lengkap</label>
+                    <input type="text" id="edit-siswa-nama" class="w-full bg-slate-700 p-2 rounded border border-slate-600" required>
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-slate-300">Kelas</label>
+                    <input type="text" id="edit-siswa-kelas" class="w-full bg-slate-700 p-2 rounded border border-slate-600" placeholder="10A, 11 IPA 1, dll" required>
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-slate-300">Password (Absen)</label>
+                    <input type="text" id="edit-siswa-password" class="w-full bg-slate-700 p-2 rounded border border-slate-600" required>
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="document.getElementById('edit-siswa-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-600 rounded text-white">Batal</button>
+                    <button type="submit" class="px-6 py-2 bg-sky-600 rounded text-white font-bold">Simpan</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -679,7 +680,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         stageSel.value = config.jenis_soal;
         
-        document.getElementById('config-kelas').value = config.kelas_target || '';
+        document.getElementById('config-kelas').value = config.kelas_target;
         document.getElementById('config-durasi').value = config.durasi_menit;
         document.getElementById('config-active').checked = config.is_active;
         
@@ -838,7 +839,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const mapelName = mataPelajaranList.find(m => m.id === q.mapel_id)?.nama_mapel || '?';
                 return `
                 <tr class="border-b border-slate-700 hover:bg-slate-800 group">
-                    <td class="p-3 w-4"><input type="checkbox" class="chk-soal" value="${q.id}"></td>
+                    <td class="p-3 w-4"><input type="checkbox" class="soal-checkbox" data-id="${q.id}"></td>
                     <td class="p-3 text-xs text-slate-500">${q.id}</td>
                     <td class="p-3 text-xs text-slate-300">${mapelName}</td>
                     <td class="p-3"><span class="bg-blue-900 text-blue-200 text-[10px] px-2 py-1 rounded uppercase">${q.jenis_soal || 'Ujian'}</span></td>
@@ -846,8 +847,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td class="p-3 text-center text-xs">${q.url_gambar ? '✅' : '-'}</td>
                     <td class="p-3 text-center font-bold text-green-500">${q.jawaban_benar}</td>
                     <td class="p-3 flex gap-2 opacity-50 group-hover:opacity-100">
-                        <button onclick="editSoal(${q.id})" class="text-sky-400">Edit</button>
-                        <button onclick="hapusSoal(${q.id})" class="text-red-400">Hapus</button>
+                        <button class="text-sky-400 hover:text-sky-300 edit-soal-btn" data-id="${q.id}">Edit</button>
+                        <button class="text-red-400 hover:text-red-300 delete-soal-btn" data-id="${q.id}">Hapus</button>
                     </td>
                 </tr>`;
             }).join('');
@@ -887,6 +888,19 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-soal-modal').classList.remove('hidden');
         document.getElementById('edit-soal-modal').classList.add('flex');
     };
+    
+    // DELEGATED EVENT LISTENERS FOR TABLE BUTTONS (NEW)
+    document.getElementById('soal-table-body').addEventListener('click', e => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        
+        if (btn.classList.contains('delete-soal-btn')) {
+             handleDelete('soal_ujian', 'id', btn.dataset.id, `Hapus soal ID ${btn.dataset.id}?`);
+        }
+        if (btn.classList.contains('edit-soal-btn')) {
+             editSoal(btn.dataset.id);
+        }
+    });
 
     window.hapusSoal = (id) => {
         if(confirm('Hapus soal ini?')) { supabaseClient.from('soal_ujian').delete().eq('id', id).then(fetchAndRenderSoal); }
@@ -1065,12 +1079,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }}]);
         }
     });
-    document.getElementById('soal-table-body').addEventListener('click', e => {
-        const btn = e.target.closest('button');
-        if (!btn) return;
-        if (btn.classList.contains('delete-soal-btn')) handleDelete('soal_ujian', 'id', btn.dataset.id, `Hapus soal ID ${btn.dataset.id}?`);
-        if (btn.classList.contains('edit-soal-btn')) openEditSoalModal(btn.dataset.id);
-    });
 
     // IMPORT LOGIC
     document.getElementById('btn-open-import-modal').addEventListener('click', async () => {
@@ -1205,7 +1213,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })));
         }
     });
-    document.getElementById('download-soal-template').addEventListener('click', () => downloadCSV([{mapel_id:'', jenis_soal:'ujian', pertanyaan:'', opsiA:'', opsiB:'', opsiC:'', opsiD:'', jawaban_benar:''}], 'template_soal.csv'));
+    document.getElementById('download-soal-template').addEventListener('click', () => downloadCSV([{mapel_id:'', jenis_soal:'ujian', pertanyaan:'', opsiA:'', opsiB:'', opsiC:'', opsiD:'', opsiE:'', jawaban_benar:''}], 'template_soal.csv'));
     document.getElementById('download-hasil').addEventListener('click', async () => { 
         const { data } = await supabaseClient.from('hasil_ujian').select('waktu_pengerjaan, nis_siswa, skor_akhir, siswa(nama), mata_pelajaran(nama_mapel)'); 
         if (data) { 
@@ -1253,28 +1261,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const blob = await Packer.toBlob(doc);
         const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'bank_soal.docx'; document.body.appendChild(link); link.click(); document.body.removeChild(link);
     });
-
-    const setupCheckboxLogic = (selectAllId, checkboxClass, deleteButtonId) => { 
-        const selectAllCheckbox = document.getElementById(selectAllId); 
-        const deleteButton = document.getElementById(deleteButtonId); 
-        const tableBody = selectAllCheckbox.closest('table').querySelector('tbody'); 
-        tableBody.addEventListener('change', (e) => { 
-            if (e.target.classList.contains(checkboxClass)) {
-                 const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length; 
-                 deleteButton.classList.toggle('hidden', selected === 0);
-                 selectAllCheckbox.checked = selected === document.querySelectorAll(`.${checkboxClass}`).length;
-            }
-        }); 
-        selectAllCheckbox.addEventListener('change', (e) => { 
-            document.querySelectorAll(`.${checkboxClass}`).forEach(checkbox => { 
-                checkbox.checked = e.target.checked; 
-            }); 
-            const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length; 
-            deleteButton.classList.toggle('hidden', selected === 0); 
-        }); 
-    };
-    setupCheckboxLogic('select-all-siswa', 'siswa-checkbox', 'delete-selected-siswa-btn');
-    setupCheckboxLogic('select-all-soal', 'soal-checkbox', 'delete-selected-soal-btn');
     
     const imageUploadInput = document.getElementById('image-upload');
     const imagePreview = document.getElementById('image-preview');
