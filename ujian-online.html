@@ -18,12 +18,24 @@
 </head>
 <body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
 
-    <!-- Modal Warning -->
-    <div id="violation-warning" class="fixed inset-0 bg-black bg-opacity-90 flex-col items-center justify-center p-4 hidden z-50 text-center">
-        <h2 class="text-4xl font-bold text-yellow-400 mb-4">PERINGATAN!</h2>
-        <p class="text-xl text-white">Dilarang meninggalkan halaman.</p>
-        <button id="close-warning-btn" class="mt-8 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-8 rounded-lg">Kembali</button>
+    <!-- Modal Peringatan Pelanggaran -->
+    <div id="violation-warning" class="fixed inset-0 bg-black bg-opacity-95 flex-col items-center justify-center p-4 hidden z-50 text-center backdrop-blur-sm">
+        <div class="bg-slate-800 p-8 rounded-xl border-2 border-red-500 shadow-2xl max-w-md animate-bounce">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 text-red-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <h2 class="text-3xl font-bold text-red-400 mb-2">PERINGATAN KERAS!</h2>
+            <p class="text-lg text-white mb-4">Anda terdeteksi meninggalkan halaman ujian atau keluar dari mode layar penuh.</p>
+            <div class="bg-red-900/30 p-4 rounded-lg mb-6 border border-red-900">
+                <p class="text-slate-300">Sisa Kesempatan:</p>
+                <p class="text-4xl font-bold text-white mt-1"><span id="violation-counter">6</span> / 6</p>
+            </div>
+            <p class="text-sm text-slate-400 mb-6">Jika kesempatan habis, jawaban akan otomatis dikirim dan Anda dianggap selesai.</p>
+            <button id="close-warning-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition transform hover:scale-105">KEMBALI KE UJIAN</button>
+        </div>
     </div>
+
+    <!-- Modal Umum -->
     <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md text-center">
             <h2 id="modal-title" class="text-2xl font-bold mb-4 text-sky-400"></h2>
@@ -76,14 +88,16 @@
                 <h1 class="text-3xl font-bold mb-2 text-cyan-300"><span id="instruction-mapel-name"></span></h1>
                 <h2 class="text-xl font-semibold mb-6 text-yellow-400" id="instruction-stage-name"></h2>
                 <div class="bg-slate-900 p-6 rounded-lg text-left max-w-lg mx-auto mb-8 text-slate-300 border border-slate-700">
-                    <ul class="list-disc list-inside space-y-3">
+                    <p class="font-bold text-red-400 mb-2 uppercase text-center">⚠️ Peraturan Penting ⚠️</p>
+                    <ul class="list-disc list-inside space-y-3 text-sm">
                         <li>Jumlah soal: <strong id="total-questions-info" class="text-white"></strong></li>
                         <li>Durasi: <strong id="time-limit-info" class="text-white"></strong> menit</li>
-                        <li>Pastikan koneksi internet stabil.</li>
-                        <li>Mode layar penuh disarankan (Wajib untuk Android/PC).</li>
+                        <li>Wajib mengaktifkan <strong>Mode Layar Penuh (Fullscreen)</strong>.</li>
+                        <li>Dilarang membuka tab lain, aplikasi lain, atau meminimalisir browser.</li>
+                        <li><strong>Batas Pelanggaran: 6 Kali.</strong> Jika melanggar lebih dari 6 kali, jawaban akan otomatis terkirim.</li>
                     </ul>
                 </div>
-                <button id="start-exam-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition transform hover:scale-105">Mulai Kerjakan</button>
+                <button id="start-exam-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition transform hover:scale-105">Saya Mengerti & Mulai</button>
                 <button onclick="navigateTo('select-mapel')" class="block mt-4 mx-auto text-slate-400 hover:text-white text-sm underline">Batal</button>
             </div>
         </div>
@@ -96,7 +110,9 @@
                         <h1 class="text-lg md:text-xl font-bold text-cyan-300 line-clamp-1"><span id="exam-mapel-name"></span></h1>
                         <p class="text-xs text-slate-400" id="exam-stage-name"></p>
                     </div>
-                    <div id="timer" class="bg-red-900 text-red-100 text-xl font-mono font-bold px-4 py-2 rounded-lg border border-red-700 shadow-inner min-w-[100px] text-center">00:00</div>
+                    <div class="flex gap-2">
+                        <div id="timer" class="bg-slate-900 text-white text-xl font-mono font-bold px-4 py-2 rounded-lg border border-slate-700 text-center">00:00</div>
+                    </div>
                 </div>
                 <div id="exam-content" class="space-y-8 pb-20"></div>
                 <div class="fixed bottom-0 left-0 w-full bg-slate-900 border-t border-slate-700 p-4 text-center z-20 md:relative md:bg-transparent md:border-0">
@@ -111,8 +127,8 @@
                 <div class="text-6xl mb-4">🎉</div>
                 <h1 class="text-3xl font-bold mb-4 text-white">Ujian Selesai!</h1>
                 <p class="text-slate-300 mb-2">Terima kasih, <span id="student-name-final" class="font-bold text-white"></span>.</p>
-                <p class="text-slate-400 text-sm">Jawaban Anda untuk tahap ini telah berhasil disimpan.</p>
-                <button onclick="location.reload()" class="mt-8 bg-slate-700 hover:bg-slate-600 px-8 py-3 rounded-lg text-white font-semibold transition">Kembali ke Menu Utama</button>
+                <p id="completion-reason" class="text-slate-400 text-sm italic mb-6">Jawaban telah disimpan.</p>
+                <button onclick="location.reload()" class="mt-4 bg-slate-700 hover:bg-slate-600 px-8 py-3 rounded-lg text-white font-semibold transition">Kembali ke Login</button>
             </div>
         </div>
     </div>
@@ -129,6 +145,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let timerInterval = null;
     let jawabanSiswa = {};
     let WAKTU_UJIAN = 90;
+    
+    // VARIABEL KEAMANAN
+    let violationCount = 0;
+    const MAX_VIOLATIONS = 6;
+    let isExamActive = false;
     
     // UI Helpers
     const showModal = (title, msg, buttons) => {
@@ -155,9 +176,118 @@ document.addEventListener('DOMContentLoaded', () => {
         return stageKey.replace(/_/g, ' ').toUpperCase();
     };
 
+    // --- FUNGSI UTAMA (Didefinisikan sebagai Function agar Hoisted/Bisa dipanggil kapan saja) ---
+
+    async function submitExam(reason) {
+        clearInterval(timerInterval);
+        removeCheatingDetection(); // MATIKAN SISTEM KEAMANAN
+        
+        const btn = document.getElementById('submit-exam-btn');
+        btn.disabled = true;
+        btn.textContent = "Mengirim...";
+        
+        let correct = 0;
+        soalUjian.forEach(q => {
+            // Format key di jawabanSiswa adalah "soal-123"
+            if (jawabanSiswa[`soal-${q.id}`] === q.jawaban_benar) correct++;
+        });
+        const score = soalUjian.length > 0 ? Math.round((correct / soalUjian.length) * 100) : 0;
+
+        const payload = {
+            nis_siswa: siswaSaatIni.nis,
+            mapel_id: configSaatIni.mapel_id,
+            jawaban_siswa: jawabanSiswa,
+            skor_akhir: score
+        };
+
+        try {
+            const { error } = await supabaseClient.from('hasil_ujian').insert([payload]);
+            
+            if (error) {
+                throw error;
+            }
+
+            document.getElementById('student-name-final').textContent = siswaSaatIni.nama;
+            document.getElementById('completion-reason').textContent = reason ? `Status: ${reason}` : "Jawaban berhasil disimpan.";
+            navigateTo('complete');
+            if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+
+        } catch (err) {
+            console.error("Gagal Submit:", err);
+            alert("Gagal menyimpan nilai. Periksa koneksi internet Anda dan coba lagi.");
+            btn.disabled = false;
+            btn.textContent = "Kirim Jawaban";
+        }
+    };
+
+    // --- LOGIKA KEAMANAN (ANTI-CHEAT) ---
+    const setupCheatingDetection = () => {
+        violationCount = 0;
+        isExamActive = true;
+        document.getElementById('violation-counter').textContent = MAX_VIOLATIONS;
+
+        // Deteksi pindah tab / minimize
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        // Deteksi keluar fullscreen
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+
+    const removeCheatingDetection = () => {
+        isExamActive = false;
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        document.removeEventListener('fullscreenchange', handleFullscreenChange);
+        document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+
+    const handleVisibilityChange = () => {
+        if (document.hidden && isExamActive) {
+            triggerViolation();
+        }
+    };
+
+    const handleFullscreenChange = () => {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement && isExamActive) {
+            triggerViolation();
+        }
+    };
+
+    const triggerViolation = () => {
+        if (!isExamActive) return;
+        
+        violationCount++;
+        const remaining = MAX_VIOLATIONS - violationCount;
+        document.getElementById('violation-counter').textContent = remaining;
+        
+        const warningModal = document.getElementById('violation-warning');
+        warningModal.classList.remove('hidden');
+        warningModal.classList.add('flex');
+
+        if (violationCount >= MAX_VIOLATIONS) {
+            isExamActive = false; // Stop further checks
+            document.getElementById('close-warning-btn').disabled = true;
+            document.getElementById('close-warning-btn').textContent = "DISKUALIFIKASI...";
+            setTimeout(() => {
+                warningModal.classList.add('hidden');
+                submitExam("Diskualifikasi (Batas Pelanggaran Habis)");
+            }, 2000);
+        }
+    };
+
+    document.getElementById('close-warning-btn').addEventListener('click', () => {
+        if (violationCount < MAX_VIOLATIONS) {
+            document.getElementById('violation-warning').classList.add('hidden');
+            // Paksa fullscreen lagi jika keluar
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => console.log(e));
+            }
+        }
+    });
+
+
     // --- LOGIKA UTAMA: PEMILIHAN UJIAN DINAMIS ---
     const showMapelSelection = async () => {
-        const loadingEl = document.getElementById('mapel-loading'); // PERBAIKAN: Variabel loadingEl
+        const loadingEl = document.getElementById('mapel-loading');
         const listEl = document.getElementById('mapel-list');
         const noExamMsg = document.getElementById('no-exam-msg');
         
@@ -166,30 +296,25 @@ document.addEventListener('DOMContentLoaded', () => {
         noExamMsg.classList.add('hidden');
 
         try {
-            // 1. Ambil Mapel
             const { data: mapels } = await supabaseClient.from('mata_pelajaran').select('*');
             
-            // 2. Ambil Pengaturan Ujian (Hanya yang AKTIF)
             const { data: configs } = await supabaseClient
                 .from('pengaturan_ujian')
                 .select('*')
                 .eq('is_active', true);
 
-            // 3. Ambil Riwayat Siswa
             const { data: history } = await supabaseClient
                 .from('hasil_ujian')
                 .select('mapel_id, jawaban_siswa, skor_akhir')
                 .eq('nis_siswa', siswaSaatIni.nis);
 
-            // 4. Persiapan Mapping Soal -> Tahap
             const { data: allQuestions } = await supabaseClient.from('soal_ujian').select('id, jenis_soal');
             const qStageMap = {};
             allQuestions?.forEach(q => qStageMap[q.id] = q.jenis_soal || 'ujian');
 
-            // Mapping History: "mapelID_tahapName" -> Skor
             const historyMap = {};
             history?.forEach(h => {
-                const firstQKey = Object.keys(h.jawaban_siswa)[0]; // "soal-123"
+                const firstQKey = Object.keys(h.jawaban_siswa)[0]; 
                 if(firstQKey) {
                     const qId = parseInt(firstQKey.split('-')[1]);
                     const stage = qStageMap[qId] || 'ujian';
@@ -197,20 +322,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // 5. Filter & Render
             let hasExam = false;
             const studentClass = (siswaSaatIni.kelas || "").toLowerCase().trim();
 
             mapels.forEach(mapel => {
-                // Ambil config untuk mapel ini
                 const mapelConfigs = configs.filter(c => c.mapel_id === mapel.id);
                 
-                // Filter berdasarkan KELAS
                 const validConfigs = mapelConfigs.filter(cfg => {
                     const target = (cfg.kelas_target || 'semua').toLowerCase();
-                    
                     if (target.includes('semua')) return true;
-                    
                     const targets = target.split(',').map(t => t.trim());
                     return targets.includes(studentClass);
                 });
@@ -220,10 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const card = document.createElement('div');
                     card.className = 'bg-slate-700 p-6 rounded-lg border border-slate-600 transition hover:border-sky-500';
                     
-                    let html = `<h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                        ${mapel.nama_mapel}
-                    </h3>`;
-                    
+                    let html = `<h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">${mapel.nama_mapel}</h3>`;
                     html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
 
                     validConfigs.sort((a,b) => {
@@ -274,9 +391,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error(e);
             listEl.innerHTML = `<p class="text-red-400 text-center">Gagal memuat data ujian. Silakan refresh.</p>`;
         } finally {
-            loadingEl.classList.add('hidden'); // PERBAIKAN: Menggunakan loadingEl
+            loadingEl.classList.add('hidden');
         }
-        
         navigateTo('select-mapel');
     };
 
@@ -302,11 +418,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('time-limit-info').textContent = WAKTU_UJIAN;
         
         configSaatIni.nama_mapel = mapelName;
-        
         navigateTo('instructions');
     };
 
-    // LOGIN
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const nis = document.getElementById('nis').value;
@@ -332,15 +446,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('start-exam-btn').addEventListener('click', async () => {
         const el = document.documentElement;
         try {
-            if (el.requestFullscreen) {
-                await el.requestFullscreen();
-            } else if (el.webkitRequestFullscreen) {
-                await el.webkitRequestFullscreen();
-            } else if (el.msRequestFullscreen) {
-                await el.msRequestFullscreen();
-            }
+            if (el.requestFullscreen) await el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+            else if (el.msRequestFullscreen) await el.msRequestFullscreen();
         } catch (err) {
-            console.log("Fullscreen tidak didukung atau ditolak. Melanjutkan...");
+            console.log("Fullscreen blocked/not supported");
         }
 
         loadExamQuestions();
@@ -362,6 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         renderExamUI();
         startTimer(WAKTU_UJIAN);
+        setupCheatingDetection(); // AKTIFKAN SISTEM KEAMANAN
         navigateTo('exam');
     }
 
@@ -425,50 +536,28 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (time <= 0) {
-                clearInterval(timerInterval);
-                submitExam();
+                submitExam("Waktu Habis");
             }
             time--;
         }, 1000);
     }
 
+    // Event listener untuk tombol Kirim Jawaban
     document.getElementById('submit-exam-btn').addEventListener('click', () => {
         const filled = Object.keys(jawabanSiswa).length;
+        let message = 'Kirim jawaban sekarang?';
+        
         if (filled < soalUjian.length) {
-            if(!confirm(`Anda baru menjawab ${filled} dari ${soalUjian.length} soal. Yakin kirim?`)) return;
-        } else {
-            if(!confirm('Kirim jawaban sekarang?')) return;
+            message = `Anda baru menjawab ${filled} dari ${soalUjian.length} soal. Yakin kirim?`;
         }
-        submitExam();
+        
+        // Gunakan Custom Modal untuk konfirmasi
+        showModal('Konfirmasi', message, [
+            { text: 'Batal', class: 'bg-slate-600 hover:bg-slate-500 text-white py-2 px-4 rounded', onClick: null },
+            { text: 'Ya, Kirim', class: 'bg-green-600 hover:bg-green-500 text-white py-2 px-4 rounded', onClick: () => submitExam("Selesai Normal") }
+        ]);
     });
 
-    const submitExam = async () => {
-        clearInterval(timerInterval);
-        
-        let correct = 0;
-        soalUjian.forEach(q => {
-            if (jawabanSiswa[`soal-${q.id}`] === q.jawaban_benar) correct++;
-        });
-        const score = Math.round((correct / soalUjian.length) * 100);
-
-        const payload = {
-            nis_siswa: siswaSaatIni.nis,
-            mapel_id: configSaatIni.mapel_id,
-            jawaban_siswa: jawabanSiswa,
-            skor_akhir: score
-        };
-
-        const { error } = await supabaseClient.from('hasil_ujian').insert([payload]);
-        
-        if (error) {
-            alert("Gagal menyimpan nilai. Coba lagi.");
-            return;
-        }
-
-        document.getElementById('student-name-final').textContent = siswaSaatIni.nama;
-        navigateTo('complete');
-        if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
-    };
     
     document.getElementById('close-warning-btn').addEventListener('click', () => {
         document.getElementById('violation-warning').classList.add('hidden');
