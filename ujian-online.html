@@ -18,9 +18,9 @@
 </head>
 <body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
 
-    <!-- Modal Peringatan Pelanggaran -->
+    <!-- Modal Peringatan Pelanggaran (DIPERBAIKI: Hapus animate-bounce) -->
     <div id="violation-warning" class="fixed inset-0 bg-black bg-opacity-95 flex-col items-center justify-center p-4 hidden z-50 text-center backdrop-blur-sm">
-        <div class="bg-slate-800 p-8 rounded-xl border-2 border-red-500 shadow-2xl max-w-md animate-bounce">
+        <div class="bg-slate-800 p-8 rounded-xl border-2 border-red-500 shadow-2xl max-w-md transform transition-all scale-100">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 text-red-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
@@ -330,7 +330,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(h.skor_akhir > historyStats[key].maxScore) {
                         historyStats[key].maxScore = h.skor_akhir;
                     }
-                    // Jika ini percobaan terbaru, update lastScore (bisa ditambahkan jika perlu)
                 }
             });
 
@@ -366,8 +365,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         const stats = historyStats[key] || { count: 0, maxScore: 0 };
                         const displayName = getStageDisplayName(cfg.jenis_soal);
 
-                        // --- LOGIKA TAMPILAN TOMBOL BERDASARKAN RIWAYAT ---
-                        // KONDISI 1: Belum pernah mengerjakan (0 kali) -> BOLEH
+                        // LOGIKA TAMPILAN TOMBOL BERDASARKAN RIWAYAT
+                        // KONDISI 1: Belum pernah mengerjakan (0 kali)
                         if (stats.count === 0) {
                             const configStr = encodeURIComponent(JSON.stringify(cfg));
                             html += `
