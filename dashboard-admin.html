@@ -19,12 +19,19 @@
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .nav-btn.active { background-color: #0ea5e9; color: white; }
+        /* Custom Scrollbar for list */
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
-        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
-        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+        /* Toggle Switch Style */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #68D391;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #68D391;
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-white min-h-screen">
@@ -136,7 +143,10 @@
                                 <select id="filter-siswa-mapel" class="bg-slate-700 text-white p-2 rounded-md text-sm"></select>
                             </div>
                         </div>
-                        <button id="delete-selected-siswa-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg hidden mt-4 md:mt-0">Hapus Siswa Terpilih</button>
+                        <button id="delete-selected-siswa-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg hidden flex items-center gap-2 mt-4 md:mt-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            Hapus Siswa Terpilih
+                        </button>
                     </div>
                     <div class="flex flex-wrap gap-4 mb-4">
                         <button id="download-siswa-template" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">Download Template CSV</button>
@@ -147,7 +157,7 @@
                         <table class="w-full text-left">
                             <thead class="bg-slate-700">
                                 <tr>
-                                    <th class="p-3 w-4"><input type="checkbox" id="select-all-siswa" class="rounded bg-slate-600 border-slate-500 focus:ring-sky-500"></th>
+                                    <th class="p-3 w-4"><input type="checkbox" id="select-all-siswa" class="rounded bg-slate-600 border-slate-500 focus:ring-sky-500 cursor-pointer"></th>
                                     <th class="p-3">NIS</th>
                                     <th class="p-3">Nama</th>
                                     <th class="p-3">Kelas</th>
@@ -191,7 +201,7 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 011.414.414l4.414 4.414a1 1 0 01.414 1.414V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
                                 Salin dari Tahap Lain
                             </button>
-                            <!-- TOMBOL HAPUS MASSAL -->
+                            <!-- TOMBOL HAPUS MASSAL SOAL -->
                             <button id="delete-selected-soal-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg hidden flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                 Hapus Terpilih
@@ -573,7 +583,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const editEl = document.getElementById('edit-jenis-soal');
         const configEl = document.getElementById('config-stage');
         const filterHasilEl = document.getElementById('filter-hasil-jenis');
-        
         const currentFilterVal = filterEl.value;
 
         filterEl.innerHTML = ''; editEl.innerHTML = ''; configEl.innerHTML = ''; 
@@ -591,7 +600,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const createNewOpt = new Option("➕ Buat Tahap Baru...", "new_custom_stage");
         createNewOpt.style.fontWeight = "bold"; createNewOpt.style.color = "#4ade80";
         editEl.add(createNewOpt);
-        
         const createNewOptConfig = new Option("➕ Buat Tahap Baru...", "new_custom_stage");
         createNewOptConfig.style.fontWeight = "bold"; createNewOptConfig.style.color = "#4ade80";
         configEl.add(createNewOptConfig);
@@ -619,7 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- CONFIG ---
+    // --- PUBLIKASI UJIAN ---
     async function fetchConfig() {
         const { data } = await supabaseClient.from('pengaturan_ujian').select('*, mata_pelajaran(nama_mapel)').order('id', {ascending:false});
         const tbody = document.getElementById('config-table-body');
@@ -699,11 +707,54 @@ document.addEventListener('DOMContentLoaded', () => {
             tbody.innerHTML = siswaList.map(siswa => {
                 const done = (hasilData || []).some(h => h.nis_siswa === siswa.nis && h.mapel_id === filterMapelId);
                 const kelasText = siswa.kelas ? `<span class="bg-purple-900 text-purple-200 px-2 py-1 rounded text-xs border border-purple-700">${siswa.kelas}</span>` : '<span class="text-slate-500 italic">-</span>';
-                return `<tr class="border-b border-slate-700 hover:bg-slate-800"><td class="p-3 w-4"><input type="checkbox" class="chk-siswa" data-nis="${siswa.nis}"></td><td class="p-3 font-mono text-slate-300">${siswa.nis}</td><td class="p-3 font-medium">${siswa.nama}</td><td class="p-3">${kelasText}</td><td class="p-3"><span class="px-2 py-1 rounded text-xs ${done ? 'bg-green-900 text-green-300' : 'bg-yellow-900 text-yellow-300'}">${done ? 'Selesai' : 'Belum'}</span></td><td class="p-3 flex gap-2 text-right"><button onclick="editSiswa('${siswa.nis}')" class="text-sky-400 hover:text-white text-sm font-medium mr-2">Edit</button>${done ? `<button class="text-green-400 hover:text-white text-sm font-medium mr-2 reset-siswa-btn" data-nis="${siswa.nis}" data-mapel="${filterMapelId}">Reset</button>` : ''}<button class="text-red-400 hover:text-white text-sm font-medium delete-siswa-btn" data-nis="${siswa.nis}">Hapus</button></td></tr>`;
+                return `<tr class="border-b border-slate-700 hover:bg-slate-800"><td class="p-3 w-4"><input type="checkbox" class="siswa-checkbox" data-nis="${siswa.nis}"></td><td class="p-3 font-mono text-slate-300">${siswa.nis}</td><td class="p-3 font-medium">${siswa.nama}</td><td class="p-3">${kelasText}</td><td class="p-3"><span class="px-2 py-1 rounded text-xs ${done ? 'bg-green-900 text-green-300' : 'bg-yellow-900 text-yellow-300'}">${done ? 'Selesai' : 'Belum'}</span></td><td class="p-3 flex gap-2 text-right"><button onclick="editSiswa('${siswa.nis}')" class="text-sky-400 hover:text-white text-sm font-medium mr-2">Edit</button>${done ? `<button class="text-green-400 hover:text-white text-sm font-medium mr-2 reset-siswa-btn" data-nis="${siswa.nis}" data-mapel="${filterMapelId}">Reset</button>` : ''}<button class="text-red-400 hover:text-white text-sm font-medium delete-siswa-btn" data-nis="${siswa.nis}">Hapus</button></td></tr>`;
             }).join('');
         }
     }
-    window.hapusSiswa = (nis) => { showModal('Hapus Siswa?', `NIS: ${nis}`, [{text:'Ya', class:'bg-red-600 text-white px-4 py-2 rounded', onClick: async () => { await supabaseClient.from('siswa').delete().eq('nis', nis); fetchAndRenderSiswa(); }}]); };
+    
+    // --- NEW: ROBUST DELETE SISWA LOGIC ---
+    const deleteSiswa = async (nis) => {
+        showModal('Konfirmasi Hapus', `Yakin hapus siswa NIS ${nis}? Semua riwayat nilai akan ikut terhapus.`, [
+            { text: 'Batal', class: 'bg-slate-600 text-white py-2 px-4 rounded' },
+            { text: 'Hapus Permanen', class: 'bg-red-600 text-white py-2 px-4 rounded', onClick: async () => {
+                // Manual Cascade
+                const { error: err1 } = await supabaseClient.from('hasil_ujian').delete().eq('nis_siswa', nis);
+                if (err1) { alert('Gagal hapus riwayat ujian: ' + err1.message); return; }
+                
+                const { error: err2 } = await supabaseClient.from('hasil_latihan').delete().eq('nis_siswa', nis);
+                if (err2) { alert('Gagal hapus riwayat latihan: ' + err2.message); return; }
+
+                const { error: err3 } = await supabaseClient.from('siswa').delete().eq('nis', nis);
+                if (err3) { alert('Gagal hapus siswa: ' + err3.message); } 
+                else { loadInitialData(); }
+            }}
+        ]);
+    };
+
+    // --- NEW: ROBUST BULK DELETE SISWA ---
+    document.getElementById('delete-selected-siswa-btn').addEventListener('click', () => {
+        const nisToDelete = Array.from(document.querySelectorAll('.siswa-checkbox:checked')).map(cb => cb.dataset.nis);
+        if (nisToDelete.length === 0) return;
+        
+        showModal('Konfirmasi Hapus Massal', `Yakin hapus ${nisToDelete.length} siswa terpilih?`, [ 
+            { text: 'Batal', class: 'bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg' }, 
+            { text: 'Ya, Hapus', class: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg', onClick: async () => { 
+                // Manual Cascade Bulk
+                await supabaseClient.from('hasil_ujian').delete().in('nis_siswa', nisToDelete);
+                await supabaseClient.from('hasil_latihan').delete().in('nis_siswa', nisToDelete);
+                
+                const { error } = await supabaseClient.from('siswa').delete().in('nis', nisToDelete); 
+                
+                if (error) { alert("Gagal menghapus: " + error.message); }
+                else {
+                    fetchAndRenderSiswa(); 
+                    document.getElementById('select-all-siswa').checked = false;
+                    document.getElementById('delete-selected-siswa-btn').classList.add('hidden');
+                }
+            }} 
+        ]);
+    });
+
     window.editSiswa = async (nis) => {
         const { data } = await supabaseClient.from('siswa').select('*').eq('nis', nis).limit(1);
         if (!data || data.length === 0) return;
@@ -751,55 +802,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // --- EVENT LISTENER DELEGATION ---
-    // Menggunakan delegation agar tombol hapus & edit tetap jalan setelah render ulang
+    document.getElementById('siswa-table-body').addEventListener('click', e => {
+        // Handle delete single
+        if (e.target.classList.contains('delete-siswa-btn')) {
+            const nis = e.target.dataset.nis;
+            deleteSiswa(nis);
+        }
+        // Handle reset single
+        if (e.target.classList.contains('reset-siswa-btn')) {
+            showModal('Reset Ujian', 'Yakin reset ujian siswa ini?', [{text:'Batal',class:'bg-slate-600 py-2 px-4 rounded text-white'},{text:'Ya',class:'bg-green-600 py-2 px-4 rounded text-white', onClick:async()=>{
+                await supabaseClient.from('hasil_ujian').delete().eq('nis_siswa', e.target.dataset.nis).eq('mapel_id', e.target.dataset.mapel); loadInitialData();
+            }}]);
+        }
+    });
+
     document.getElementById('soal-table-body').addEventListener('click', e => {
         const btn = e.target.closest('button');
         if (!btn) return;
         if (btn.classList.contains('delete-soal-btn')) {
-             handleDelete('soal_ujian', 'id', btn.dataset.id, `Hapus soal ID ${btn.dataset.id}?`);
+             // Helper delete for soal is simpler (no cascade needed usually)
+             showModal('Konfirmasi Hapus', `Hapus soal ID ${btn.dataset.id}?`, [{ text: 'Batal', class: 'bg-slate-600 text-white py-2 px-4 rounded' }, { text: 'Hapus', class: 'bg-red-600 text-white py-2 px-4 rounded', onClick: async () => {
+                await supabaseClient.from('soal_ujian').delete().eq('id', btn.dataset.id); loadInitialData();
+            }}]);
         }
         if (btn.classList.contains('edit-soal-btn')) {
              openEditSoalModal(btn.dataset.id);
         }
     });
     
-    // --- CHECKBOX & BULK DELETE ---
-    const setupCheckboxLogic = (selectAllId, checkboxClass, deleteButtonId) => { 
-        const selectAllCheckbox = document.getElementById(selectAllId); 
-        const deleteButton = document.getElementById(deleteButtonId); 
-        const tableBody = selectAllCheckbox.closest('table').querySelector('tbody'); 
-        
-        tableBody.addEventListener('change', (e) => { 
-            if (e.target.classList.contains(checkboxClass)) {
-                 const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length; 
-                 deleteButton.classList.toggle('hidden', selected === 0);
-                 const total = document.querySelectorAll(`.${checkboxClass}`).length;
-                 selectAllCheckbox.checked = (total > 0 && selected === total);
-            }
-        }); 
-        selectAllCheckbox.addEventListener('change', (e) => { 
-            document.querySelectorAll(`.${checkboxClass}`).forEach(checkbox => { 
-                checkbox.checked = e.target.checked; 
-            }); 
-            const selected = document.querySelectorAll(`.${checkboxClass}:checked`).length; 
-            deleteButton.classList.toggle('hidden', selected === 0); 
-        }); 
-    };
-    
-    setupCheckboxLogic('select-all-siswa', 'chk-siswa', 'delete-selected-siswa-btn');
-    setupCheckboxLogic('select-all-soal', 'soal-checkbox', 'delete-selected-soal-btn');
-
-    // Handler Bulk Delete Soal
+    // BULK DELETE SOAL
     document.getElementById('delete-selected-soal-btn').addEventListener('click', () => {
         const idsToDelete = Array.from(document.querySelectorAll('.soal-checkbox:checked')).map(cb => cb.dataset.id);
         if (idsToDelete.length === 0) return;
         showModal('Konfirmasi Hapus Massal', `Yakin hapus ${idsToDelete.length} soal terpilih?`, [ 
             { text: 'Batal', class: 'bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg' }, 
             { text: 'Ya, Hapus', class: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg', onClick: async () => { 
-                await supabaseClient.from('soal_ujian').delete().in('id', idsToDelete); 
-                fetchAndRenderSoal(); 
-                document.getElementById('select-all-soal').checked = false;
-                document.getElementById('delete-selected-soal-btn').classList.add('hidden');
+                const { error } = await supabaseClient.from('soal_ujian').delete().in('id', idsToDelete); 
+                if (error) { alert("Gagal menghapus: " + error.message); }
+                else {
+                    fetchAndRenderSoal(); 
+                    document.getElementById('select-all-soal').checked = false;
+                    document.getElementById('delete-selected-soal-btn').classList.add('hidden');
+                }
             }} 
         ]);
     });
@@ -807,7 +851,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-open-create-soal').addEventListener('click', () => { document.getElementById('edit-soal-form').reset(); document.getElementById('edit-soal-id').value = ''; document.getElementById('form-title').textContent = "Buat Soal Baru"; document.getElementById('edit-soal-modal').classList.remove('hidden'); document.getElementById('edit-soal-modal').classList.add('flex'); });
     
     window.editSoal = async (id) => { /* ... same logic ... */ }; 
-    // Note: logic editSoal above is redefined but essentially calls openEditSoalModal
     const openEditSoalModal = async (id = null) => {
         const { data } = await supabaseClient.from('soal_ujian').select('*').eq('id', id).limit(1);
         if(!data || data.length === 0) return;
@@ -903,21 +946,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filter-hasil-mapel').addEventListener('change', fetchAndRenderHasil);
     document.getElementById('filter-hasil-jenis').addEventListener('change', fetchAndRenderHasil);
     document.getElementById('filter-latihan-mapel').addEventListener('change', fetchAndRenderHasilLatihan);
-    const handleDelete = async (table, col, val, msg) => { showModal('Konfirmasi Hapus', msg, [{ text: 'Batal', class: 'bg-slate-600 text-white py-2 px-4 rounded' }, { text: 'Hapus', class: 'bg-red-600 text-white py-2 px-4 rounded', onClick: async () => { await supabaseClient.from(table).delete().eq(col, val); loadInitialData(); }}]); };
-    document.getElementById('siswa-table-body').addEventListener('click', e => { if (e.target.classList.contains('delete-siswa-btn')) handleDelete('siswa', 'nis', e.target.dataset.nis, `Hapus siswa NIS ${e.target.dataset.nis}?`); if (e.target.classList.contains('reset-siswa-btn')) { showModal('Reset Ujian', 'Yakin reset ujian siswa ini?', [{text:'Batal',class:'bg-slate-600 py-2 px-4 rounded text-white'},{text:'Ya',class:'bg-green-600 py-2 px-4 rounded text-white', onClick:async()=>{ await supabaseClient.from('hasil_ujian').delete().eq('nis_siswa', e.target.dataset.nis).eq('mapel_id', e.target.dataset.mapel); loadInitialData(); }}]); } });
-    document.getElementById('btn-open-import-modal').addEventListener('click', async () => { const mapelId = document.getElementById('filter-mapel').value; const currentStage = document.getElementById('filter-jenis-soal').value; if (mapelId === 'all') return showModal('Peringatan', 'Silakan pilih Mata Pelajaran spesifik terlebih dahulu untuk menggunakan fitur import.', [{text:'OK', class:'bg-sky-600 hover:bg-sky-700 text-white py-2 px-6 rounded'}]); const modal = document.getElementById('import-soal-modal'); const list = document.getElementById('import-list'); const targetLabel = document.getElementById('import-target-label'); const targetText = document.getElementById('filter-jenis-soal').options[document.getElementById('filter-jenis-soal').selectedIndex].text; targetLabel.textContent = targetText; list.innerHTML = '<p class="text-center text-slate-500 py-4">Memuat bank soal...</p>'; document.getElementById('btn-execute-import').disabled = true; modal.classList.remove('hidden'); modal.classList.add('flex'); const { data } = await supabaseClient.from('soal_ujian').select('*').eq('mapel_id', mapelId); importableQuestions = data.filter(q => q.jenis_soal !== currentStage); list.innerHTML = ''; if (importableQuestions.length === 0) { list.innerHTML = '<p class="text-center text-slate-500 py-8">Tidak ada soal dari tahap lain untuk disalin.</p>'; return; } importableQuestions.forEach(q => { const sourceLabel = q.jenis_soal === 'ujian' ? 'Tahap 1' : q.jenis_soal; const item = document.createElement('div'); item.className = 'flex items-start gap-3 p-3 bg-slate-800 border border-slate-700 rounded hover:bg-slate-750 cursor-pointer'; item.innerHTML = `<input type="checkbox" value="${q.id}" class="import-chk mt-1 rounded bg-slate-700 border-slate-600 text-purple-500 focus:ring-purple-500 cursor-pointer"><div class="flex-1 overflow-hidden"><div class="flex items-center gap-2 mb-1"><span class="text-[10px] uppercase font-bold bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">${sourceLabel}</span><p class="text-sm text-slate-200 font-medium truncate">${q.pertanyaan}</p></div><p class="text-xs text-slate-500 truncate">Jawaban: ${q.jawaban_benar}</p></div>`; item.addEventListener('click', (e) => { if (e.target.type !== 'checkbox') { const cb = item.querySelector('input'); cb.checked = !cb.checked; updateImportCount(); } }); item.querySelector('input').addEventListener('change', updateImportCount); list.appendChild(item); }); });
-    const updateImportCount = () => { const count = document.querySelectorAll('.import-chk:checked').length; document.getElementById('import-count-label').textContent = `${count} soal dipilih`; document.getElementById('btn-execute-import').disabled = count === 0; };
-    document.getElementById('select-all-import').addEventListener('change', (e) => { document.querySelectorAll('.import-chk').forEach(cb => cb.checked = e.target.checked); updateImportCount(); });
-    document.getElementById('btn-execute-import').addEventListener('click', async () => { const selectedIds = Array.from(document.querySelectorAll('.import-chk:checked')).map(cb => parseInt(cb.value)); const targetStage = document.getElementById('filter-jenis-soal').value; const btn = document.getElementById('btn-execute-import'); btn.textContent = 'Menyalin...'; btn.disabled = true; const toCopy = importableQuestions.filter(q => selectedIds.includes(q.id)); const payload = toCopy.map(q => { const { id, created_at, ...rest } = q; return { ...rest, jenis_soal: targetStage }; }); const { error } = await supabaseClient.from('soal_ujian').insert(payload); if (error) { showModal('Error', `Gagal menyalin: ${error.message}`, [{text:'OK', class:'bg-red-600 hover:bg-red-700 text-white py-2 px-6 rounded'}]); } else { availableStages.add(targetStage); document.getElementById('import-soal-modal').classList.add('hidden'); document.getElementById('import-soal-modal').classList.remove('flex'); fetchAndRenderSoal(); showModal('Sukses', `Berhasil menyalin ${payload.length} soal!`, [{text:'OK', class:'bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded'}]); } btn.textContent = 'Salin Soal'; btn.disabled = false; });
-    const handleFileUpload = (file, table, transform) => { Papa.parse(file, { header: true, skipEmptyLines: true, complete: async (res) => { try { if (res.errors.length) throw new Error(res.errors[0].message); const { error } = await supabaseClient.from(table).insert(transform(res.data)); if (error) throw error; showModal('Sukses', 'Upload berhasil!', [{text:'OK', class:'bg-green-600 text-white py-2 px-4 rounded'}]); if(table === 'soal_ujian') loadInitialData(); else loadInitialData(); } catch (e) { showModal('Error', e.message, [{text:'OK', class:'bg-red-600 text-white py-2 px-4 rounded'}]); } document.getElementById('upload-soal-csv').value = ''; }}); };
-    const downloadCSV = (data, name) => { const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([Papa.unparse(data)], {type:'text/csv'})); link.download = name; link.click(); };
-    document.getElementById('upload-soal-csv').addEventListener('change', (e) => { const file = e.target.files[0]; const targetStage = document.getElementById('filter-jenis-soal').value; if (file) { handleFileUpload(file, 'soal_ujian', (data) => data.map(row => ({ mapel_id: row.mapel_id, jenis_soal: row.jenis_soal || targetStage, pertanyaan: row.pertanyaan, pilihan: [row.opsiA, row.opsiB, row.opsiC, row.opsiD, row.opsiE].filter(Boolean), jawaban_benar: row.jawaban_benar }))); } });
-    document.getElementById('upload-siswa-csv').addEventListener('change', (e) => { const file = e.target.files[0]; if (file) { handleFileUpload(file, 'siswa', (data) => data.map(row => ({ nis: row.nis, nama: row.nama, kelas: row.kelas || 'Umum', password: row.password }))); } });
-    document.getElementById('download-soal-template').addEventListener('click', () => downloadCSV([{mapel_id:'', jenis_soal:'ujian', pertanyaan:'', opsiA:'', opsiB:'', opsiC:'', opsiD:'', opsiE:'', jawaban_benar:''}], 'template_soal.csv'));
-    document.getElementById('download-hasil').addEventListener('click', async () => { const { data } = await supabaseClient.from('hasil_ujian').select('waktu_pengerjaan, nis_siswa, skor_akhir, siswa(nama), mata_pelajaran(nama_mapel)'); if (data) { const d = data.map(i => ({ waktu: new Date(i.waktu_pengerjaan).toLocaleString('id-ID'), nis: i.nis_siswa, nama: i.siswa?.nama || 'N/A', mapel: i.mata_pelajaran?.nama_mapel || 'N/A', skor: i.skor_akhir })); downloadCSV(d, 'hasil_ujian_lengkap.csv'); } });
-    document.getElementById('download-latihan').addEventListener('click', async () => { const { data } = await supabaseClient.from('hasil_latihan').select('*, siswa(nama), mata_pelajaran(nama_mapel)'); if (data) { const processed = {}; data.forEach(item => { const key = `${item.nis_siswa}-${item.mapel_id}`; if (!processed[key]) processed[key] = { nis: item.nis_siswa, nama: item.siswa?.nama || 'N/A', mapel: item.mata_pelajaran?.nama_mapel || 'N/A', percobaan: {} }; processed[key].percobaan[item.nomor_percobaan] = item.skor; }); const flattened = Object.values(processed).map(res => { const percobaanKeys = Object.keys(res.percobaan).map(Number).sort((a,b)=>a-b); const skorAwal = res.percobaan[percobaanKeys[0]] || 0; const skorAkhir = res.percobaan[percobaanKeys[percobaanKeys.length - 1]] || 0; return { nis: res.nis, nama: res.nama, mata_pelajaran: res.mapel, skor_awal: skorAwal, skor_akhir: skorAkhir, rata_rata: (skorAwal + skorAkhir) / 2 }; }); downloadCSV(flattened, 'hasil_latihan_lengkap.csv'); } });
-    document.getElementById('download-siswa-template').addEventListener('click', () => downloadCSV([{ nis: '', nama: '', kelas: '', password: '' }], 'template_siswa.csv'));
-    document.getElementById('download-soal-docx').addEventListener('click', async () => { const filterMapelId = document.getElementById('filter-mapel').value; let query = supabaseClient.from('soal_ujian').select('*').order('mapel_id').order('id'); if (filterMapelId && filterMapelId !== 'all') query = query.eq('mapel_id', filterMapelId); const { data, error } = await query; if (error || !data || data.length === 0) return showModal('Info', 'Tidak ada data soal.', [{text:'OK', class:'bg-sky-600 text-white py-2 px-6 rounded'}]); const { Document, Packer, Paragraph, TextRun, HeadingLevel } = docx; const children = []; data.forEach((soal, index) => { const mapelInfo = `[${mataPelajaranList.find(m => m.id === soal.mapel_id)?.nama_mapel || 'N/A'} | ${soal.jenis_soal}]`; children.push(new Paragraph({ children: [ new TextRun({ text: `${index + 1}. `, bold: true }), new TextRun({ text: mapelInfo, bold: true, color: "808080", size: 20 }), new TextRun({ text: ` ${soal.pertanyaan}` }) ], spacing: { before: 200, after: 100 } })); if (soal.pilihan) soal.pilihan.forEach((opsi, i) => children.push(new Paragraph({ children: [ new TextRun({ text: String.fromCharCode(65+i)+'. ', bold: (opsi===soal.jawaban_benar) }), new TextRun({ text: opsi, bold: (opsi===soal.jawaban_benar) }) ], indent: { left: 720 } }))); children.push(new Paragraph({ children: [ new TextRun({ text: `Kunci: ${soal.jawaban_benar}`, bold: true, color: "009900", size: 22 }) ], spacing: { before: 100, after: 200 } })); }); const doc = new Document({ sections: [{ children: [ new Paragraph({ text: "BANK SOAL UJIAN", heading: HeadingLevel.TITLE }), ...children ] }] }); const blob = await Packer.toBlob(doc); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'bank_soal.docx'; document.body.appendChild(link); link.click(); document.body.removeChild(link); });
+    
     const imageUploadInput = document.getElementById('image-upload');
     const imagePreview = document.getElementById('image-preview');
     imageUploadInput.addEventListener('change', (e) => { const file = e.target.files[0]; if (file) { if (file.size > 1024 * 1024) { showModal('Error', 'Ukuran file gambar tidak boleh melebihi 1MB.', [{ text: 'OK', class: 'bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg' }]); e.target.value = null; return; } imgFile = file; delImg = false; imagePreview.src = URL.createObjectURL(file); } });
