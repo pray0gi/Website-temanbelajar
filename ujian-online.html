@@ -176,8 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return stageKey.replace(/_/g, ' ').toUpperCase();
     };
 
-    // --- FUNGSI UTAMA (Didefinisikan sebagai Function agar Hoisted/Bisa dipanggil kapan saja) ---
-
+    // --- FUNGSI UTAMA SUBMIT (Didefinisikan sebagai Function agar Hoisted) ---
     async function submitExam(reason) {
         clearInterval(timerInterval);
         removeCheatingDetection(); // MATIKAN SISTEM KEAMANAN
@@ -191,6 +190,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Format key di jawabanSiswa adalah "soal-123"
             if (jawabanSiswa[`soal-${q.id}`] === q.jawaban_benar) correct++;
         });
+        
+        // Hitung Skor 0-100
         const score = soalUjian.length > 0 ? Math.round((correct / soalUjian.length) * 100) : 0;
 
         const payload = {
@@ -226,9 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isExamActive = true;
         document.getElementById('violation-counter').textContent = MAX_VIOLATIONS;
 
-        // Deteksi pindah tab / minimize
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        // Deteksi keluar fullscreen
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
     };
@@ -264,11 +263,12 @@ document.addEventListener('DOMContentLoaded', () => {
         warningModal.classList.add('flex');
 
         if (violationCount >= MAX_VIOLATIONS) {
-            isExamActive = false; // Stop further checks
+            isExamActive = false; 
             document.getElementById('close-warning-btn').disabled = true;
             document.getElementById('close-warning-btn').textContent = "DISKUALIFIKASI...";
             setTimeout(() => {
                 warningModal.classList.add('hidden');
+                // Kirim jawaban apa adanya jika melanggar 6x
                 submitExam("Diskualifikasi (Batas Pelanggaran Habis)");
             }, 2000);
         }
@@ -277,7 +277,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('close-warning-btn').addEventListener('click', () => {
         if (violationCount < MAX_VIOLATIONS) {
             document.getElementById('violation-warning').classList.add('hidden');
-            // Paksa fullscreen lagi jika keluar
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(e => console.log(e));
             }
@@ -312,8 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const qStageMap = {};
             allQuestions?.forEach(q => qStageMap[q.id] = q.jenis_soal || 'ujian');
 
-            // LOGIKA BARU: Menghitung percobaan & skor terbaik
-            // Format: "mapelID_tahap" -> { count: 0, maxScore: 0 }
+            // LOGIKA BARU: MENGELOMPOKKAN RIWAYAT PER TAHAP
             const historyStats = {}; 
             
             history?.forEach(h => {
@@ -323,12 +321,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     const stage = qStageMap[qId] || 'ujian';
                     const key = `${h.mapel_id}_${stage}`;
                     
-                    if(!historyStats[key]) historyStats[key] = { count: 0, maxScore: 0 };
+                    if(!historyStats[key]) {
+                        historyStats[key] = { count: 0, maxScore: 0 };
+                    }
                     
                     historyStats[key].count++;
+                    // Cari skor tertinggi
                     if(h.skor_akhir > historyStats[key].maxScore) {
                         historyStats[key].maxScore = h.skor_akhir;
                     }
+                    // Jika ini percobaan terbaru, update lastScore (bisa ditambahkan jika perlu)
                 }
             });
 
@@ -363,14 +365,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         const key = `${mapel.id}_${cfg.jenis_soal}`;
                         const stats = historyStats[key] || { count: 0, maxScore: 0 };
                         const displayName = getStageDisplayName(cfg.jenis_soal);
-                        
-                        // LOGIKA REMEDIAL
-                        // 1. Belum pernah -> Tombol Mulai
-                        // 2. Sudah 1x & Skor < 75 -> Tombol Remedial (Warna Kuning)
-                        // 3. Sudah 2x ATAU Skor >= 75 -> Selesai (Hijau/Merah)
 
+                        // --- LOGIKA TAMPILAN TOMBOL BERDASARKAN RIWAYAT ---
+                        // KONDISI 1: Belum pernah mengerjakan (0 kali) -> BOLEH
                         if (stats.count === 0) {
-                            // BELUM PERNAH
                             const configStr = encodeURIComponent(JSON.stringify(cfg));
                             html += `
                             <button onclick="prepareExam('${configStr}', '${mapel.nama_mapel}')" 
@@ -381,38 +379,32 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform group-hover:translate-x-1 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
                             </button>`;
-                        } 
+                        }
+                        // KONDISI 2: Sudah 1 kali DAN Nilai < 75 -> BOLEH (Remedial)
                         else if (stats.count === 1 && stats.maxScore < 75) {
-                            // REMEDIAL (1 Kali Kesempatan)
                             const configStr = encodeURIComponent(JSON.stringify(cfg));
                             html += `
                             <button onclick="prepareExam('${configStr}', '${mapel.nama_mapel}')" 
                                 class="flex justify-between items-center bg-yellow-600 hover:bg-yellow-500 text-white p-3 rounded font-semibold transition shadow-lg group text-left border border-yellow-400">
                                 <div>
-                                    <span class="block text-sm font-bold">Remedial ${displayName}</span>
-                                    <span class="text-xs font-normal">Skor Awal: ${stats.maxScore} (Belum Tuntas)</span>
+                                    <span class="block text-sm font-bold text-yellow-100">Remedial ${displayName}</span>
+                                    <span class="text-xs font-normal text-yellow-200">Nilai Sebelumnya: ${stats.maxScore} (Belum Tuntas)</span>
                                 </div>
-                                <span class="bg-white text-yellow-700 text-xs font-bold px-2 py-1 rounded">Coba Lagi</span>
+                                <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded">Ulangi</span>
                             </button>`;
                         }
+                        // KONDISI 3: Sudah >= 2 kali ATAU Nilai >= 75 -> SELESAI
                         else {
-                            // SELESAI (Sudah Lulus atau Kesempatan Habis)
-                            let scoreColor, statusText;
-                            if (stats.maxScore >= 75) {
-                                scoreColor = 'text-green-400 border-green-800 bg-green-900/30';
-                                statusText = "Tuntas";
-                            } else {
-                                scoreColor = 'text-red-400 border-red-800 bg-red-900/30';
-                                statusText = "Kesempatan Habis";
-                            }
+                            let statusText = stats.maxScore >= 75 ? "Tuntas" : "Kesempatan Habis";
+                            let scoreColor = stats.maxScore >= 75 ? 'text-green-400 border-green-800 bg-green-900/30' : 'text-red-400 border-red-800 bg-red-900/30';
                             
                             html += `
                             <div class="flex justify-between items-center p-3 rounded border ${scoreColor}">
                                 <div>
                                     <div class="text-xs font-bold uppercase opacity-80">${displayName}</div>
-                                    <div class="text-sm">${statusText}</div>
+                                    <div class="text-xs mt-1">${statusText}</div>
                                 </div>
-                                <div class="text-xl font-bold">${stats.maxScore}</div>
+                                <div class="text-2xl font-bold">${stats.maxScore}</div>
                             </div>`;
                         }
                     });
@@ -510,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         renderExamUI();
         startTimer(WAKTU_UJIAN);
-        setupCheatingDetection(); // AKTIFKAN SISTEM KEAMANAN
+        setupCheatingDetection(); 
         navigateTo('exam');
     }
 
@@ -574,28 +566,29 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (time <= 0) {
-                submitExam("Waktu Habis");
+                submitExam("Waktu Habis"); // Auto submit
             }
             time--;
         }, 1000);
     }
 
-    // Event listener untuk tombol Kirim Jawaban
+    // --- LOGIKA VALIDASI TOMBOL KIRIM ---
     document.getElementById('submit-exam-btn').addEventListener('click', () => {
         const filled = Object.keys(jawabanSiswa).length;
-        let message = 'Kirim jawaban sekarang?';
-        
-        if (filled < soalUjian.length) {
-            message = `Anda baru menjawab ${filled} dari ${soalUjian.length} soal. Yakin kirim?`;
+        const total = soalUjian.length;
+
+        if (filled < total) {
+            showModal('Peringatan', `Anda baru menjawab ${filled} dari ${total} soal. Harap jawab semua soal sebelum mengirim.`, [
+                { text: 'OK, Saya Mengerti', class: 'bg-sky-600 hover:bg-sky-500 text-white py-2 px-6 rounded font-bold', onClick: null }
+            ]);
+            return; 
         }
         
-        // Gunakan Custom Modal untuk konfirmasi
-        showModal('Konfirmasi', message, [
-            { text: 'Batal', class: 'bg-slate-600 hover:bg-slate-500 text-white py-2 px-4 rounded', onClick: null },
-            { text: 'Ya, Kirim', class: 'bg-green-600 hover:bg-green-500 text-white py-2 px-4 rounded', onClick: () => submitExam("Selesai Normal") }
+        showModal('Konfirmasi', 'Semua soal telah terisi. Yakin ingin mengirim jawaban?', [
+            { text: 'Periksa Lagi', class: 'bg-slate-600 hover:bg-slate-500 text-white py-2 px-4 rounded', onClick: null },
+            { text: 'Ya, Kirim', class: 'bg-green-600 hover:bg-green-500 text-white py-2 px-4 rounded font-bold', onClick: () => submitExam("Selesai Normal") }
         ]);
     });
-
     
     document.getElementById('close-warning-btn').addEventListener('click', () => {
         document.getElementById('violation-warning').classList.add('hidden');
