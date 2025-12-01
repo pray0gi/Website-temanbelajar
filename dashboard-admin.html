@@ -1125,6 +1125,324 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('remove-image-btn').addEventListener('click', () => { imgFile = null; delImg = true; imageUploadInput.value = ''; imagePreview.src = 'https://placehold.co/150x100/1e293b/94a3b8?text=Tidak+Ada'; });
 
     checkSession();
+// ==========================================
+    // PERBAIKAN FITUR DOWNLOAD (TAMBAHAN)
+    // ==========================================
+
+    // 1. FUNGSI UTILITAS DOWNLOAD FILE
+    const downloadFile = (content, fileName, mimeType) => {
+        const a = document.createElement('a');
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    // 2. DOWNLOAD TEMPLATE SISWA (CSV)
+    document.getElementById('download-siswa-template')?.addEventListener('click', () => {
+        const csvContent = "NIS,Nama,Kelas,Password\n12345,Contoh Siswa,10A,12345";
+        downloadFile(csvContent, 'template_siswa.csv', 'text/csv');
+    });
+
+    // 3. DOWNLOAD TEMPLATE SOAL (CSV)
+    document.getElementById('download-soal-template')?.addEventListener('click', () => {
+        const csvContent = "Pertanyaan,PilihanA,PilihanB,PilihanC,PilihanD,PilihanE,JawabanBenar\nIbukota Indonesia adalah?,Jakarta,Bandung,Surabaya,Medan,Bali,Jakarta";
+        downloadFile(csvContent, 'template_soal.csv', 'text/csv');
+    });
+
+    // 4. DOWNLOAD HASIL UJIAN (CSV)
+    document.getElementById('download-hasil')?.addEventListener('click', async () => {
+        const btn = document.getElementById('download-hasil');
+        const originalText = btn.textContent;
+        btn.textContent = "Memproses..."; btn.disabled = true;
+
+        try {
+            const filterMapelId = document.getElementById('filter-hasil-mapel').value;
+            const filterStage = document.getElementById('filter-hasil-jenis').value;
+            
+            let query = supabaseClient.from('hasil_ujian')
+                .select('waktu_pengerjaan, skor_akhir, siswa(nis, nama, kelas), mata_pelajaran(nama_mapel)');
+
+            if (filterMapelId && filterMapelId !== 'all') {
+                query = query.eq('mapel_id', filterMapelId);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                alert("Tidak ada data hasil ujian untuk diunduh.");
+                return;
+            }
+
+            // Format data untuk CSV
+            const csvData = data.map(row => ({
+                Waktu: new Date(row.waktu_pengerjaan).toLocaleString('id-ID'),
+                NIS: row.siswa?.nis || '-',
+                Nama: row.siswa?.nama || '-',
+                Kelas: row.siswa?.kelas || '-',
+                Mapel: row.mata_pelajaran?.nama_mapel || '-',
+                Skor: row.skor_akhir
+            }));
+
+            // Gunakan PapaParse (sudah ada di library Anda)
+            const csvString = Papa.unparse(csvData);
+            downloadFile(csvString, `Hasil_Ujian_${new Date().getTime()}.csv`, 'text/csv');
+
+        } catch (err) {
+            alert("Gagal download: " + err.message);
+        } finally {
+            btn.textContent = originalText; btn.disabled = false;
+        }
+    });
+
+    // 5. DOWNLOAD HASIL LATIHAN (CSV)
+    document.getElementById('download-latihan')?.addEventListener('click', async () => {
+        const btn = document.getElementById('download-latihan');
+        btn.textContent = "Memproses..."; btn.disabled = true;
+        
+        try {
+            const filterMapelId = document.getElementById('filter-latihan-mapel').value;
+            let query = supabaseClient.from('hasil_latihan')
+                .select('nomor_percobaan, skor, siswa(nis, nama, kelas), mata_pelajaran(nama_mapel)');
+            
+            if (filterMapelId && filterMapelId !== 'all') {
+                query = query.eq('mapel_id', filterMapelId);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+            
+            if (!data || data.length === 0) {
+                alert("Data latihan kosong."); return;
+            }
+
+            const csvString = Papa.unparse(data.map(d => ({
+                NIS: d.siswa?.nis,
+                Nama: d.siswa?.nama,
+                Kelas: d.siswa?.kelas,
+                Mapel: d.mata_pelajaran?.nama_mapel,
+                Percobaan_Ke: d.nomor_percobaan,
+                Skor: d.skor
+            })));
+            
+            downloadFile(csvString, `Hasil_Latihan_${new Date().getTime()}.csv`, 'text/csv');
+        } catch(err) {
+            alert("Error: " + err.message);
+        } finally {
+            btn.textContent = "Download Hasil Latihan (CSV)"; btn.disabled = false;
+        }
+    });
+
+    // 6. DOWNLOAD BANK SOAL (DOCX - Microsoft Word)
+    document.getElementById('download-soal-docx')?.addEventListener('click', async () => {
+        const btn = document.getElementById('download-soal-docx');
+        const originalText = btn.textContent;
+        btn.textContent = "Membuat DOCX..."; btn.disabled = true;
+
+        try {
+            const mapelId = document.getElementById('filter-mapel').value;
+            const stage = document.getElementById('filter-jenis-soal').value;
+            
+            let query = supabaseClient.from('soal_ujian').select('*').order('id');
+            if(mapelId !== 'all') query = query.eq('mapel_id', mapelId);
+            if(stage !== 'all') query = query.eq('jenis_soal', stage);
+            
+            const { data, error } = await query;
+            if(error) throw error;
+            if(!data.length) { alert("Tidak ada soal untuk diunduh."); return; }
+
+            // Menggunakan library docx yang sudah di-include di head
+            const { Document, Packer, Paragraph, TextRun, AlignmentType } = docx;
+
+            const docChildren = [
+                new Paragraph({
+                    children: [ new TextRun({ text: "BANK SOAL", bold: true, size: 32 }) ],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 400 }
+                })
+            ];
+
+            data.forEach((soal, index) => {
+                docChildren.push(
+                    new Paragraph({
+                        children: [ new TextRun({ text: `${index + 1}. ${soal.pertanyaan}`, bold: true }) ],
+                        spacing: { before: 200, after: 100 }
+                    })
+                );
+                
+                ['A', 'B', 'C', 'D', 'E'].forEach((opt, i) => {
+                    if(soal.pilihan[i]) {
+                        const isKey = soal.jawaban_benar === soal.pilihan[i]; // Tandai kunci jika perlu
+                        docChildren.push(
+                            new Paragraph({
+                                children: [ new TextRun({ text: `   ${opt}. ${soal.pilihan[i]}`, color: isKey ? "FF0000" : "000000" }) ] // Kunci warna merah
+                            })
+                        );
+                    }
+                });
+                
+                docChildren.push(new Paragraph({ text: `Kunci Jawaban: ${soal.jawaban_benar}`, spacing: { after: 200 } }));
+            });
+
+            const doc = new Document({ sections: [{ properties: {}, children: docChildren }] });
+
+            const blob = await Packer.toBlob(doc);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Bank_Soal_${stage}.docx`;
+            a.click();
+            
+        } catch (err) {
+            console.error(err);
+            alert("Gagal membuat DOCX: " + err.message);
+        } finally {
+            btn.textContent = originalText; btn.disabled = false;
+        }
+    });
+
+    // ============================================================
+    // PERBAIKAN FITUR: DOWNLOAD TEMPLATE & UPLOAD SOAL
+    // ============================================================
+
+    // --- FUNGSI BANTUAN UNTUK DOWNLOAD ---
+    const downloadCSV = (content, fileName) => {
+        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // --- 1. DOWNLOAD TEMPLATE SOAL (Format Baru) ---
+    const btnTemplate = document.getElementById('download-soal-template');
+    if (btnTemplate) {
+        // Hapus event listener lama (jika ada) dengan clone node
+        const newBtn = btnTemplate.cloneNode(true);
+        btnTemplate.parentNode.replaceChild(newBtn, btnTemplate);
+
+        newBtn.addEventListener('click', () => {
+            // Header persis seperti template_soal.csv Anda
+            const headers = [
+                "mapel_id", 
+                "jenis_soal", 
+                "pertanyaan", 
+                "opsiA", 
+                "opsiB", 
+                "opsiC", 
+                "opsiD", 
+                "opsiE", 
+                "jawaban_benar"
+            ];
+            
+            // Contoh data agar user paham cara isinya
+            const exampleData = [
+                "2,ASAS_INFORMATIKA,Siapa penemu komputer?,Charles Babbage,Alan Turing,Steve Jobs,Bill Gates,Elon Musk,Charles Babbage",
+                "2,ASAS_INFORMATIKA,Apa kepanjangan CPU?,Central Processing Unit,Central Program Unit,Control Processing Unit,Computer Personal Unit,Central Power Unit,Central Processing Unit"
+            ];
+
+            const csvContent = headers.join(",") + "\n" + exampleData.join("\n");
+            downloadCSV(csvContent, 'template_soal_lengkap.csv');
+        });
+    }
+
+    // --- 2. UPLOAD SOAL (Membaca Mapel ID & Tahap dari CSV) ---
+    const inputUpload = document.getElementById('upload-soal-csv');
+    if (inputUpload) {
+        // Reset event listener agar tidak double
+        const newInput = inputUpload.cloneNode(true);
+        inputUpload.parentNode.replaceChild(newInput, inputUpload);
+
+        newInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Konfirmasi
+            if (!confirm(`Upload file "${file.name}"? Pastikan format sesuai template baru (ada mapel_id & jenis_soal).`)) {
+                e.target.value = '';
+                return;
+            }
+
+            // Parse CSV menggunakan PapaParse
+            Papa.parse(file, {
+                header: true, // Baris pertama dianggap header
+                skipEmptyLines: true,
+                complete: async function(results) {
+                    const rows = results.data;
+                    const payload = [];
+                    let errorCount = 0;
+
+                    // Loop setiap baris data
+                    rows.forEach((row, idx) => {
+                        // Ambil data berdasarkan nama kolom di template_soal.csv
+                        // Kita gunakan trim() untuk membuang spasi berlebih
+                        const mId = row['mapel_id'] ? row['mapel_id'].toString().trim() : null;
+                        const jSoal = row['jenis_soal'] ? row['jenis_soal'].toString().trim() : null;
+                        const tanya = row['pertanyaan'] ? row['pertanyaan'].trim() : null;
+                        const jawab = row['jawaban_benar'] ? row['jawaban_benar'].trim() : null;
+
+                        // Validasi: Jika data penting kosong, skip
+                        if (!mId || !jSoal || !tanya || !jawab) {
+                            console.warn(`Baris ${idx+2} skip: Data tidak lengkap.`);
+                            errorCount++;
+                            return;
+                        }
+
+                        // Susun Opsi A-E menjadi array
+                        const arrPilihan = [
+                            row['opsiA'], row['opsiB'], row['opsiC'], row['opsiD'], row['opsiE']
+                        ].filter(p => p && p.trim() !== ""); // Hapus opsi kosong
+
+                        // Masukkan ke antrian upload
+                        payload.push({
+                            mapel_id: parseInt(mId), // Konversi ke angka
+                            jenis_soal: jSoal,
+                            pertanyaan: tanya,
+                            pilihan: arrPilihan,
+                            jawaban_benar: jawab,
+                            url_gambar: null 
+                        });
+                    });
+
+                    // Kirim ke Database Supabase
+                    if (payload.length > 0) {
+                        const { error } = await supabaseClient.from('soal_ujian').insert(payload);
+
+                        if (error) {
+                            alert("Gagal Simpan ke Database: " + error.message);
+                        } else {
+                            alert(`Berhasil! ${payload.length} soal tersimpan.\n(${errorCount} baris gagal/dilewati)`);
+                            
+                            // Refresh Tabel Soal
+                            fetchAndRenderSoal();
+                            
+                            // Update dropdown filter jika ada jenis soal baru
+                            const stages = new Set(payload.map(p => p.jenis_soal));
+                            stages.forEach(s => availableStages.add(s));
+                            updateStageDropdowns();
+                        }
+                    } else {
+                        alert("Tidak ada data valid. Cek header CSV: mapel_id, jenis_soal, pertanyaan, opsiA...E, jawaban_benar");
+                    }
+                    
+                    // Bersihkan input file
+                    e.target.value = '';
+                },
+                error: function(err) {
+                    alert("Error baca file: " + err.message);
+                }
+            });
+        });
+    }
+
 });
 </script>
 </body>
