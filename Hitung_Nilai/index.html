@@ -746,7 +746,7 @@ footer {
 
 <footer>Penghitung Nilai Gabungan · SMP · DIY Yogyakarta · 2025–2026</footer>
 
-<script>
+ <script>
 // ── Build rapor inputs ──
 const MAPEL_KEYS_26 = ['BI','BIG','MAT','IPA'];
 const MAPEL_KEYS_25 = ['BI','BIG','MAT','IPA'];
@@ -819,16 +819,16 @@ function getRapor26() {
   return { avgs, sum: valid.length ? valid.reduce((a,b)=>a+b,0) : null };
 }
 
-function hitung2026() {
+// Tambahkan parameter isAuto
+function hitung2026(isAuto = false) {
   const rapor = getRapor26();
   const tka_mat = val('tka_mat_26'), tka_bi = val('tka_bi_26');
   const tkad_big = val('tkad_big_26'), tkad_ipa = val('tkad_ipa_26');
 
-  if (rapor.sum === null) { alert('Harap isi minimal satu nilai rapor!'); return; }
+  if (!isAuto && rapor.sum === null) { alert('Harap isi minimal satu nilai rapor!'); return; }
 
-  const nilaiRapor = rapor.sum;
+  const nilaiRapor = rapor.sum || 0;
   
-  // LOGIKA DIPERBAIKI: Menggabungkan nilai TKA dan TKAD
   const totalTKA = (tka_mat || 0) + (tka_bi || 0);
   const totalTKAD = (tkad_big || 0) + (tkad_ipa || 0);
   const nilaiUjian = totalTKA + totalTKAD; 
@@ -854,14 +854,18 @@ function hitung2026() {
     detailItem('NILAI GABUNGAN', ng.toFixed(2), true);
 
   document.getElementById('result2026').classList.add('show');
-  document.getElementById('result2026').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  
+  // Hanya scroll jika tombol diklik manual
+  if (!isAuto) {
+    document.getElementById('result2026').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
 }
 
 function autoCalc26() {
   const rapor = getRapor26();
-  // Mengecek apakah ada salah satu input ujian yang terisi (TKA atau TKAD)
   const hasUjian = val('tka_mat_26') !== null || val('tka_bi_26') !== null || val('tkad_big_26') !== null || val('tkad_ipa_26') !== null;
-  if (rapor.sum !== null && hasUjian) hitung2026();
+  // Kirim isAuto = true agar tidak scroll
+  if (rapor.sum !== null && hasUjian) hitung2026(true);
 }
 
 function reset2026() {
@@ -878,16 +882,17 @@ function getRapor25() {
   return { avgs, sum: valid.length ? valid.reduce((a,b)=>a+b,0) : null };
 }
 
-function hitung2025() {
+// Tambahkan parameter isAuto
+function hitung2025(isAuto = false) {
   const rapor = getRapor25();
   const baca  = val('aspd_baca');
   const sains = val('aspd_sains');
   const num   = val('aspd_num');
 
-  if (rapor.sum === null) { alert('Harap isi minimal satu nilai rapor!'); return; }
-  if (baca === null && sains === null && num === null) { alert('Harap isi minimal satu nilai ASPD!'); return; }
+  if (!isAuto && rapor.sum === null) { alert('Harap isi minimal satu nilai rapor!'); return; }
+  if (!isAuto && baca === null && sains === null && num === null) { alert('Harap isi minimal satu nilai ASPD!'); return; }
 
-  const nilaiRapor = rapor.sum;
+  const nilaiRapor = rapor.sum || 0;
   const aBaca  = baca  !== null ? baca  * 1.72 : 0;
   const aSains = sains !== null ? sains * 1.14 : 0;
   const aNum   = num   !== null ? num   * 1.14 : 0;
@@ -916,13 +921,18 @@ function hitung2025() {
     detailItem('NILAI GABUNGAN', ng.toFixed(2), true);
 
   document.getElementById('result2025').classList.add('show');
-  document.getElementById('result2025').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  
+  // Hanya scroll jika tombol diklik manual
+  if (!isAuto) {
+    document.getElementById('result2025').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
 }
 
 function autoCalc25() {
   const rapor = getRapor25();
   const hasASPD = val('aspd_baca') !== null || val('aspd_sains') !== null || val('aspd_num') !== null;
-  if (rapor.sum !== null && hasASPD) hitung2025();
+  // Kirim isAuto = true agar tidak scroll
+  if (rapor.sum !== null && hasASPD) hitung2025(true);
 }
 
 function reset2025() {
@@ -930,5 +940,6 @@ function reset2025() {
   document.getElementById('result2025').classList.remove('show');
 }
 </script>
+ 
 </body>
 </html>
