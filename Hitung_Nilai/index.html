@@ -550,9 +550,6 @@ footer {
 
 <main>
 
-<!-- ══════════════════════════════════════════════
-     PANEL 2026
-══════════════════════════════════════════════ -->
 <div id="panel2026" class="panel active">
 
   <div class="formula-card">
@@ -560,14 +557,13 @@ footer {
     <div class="formula-text">
       <h3>Formula Nilai Gabungan 2026</h3>
       <p>
-        <strong>NG</strong> = (Rata-rata Rapor × <strong>0.4</strong>) + (Nilai TKA × <strong>0.6</strong>)<br>
+        <strong>NG</strong> = (Total Rapor × <strong>0.4</strong>) + ((TKA + TKAD) × <strong>0.6</strong>)<br>
         Rapor: Rata-rata 4 mapel × 5 semester → jumlah (maks 400)<br>
-        TKA: Matematika + Bahasa Indonesia (maks 200) · TKAD: opsional pengganti TKA
+        Ujian: TKA (Mat + B.Indo) + TKAD (B.Inggris + IPA) → jumlah (maks 400)
       </p>
     </div>
   </div>
 
-  <!-- Nilai Rapor -->
   <div class="card" style="margin-bottom:1.5rem">
     <div class="card-header">
       <div class="icon">📓</div>
@@ -583,7 +579,6 @@ footer {
     </div>
   </div>
 
-  <!-- TKA + TKAD -->
   <div class="section-grid">
     <div class="card">
       <div class="card-header">
@@ -607,7 +602,7 @@ footer {
     <div class="card">
       <div class="card-header">
         <div class="icon">📝</div>
-        <h3>Nilai TKAD <span style="font-weight:300;font-size:11px;color:var(--muted)">opsional</span></h3>
+        <h3>Nilai TKAD</h3>
       </div>
       <div class="card-body">
         <div class="ujian-row">
@@ -660,9 +655,6 @@ footer {
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════
-     PANEL 2025
-══════════════════════════════════════════════ -->
 <div id="panel2025" class="panel">
 
   <div class="formula-card">
@@ -676,7 +668,6 @@ footer {
     </div>
   </div>
 
-  <!-- Nilai Rapor 2025 -->
   <div class="card" style="margin-bottom:1.5rem">
     <div class="card-header">
       <div class="icon">📓</div>
@@ -692,7 +683,6 @@ footer {
     </div>
   </div>
 
-  <!-- ASPD -->
   <div class="card" style="margin-bottom:1.5rem">
     <div class="card-header">
       <div class="icon">📝</div>
@@ -837,19 +827,13 @@ function hitung2026() {
   if (rapor.sum === null) { alert('Harap isi minimal satu nilai rapor!'); return; }
 
   const nilaiRapor = rapor.sum;
-  let nilaiUjian = 0, sourceLabel = '–';
-  const hasTKA  = tka_mat !== null || tka_bi !== null;
-  const hasTKAD = tkad_big !== null || tkad_ipa !== null;
+  
+  // LOGIKA DIPERBAIKI: Menggabungkan nilai TKA dan TKAD
+  const totalTKA = (tka_mat || 0) + (tka_bi || 0);
+  const totalTKAD = (tkad_big || 0) + (tkad_ipa || 0);
+  const nilaiUjian = totalTKA + totalTKAD; 
 
-  if (hasTKA) {
-    nilaiUjian = (tka_mat||0) + (tka_bi||0);
-    sourceLabel = 'TKA';
-  } else if (hasTKAD) {
-    nilaiUjian = (tkad_big||0) + (tkad_ipa||0);
-    sourceLabel = 'TKAD';
-  }
-
-  const ng = nilaiRapor * 0.4 + nilaiUjian * 0.6;
+  const ng = (nilaiRapor * 0.4) + (nilaiUjian * 0.6);
   const [pred, cls] = predikat(ng);
 
   document.getElementById('score2026').textContent = ng.toFixed(2);
@@ -865,8 +849,8 @@ function hitung2026() {
     detailItem('Rata-rata IPA', ipa) +
     detailItem('Jumlah Nilai Rapor', nilaiRapor.toFixed(2)) +
     detailItem('Kontribusi Rapor (×0.4)', (nilaiRapor*0.4).toFixed(2)) +
-    detailItem(`Nilai ${sourceLabel}`, nilaiUjian.toFixed(2)) +
-    detailItem(`Kontribusi ${sourceLabel} (×0.6)`, (nilaiUjian*0.6).toFixed(2)) +
+    detailItem('Jumlah Nilai TKA + TKAD', nilaiUjian.toFixed(2)) +
+    detailItem('Kontribusi TKA+TKAD (×0.6)', (nilaiUjian*0.6).toFixed(2)) +
     detailItem('NILAI GABUNGAN', ng.toFixed(2), true);
 
   document.getElementById('result2026').classList.add('show');
@@ -875,9 +859,9 @@ function hitung2026() {
 
 function autoCalc26() {
   const rapor = getRapor26();
-  const hasTKA  = val('tka_mat_26') !== null || val('tka_bi_26') !== null;
-  const hasTKAD = val('tkad_big_26') !== null || val('tkad_ipa_26') !== null;
-  if (rapor.sum !== null && (hasTKA || hasTKAD)) hitung2026();
+  // Mengecek apakah ada salah satu input ujian yang terisi (TKA atau TKAD)
+  const hasUjian = val('tka_mat_26') !== null || val('tka_bi_26') !== null || val('tkad_big_26') !== null || val('tkad_ipa_26') !== null;
+  if (rapor.sum !== null && hasUjian) hitung2026();
 }
 
 function reset2026() {
@@ -948,4 +932,3 @@ function reset2025() {
 </script>
 </body>
 </html>
-
